@@ -1,0 +1,91 @@
+{
+  "rootId": "infosec-universe-ultimate-map-blockchain-web3-security",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-blockchain-web3-security",
+      "name": "Blockchain / Web3 Security",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-blockchain-web3-security-smart-contract-auditing-solidity-evm",
+      "name": "Smart contract auditing (Solidity/EVM)",
+      "x": 138.564,
+      "y": 80.0,
+      "depth": 1,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-blockchain-web3-security-wallet-key-security-hsms-mpc-wallets",
+      "name": "Wallet & key security (HSMs, MPC wallets)",
+      "x": 0.0,
+      "y": 160.0,
+      "depth": 1,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-blockchain-web3-security-defi-risks-oracle-manipulation-flash-loans",
+      "name": "DeFi risks (oracle manipulation, flash loans)",
+      "x": -138.564,
+      "y": 80.0,
+      "depth": 1,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-blockchain-web3-security-smart-contract-vulns-reentrancy-integer-overflow-underflow-access-control",
+      "name": "Smart contract vulns: reentrancy, integer overflow/underflow, access control",
+      "x": -138.564,
+      "y": -80.0,
+      "depth": 1,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-blockchain-web3-security-security-tooling-slither-mythril-echidna-foundry-forge",
+      "name": "Security tooling: Slither, Mythril, Echidna, Foundry/Forge",
+      "x": -0.0,
+      "y": -160.0,
+      "depth": 1,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-blockchain-web3-security-audit-practices-formal-verification-fuzzing-time-locked-upgrades",
+      "name": "Audit practices: formal verification, fuzzing, time-locked upgrades",
+      "x": 138.564,
+      "y": -80.0,
+      "depth": 1,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-blockchain-web3-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-blockchain-web3-security",
+      "target": "infosec-universe-ultimate-map-blockchain-web3-security-smart-contract-auditing-solidity-evm"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-blockchain-web3-security",
+      "target": "infosec-universe-ultimate-map-blockchain-web3-security-wallet-key-security-hsms-mpc-wallets"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-blockchain-web3-security",
+      "target": "infosec-universe-ultimate-map-blockchain-web3-security-defi-risks-oracle-manipulation-flash-loans"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-blockchain-web3-security",
+      "target": "infosec-universe-ultimate-map-blockchain-web3-security-smart-contract-vulns-reentrancy-integer-overflow-underflow-access-control"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-blockchain-web3-security",
+      "target": "infosec-universe-ultimate-map-blockchain-web3-security-security-tooling-slither-mythril-echidna-foundry-forge"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-blockchain-web3-security",
+      "target": "infosec-universe-ultimate-map-blockchain-web3-security-audit-practices-formal-verification-fuzzing-time-locked-upgrades"
+    }
+  ]
+}

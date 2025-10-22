@@ -1,0 +1,151 @@
+{
+  "rootId": "infosec-universe-ultimate-map-rf-sdr-satellite",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite",
+      "name": "RF/SDR & Satellite",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools",
+      "name": "SDR Labs & Tools",
+      "x": -27.784,
+      "y": 157.569,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-gnu-radio-usrp-hackrf-rtl-sdr-sdrangel",
+      "name": "GNU Radio • USRP/HackRF • RTL‑SDR • SDRangel",
+      "x": 300.702,
+      "y": 109.446,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-protocol-fuzzing-replay",
+      "name": "Protocol fuzzing & replay",
+      "x": 160.0,
+      "y": 277.128,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-rogue-downlink-backhaul",
+      "name": "Rogue downlink/backhaul",
+      "x": -55.567,
+      "y": 315.138,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-encryption-overlays",
+      "name": "Encryption overlays",
+      "x": -245.134,
+      "y": 205.692,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-ground-stations-antennas",
+      "name": "Ground stations & antennas",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience",
+      "name": "GNSS & RF Resilience",
+      "x": 27.784,
+      "y": -157.569,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience-spoofing-jamming-detection",
+      "name": "Spoofing/jamming detection",
+      "x": -245.134,
+      "y": -205.692,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience-multi-constellation-gps-glonass-galileo-beidou",
+      "name": "Multi‑constellation (GPS, GLONASS, Galileo, BeiDou)",
+      "x": -55.567,
+      "y": -315.138,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience-inertial-backups-ground-station-detection",
+      "name": "Inertial backups & ground‑station detection",
+      "x": 160.0,
+      "y": -277.128,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience-resilience-fallback-comms-hf-mesh",
+      "name": "Resilience & fallback comms (HF/Mesh)",
+      "x": 300.702,
+      "y": -109.446,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-gnu-radio-usrp-hackrf-rtl-sdr-sdrangel"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-protocol-fuzzing-replay"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-rogue-downlink-backhaul"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-encryption-overlays"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-sdr-labs-tools-ground-stations-antennas"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience-spoofing-jamming-detection"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience-multi-constellation-gps-glonass-galileo-beidou"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience-inertial-backups-ground-station-detection"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite-gnss-rf-resilience-resilience-fallback-comms-hf-mesh"
+    }
+  ]
+}

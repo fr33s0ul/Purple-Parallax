@@ -1,0 +1,247 @@
+{
+  "rootId": "infosec-universe-ultimate-map-network-security",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-network-security",
+      "name": "Network Security",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-edge-segmentation",
+      "name": "Edge & Segmentation",
+      "x": 0.0,
+      "y": 160.0,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-edge-segmentation-firewalls-pfsense-opnsense-iptables-nftables-vyos-commercial-palo-alto-fortinet-check-point-cisco-asa-legacy-ftd",
+      "name": "Firewalls: pfSense/OPNsense, iptables/nftables, VyOS; commercial: Palo Alto, Fortinet, Check Point, Cisco ASA (legacy) / FTD",
+      "x": 313.851,
+      "y": 62.429,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-edge-segmentation-ngfw-waf-ips-ids-suricata-snort-modsecurity",
+      "name": "NGFW/WAF/IPS/IDS: Suricata, Snort, ModSecurity",
+      "x": 266.07,
+      "y": 177.782,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-edge-segmentation-reverse-proxies-lb-nginx-haproxy",
+      "name": "Reverse proxies/LB: Nginx, HAProxy",
+      "x": 177.782,
+      "y": 266.07,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-edge-segmentation-secure-web-gateway-ztna-casb-sse-stack-optional-rbi",
+      "name": "Secure Web Gateway/ZTNA/CASB (SSE stack; optional RBI)",
+      "x": 62.429,
+      "y": 313.851,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-edge-segmentation-vpn-openvpn-wireguard-ipsec-ssl",
+      "name": "VPN: OpenVPN/WireGuard, IPsec/SSL",
+      "x": -62.429,
+      "y": 313.851,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-edge-segmentation-ddos-rtbh-anycast-bgp-flowspec-scrubbing",
+      "name": "DDoS: RTBH/Anycast • BGP Flowspec • Scrubbing",
+      "x": -177.782,
+      "y": 266.07,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-edge-segmentation-micro-macro-segmentation",
+      "name": "Micro/Macro Segmentation",
+      "x": -266.07,
+      "y": 177.782,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-edge-segmentation-network-access-control-nac-802-1x-cisco-ise-aruba-clearpass",
+      "name": "Network Access Control (NAC: 802.1X, Cisco ISE, Aruba ClearPass)",
+      "x": -313.851,
+      "y": 62.429,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-dns-tls",
+      "name": "DNS & TLS",
+      "x": -133.035,
+      "y": -88.891,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-dns-tls-dnssec-doh-dot-rpz-bind-unbound-powerdns-let-s-encrypt-acme-certbot",
+      "name": "DNSSEC • DoH/DoT • RPZ • BIND/Unbound/PowerDNS • Let's Encrypt/ACME/Certbot",
+      "x": -313.851,
+      "y": -62.429,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-dns-tls-pki-mtls-cert-lifecycle-acme-smallstep",
+      "name": "PKI • mTLS • Cert Lifecycle • ACME/Smallstep",
+      "x": -266.07,
+      "y": -177.782,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-dns-tls-email-auth-spf-dkim-dmarc-mta-sts-tls-rpt-bimi-arc",
+      "name": "Email Auth: SPF, DKIM, DMARC, MTA-STS, TLS-RPT, BIMI, ARC",
+      "x": -177.782,
+      "y": -266.07,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-telemetry",
+      "name": "Telemetry",
+      "x": 88.891,
+      "y": -133.035,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-telemetry-netflow-ipfix-sflow-softflowd-pmacct",
+      "name": "NetFlow/IPFIX/sFlow • softflowd/pmacct",
+      "x": -62.429,
+      "y": -313.851,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-telemetry-zeek-suricata-ids-json-telemetry-pcap-tcpdump",
+      "name": "Zeek/Suricata (IDS & JSON telemetry) • PCAP • tcpdump",
+      "x": 62.429,
+      "y": -313.851,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-telemetry-syslog-syslog-ng-radius-tacacs",
+      "name": "Syslog/syslog-ng • RADIUS/TACACS+",
+      "x": 177.782,
+      "y": -266.07,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-telemetry-ja3-ja4-tls-fingerprints",
+      "name": "JA3/JA4 TLS fingerprints",
+      "x": 266.07,
+      "y": -177.782,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security-telemetry-windows-event-forwarding-wef-winrm-nxlog-winlogbeat",
+      "name": "Windows Event Forwarding (WEF)/WinRM • NXLog/Winlogbeat",
+      "x": 313.851,
+      "y": -62.429,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-network-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security",
+      "target": "infosec-universe-ultimate-map-network-security-edge-segmentation"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-edge-segmentation",
+      "target": "infosec-universe-ultimate-map-network-security-edge-segmentation-firewalls-pfsense-opnsense-iptables-nftables-vyos-commercial-palo-alto-fortinet-check-point-cisco-asa-legacy-ftd"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-edge-segmentation",
+      "target": "infosec-universe-ultimate-map-network-security-edge-segmentation-ngfw-waf-ips-ids-suricata-snort-modsecurity"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-edge-segmentation",
+      "target": "infosec-universe-ultimate-map-network-security-edge-segmentation-reverse-proxies-lb-nginx-haproxy"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-edge-segmentation",
+      "target": "infosec-universe-ultimate-map-network-security-edge-segmentation-secure-web-gateway-ztna-casb-sse-stack-optional-rbi"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-edge-segmentation",
+      "target": "infosec-universe-ultimate-map-network-security-edge-segmentation-vpn-openvpn-wireguard-ipsec-ssl"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-edge-segmentation",
+      "target": "infosec-universe-ultimate-map-network-security-edge-segmentation-ddos-rtbh-anycast-bgp-flowspec-scrubbing"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-edge-segmentation",
+      "target": "infosec-universe-ultimate-map-network-security-edge-segmentation-micro-macro-segmentation"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-edge-segmentation",
+      "target": "infosec-universe-ultimate-map-network-security-edge-segmentation-network-access-control-nac-802-1x-cisco-ise-aruba-clearpass"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security",
+      "target": "infosec-universe-ultimate-map-network-security-dns-tls"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-dns-tls",
+      "target": "infosec-universe-ultimate-map-network-security-dns-tls-dnssec-doh-dot-rpz-bind-unbound-powerdns-let-s-encrypt-acme-certbot"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-dns-tls",
+      "target": "infosec-universe-ultimate-map-network-security-dns-tls-pki-mtls-cert-lifecycle-acme-smallstep"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-dns-tls",
+      "target": "infosec-universe-ultimate-map-network-security-dns-tls-email-auth-spf-dkim-dmarc-mta-sts-tls-rpt-bimi-arc"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security",
+      "target": "infosec-universe-ultimate-map-network-security-telemetry"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-telemetry",
+      "target": "infosec-universe-ultimate-map-network-security-telemetry-netflow-ipfix-sflow-softflowd-pmacct"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-telemetry",
+      "target": "infosec-universe-ultimate-map-network-security-telemetry-zeek-suricata-ids-json-telemetry-pcap-tcpdump"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-telemetry",
+      "target": "infosec-universe-ultimate-map-network-security-telemetry-syslog-syslog-ng-radius-tacacs"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-telemetry",
+      "target": "infosec-universe-ultimate-map-network-security-telemetry-ja3-ja4-tls-fingerprints"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-network-security-telemetry",
+      "target": "infosec-universe-ultimate-map-network-security-telemetry-windows-event-forwarding-wef-winrm-nxlog-winlogbeat"
+    }
+  ]
+}

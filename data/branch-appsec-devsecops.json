@@ -1,0 +1,283 @@
+{
+  "rootId": "infosec-universe-ultimate-map-appsec-devsecops",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops",
+      "name": "AppSec & DevSecOps",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc",
+      "name": "Secure SDLC",
+      "x": 102.846,
+      "y": 122.567,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-requirements-threat-modeling",
+      "name": "Requirements/Threat Modeling",
+      "x": 315.138,
+      "y": 55.567,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-code-reviews-secure-patterns",
+      "name": "Code Reviews • Secure Patterns",
+      "x": 277.128,
+      "y": 160.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-sast-dast-iast-sca-zap-semgrep-bandit-gosec-brakeman-nikto-legacy-signature-based-sca-osv-scanner-dependency-check-trivy-syft-codeql",
+      "name": "SAST/DAST/IAST/SCA: ZAP, Semgrep, Bandit, Gosec, Brakeman, Nikto (legacy/signature-based); SCA: OSV‑Scanner, Dependency‑Check, Trivy, Syft • CodeQL",
+      "x": 205.692,
+      "y": 245.134,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-sbom-supply-chain-slsa-spdx-cyclonedx-sigstore-cosign-in-toto",
+      "name": "SBOM • Supply Chain (SLSA) • SPDX • CycloneDX • Sigstore/cosign • in-toto",
+      "x": 109.446,
+      "y": 300.702,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-secrets-scanning-gitleaks-trufflehog-gitguardian",
+      "name": "Secrets Scanning: Gitleaks, TruffleHog, GitGuardian",
+      "x": 0.0,
+      "y": 320.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-api-web",
+      "name": "API & Web",
+      "x": -150.351,
+      "y": 54.723,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-api-web-owasp-asvs-top-10-api-top-10",
+      "name": "OWASP ASVS • Top 10 • API Top 10",
+      "x": -109.446,
+      "y": 300.702,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-api-web-authn-z-jwt-oauth2-oidc",
+      "name": "AuthN/Z (JWT, OAuth2, OIDC)",
+      "x": -205.692,
+      "y": 245.134,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-api-web-graphql-restrict-disable-introspection-in-prod-depth-complexity-limits-schema-allow-lists-role-based-access",
+      "name": "GraphQL: restrict/disable introspection in prod • depth/complexity limits • schema allow-lists • role-based access",
+      "x": -277.128,
+      "y": 160.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-api-web-rate-limiting-waf-client-side-protections-csp-trusted-types-bot-mgmt",
+      "name": "Rate limiting • WAF • Client-side protections (CSP, Trusted Types) • Bot mgmt",
+      "x": -315.138,
+      "y": 55.567,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-api-web-runtime-in-app-protection-rasp",
+      "name": "Runtime in-app protection (RASP)",
+      "x": -315.138,
+      "y": -55.567,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-api-web-jwt-bcp-short-expiries-audience-issuer-checks-key-rotation-avoid-none-weak-algs",
+      "name": "JWT BCP: short expiries, audience/issuer checks, key rotation; avoid “none”/weak algs",
+      "x": -277.128,
+      "y": -160.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-container-iac",
+      "name": "Container & IAC",
+      "x": -54.723,
+      "y": -150.351,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-container-iac-iac-terraform-cloudformation-scanning-checkov-tfsec-terrascan-kics-policy-as-code-opa-conftest-sentinel",
+      "name": "IaC: Terraform/CloudFormation; scanning: Checkov, tfsec, Terrascan, KICS; Policy as Code (OPA/Conftest, Sentinel)",
+      "x": -205.692,
+      "y": -245.134,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-container-iac-image-scanning-sbom-trivy-grype-syft-snyk",
+      "name": "Image Scanning & SBOM: Trivy, Grype, Syft, Snyk",
+      "x": -109.446,
+      "y": -300.702,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-container-iac-runtime-admission-policy-falco-opa-kyverno-kube-bench-kube-hunter-tetragon-ebpf-seccomp-apparmor-selinux-securitycontext-runasnonroot-drop-caps",
+      "name": "Runtime: Admission, Policy, Falco, OPA, Kyverno, kube-bench, kube-hunter • Tetragon (eBPF) • seccomp • AppArmor/SELinux • SecurityContext (runAsNonRoot, drop caps)",
+      "x": -0.0,
+      "y": -320.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling",
+      "name": "DevOps Tooling",
+      "x": 122.567,
+      "y": -102.846,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling-ci-cd-github-actions-gitlab-jenkins-argo-cd-spinnaker",
+      "name": "CI/CD: GitHub Actions, GitLab, Jenkins, Argo CD, Spinnaker",
+      "x": 109.446,
+      "y": -300.702,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling-artifact-nexus-artifactory-harbor-docker-registry",
+      "name": "Artifact: Nexus, Artifactory, Harbor/Docker Registry",
+      "x": 205.692,
+      "y": -245.134,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling-monitoring-prometheus-grafana-loki-victoriametrics",
+      "name": "Monitoring: Prometheus, Grafana, Loki, VictoriaMetrics",
+      "x": 277.128,
+      "y": -160.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling-tracing-jaeger-zipkin-opentelemetry",
+      "name": "Tracing: Jaeger, Zipkin, OpenTelemetry",
+      "x": 315.138,
+      "y": -55.567,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-requirements-threat-modeling"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-code-reviews-secure-patterns"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-sast-dast-iast-sca-zap-semgrep-bandit-gosec-brakeman-nikto-legacy-signature-based-sca-osv-scanner-dependency-check-trivy-syft-codeql"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-sbom-supply-chain-slsa-spdx-cyclonedx-sigstore-cosign-in-toto"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-secure-sdlc-secrets-scanning-gitleaks-trufflehog-gitguardian"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-api-web"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-api-web",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-api-web-owasp-asvs-top-10-api-top-10"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-api-web",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-api-web-authn-z-jwt-oauth2-oidc"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-api-web",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-api-web-graphql-restrict-disable-introspection-in-prod-depth-complexity-limits-schema-allow-lists-role-based-access"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-api-web",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-api-web-rate-limiting-waf-client-side-protections-csp-trusted-types-bot-mgmt"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-api-web",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-api-web-runtime-in-app-protection-rasp"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-api-web",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-api-web-jwt-bcp-short-expiries-audience-issuer-checks-key-rotation-avoid-none-weak-algs"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-container-iac"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-container-iac",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-container-iac-iac-terraform-cloudformation-scanning-checkov-tfsec-terrascan-kics-policy-as-code-opa-conftest-sentinel"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-container-iac",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-container-iac-image-scanning-sbom-trivy-grype-syft-snyk"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-container-iac",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-container-iac-runtime-admission-policy-falco-opa-kyverno-kube-bench-kube-hunter-tetragon-ebpf-seccomp-apparmor-selinux-securitycontext-runasnonroot-drop-caps"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling-ci-cd-github-actions-gitlab-jenkins-argo-cd-spinnaker"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling-artifact-nexus-artifactory-harbor-docker-registry"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling-monitoring-prometheus-grafana-loki-victoriametrics"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops-devops-tooling-tracing-jaeger-zipkin-opentelemetry"
+    }
+  ]
+}

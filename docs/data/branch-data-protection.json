@@ -1,0 +1,127 @@
+{
+  "rootId": "infosec-universe-ultimate-map-data-protection",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-data-protection",
+      "name": "Data Protection",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection-classification-controls",
+      "name": "Classification & Controls",
+      "x": 35.603,
+      "y": 155.988,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection-classification-controls-labels-policies-dlp-endpoint-network-cloud",
+      "name": "Labels/Policies • DLP (Endpoint, Network, Cloud)",
+      "x": 288.31,
+      "y": 138.843,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection-classification-controls-encryption-at-rest-in-transit-key-mgmt-veracrypt-luks-dm-crypt-sops",
+      "name": "Encryption at Rest/In Transit • Key Mgmt (Veracrypt, LUKS/dm‑crypt, SOPS)",
+      "x": 71.207,
+      "y": 311.977,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection-classification-controls-backups-retention-restic-borg-duplicity-drm",
+      "name": "Backups/Retention: restic, Borg, Duplicity • DRM",
+      "x": -199.517,
+      "y": 250.186,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering",
+      "name": "Privacy Engineering",
+      "x": -35.603,
+      "y": -155.988,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering-pii-phi-pci-minimisation-consent-management",
+      "name": "PII/PHI/PCI • Minimisation & Consent management",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering-anonymisation-pseudonymisation-differential-privacy",
+      "name": "Anonymisation/Pseudonymisation • Differential Privacy",
+      "x": -199.517,
+      "y": -250.186,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering-federated-local-processing-edge-homomorphic-encryption-mpc",
+      "name": "Federated/Local processing (Edge) • Homomorphic encryption & MPC",
+      "x": 71.207,
+      "y": -311.977,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering-zero-knowledge-proofs-verification-without-revealing-data",
+      "name": "Zero-Knowledge Proofs (verification without revealing data)",
+      "x": 288.31,
+      "y": -138.843,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-data-protection"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-data-protection",
+      "target": "infosec-universe-ultimate-map-data-protection-classification-controls"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-data-protection-classification-controls",
+      "target": "infosec-universe-ultimate-map-data-protection-classification-controls-labels-policies-dlp-endpoint-network-cloud"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-data-protection-classification-controls",
+      "target": "infosec-universe-ultimate-map-data-protection-classification-controls-encryption-at-rest-in-transit-key-mgmt-veracrypt-luks-dm-crypt-sops"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-data-protection-classification-controls",
+      "target": "infosec-universe-ultimate-map-data-protection-classification-controls-backups-retention-restic-borg-duplicity-drm"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-data-protection",
+      "target": "infosec-universe-ultimate-map-data-protection-privacy-engineering"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-data-protection-privacy-engineering",
+      "target": "infosec-universe-ultimate-map-data-protection-privacy-engineering-pii-phi-pci-minimisation-consent-management"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-data-protection-privacy-engineering",
+      "target": "infosec-universe-ultimate-map-data-protection-privacy-engineering-anonymisation-pseudonymisation-differential-privacy"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-data-protection-privacy-engineering",
+      "target": "infosec-universe-ultimate-map-data-protection-privacy-engineering-federated-local-processing-edge-homomorphic-encryption-mpc"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-data-protection-privacy-engineering",
+      "target": "infosec-universe-ultimate-map-data-protection-privacy-engineering-zero-knowledge-proofs-verification-without-revealing-data"
+    }
+  ]
+}
