@@ -172,6 +172,11 @@ html file oc CyberAtlas.html
     --stroke:#4b5563;
     --box:#ffffff;
   }
+  [data-palette="accessible"]{
+    --accent:#1f77b4;
+    --edge:#3b4a5a;
+    --edge-soft:rgba(31,119,180,0.35);
+  }
   html,body{margin:0;height:100%;color:var(--ink);background:var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   .app{display:grid;grid-template-columns:320px 1fr;height:100%}
   aside{background:var(--panel);border-right:1px solid var(--edge);padding:14px 14px 18px;overflow:auto}
@@ -196,9 +201,13 @@ html file oc CyberAtlas.html
   .btn:active{transform:translateY(1px)}
   .pill{display:inline-block;border:1px solid var(--edge);border-radius:999px;padding:6px 10px;font-size:12px;margin:5px 5px 0 0;background:var(--panel);cursor:pointer}
   input[type="search"]{width:100%;padding:10px 12px;border-radius:10px;background:var(--panel);color:var(--ink);border:1px solid var(--edge);outline:none}
+  select{width:100%;padding:8px 10px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--edge);outline:none}
   #results{max-height:240px;overflow:auto;margin-top:6px}
+  #results:empty{display:none}
   .hit{padding:6px 8px;border:1px solid var(--edge);border-radius:8px;background:var(--panel);margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
   .hit:hover{border-color:var(--accent)}
+  .hit.active{border-color:var(--accent);background:rgba(199,92,92,0.12)}
+  mark{background:rgba(199,92,92,0.2);color:inherit;padding:0 2px;border-radius:3px}
   .canvas-wrap{position:relative;height:100%;background:var(--bg)}
   canvas{width:100%;height:100%;display:block;background:var(--bg);cursor:grab}
   canvas.grabbing{cursor:grabbing}
@@ -304,6 +313,28 @@ html file oc CyberAtlas.html
   .modal-content ul{list-style-type:none;padding-left:0;margin-bottom:16px;}
   .modal-content li{margin-bottom:6px;font-size:14px;}
 
+  /* Alternative view containers */
+  #altView{max-height:240px;overflow:auto;margin-top:8px;border:1px solid var(--edge);border-radius:8px;padding:6px;display:none}
+  #altView ul{margin:0;padding-left:16px;list-style:none}
+  #altView li{margin:2px 0;font-size:12px;cursor:pointer}
+  #altView li:focus{outline:2px solid var(--accent);outline-offset:2px}
+  #altView table{width:100%;border-collapse:collapse;font-size:12px}
+  #altView th,#altView td{border-bottom:1px solid var(--edge);padding:6px 4px;text-align:left}
+  #altView tr:hover{background:rgba(199,92,92,0.08)}
+
+  /* Responsive layout: stack sidebar below canvas on narrow screens */
+  @media (max-width: 900px){
+    .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+    aside{grid-row:1;background:var(--panel);border-right:none;border-bottom:1px solid var(--edge)}
+    .canvas-wrap{grid-row:2;height:calc(100vh - 320px)}
+  }
+  @media (max-width: 600px){
+    aside{padding:10px}
+    .btn-row{gap:4px}
+    .btn{padding:6px 7px;font-size:12px}
+    input[type="search"],select{font-size:12px}
+  }
+
   /* Style for motion slider label */
   #motionContainer label{
     display:block;
@@ -347,9 +378,11 @@ html file oc CyberAtlas.html
     <div class="row btn-row">
       <button class="btn" id="backBtn">Back</button>
       <button class="btn" id="centerBtn">Center</button>
-      <button class="btn" id="expandBtn">Expand All</button>
-      <button class="btn" id="collapseBtn">Collapse All</button>
+      <button class="btn" id="expandLevelBtn" title="Expand the next level for the focused node">Expand level</button>
+      <button class="btn" id="collapseBranchBtn" title="Collapse the focused branch">Collapse branch</button>
+      <button class="btn" id="resetBtn" title="Reset zoom and expansion">Reset view</button>
       <button class="btn" id="themeBtn">Light</button>
+      <button class="btn" id="paletteBtn" title="Toggle accessible palette">Accessible palette</button>
       <!-- Collapse sidebar toggle and keyboard help -->
       <button class="btn" id="toggleSidebarBtn" title="Collapse/Expand sidebar" style="margin-left:auto;">⟨</button>
       <button class="btn" id="helpBtn" title="Keyboard shortcuts">?</button>
@@ -358,9 +391,29 @@ html file oc CyberAtlas.html
     <!-- Breadcrumb trail to show the current focused path -->
     <div id="breadcrumb" class="row"></div>
 
+    <div class="row muted">View</div>
+    <div class="row">
+      <select id="viewToggle" aria-label="Choose an alternative view of the atlas">
+        <option value="radial">Radial map</option>
+        <option value="tree">Tree outline</option>
+        <option value="list">Topic table</option>
+      </select>
+    </div>
+    <div id="altView" class="row" aria-live="polite"></div>
+
     <!-- Filters section to toggle entire macro buckets on/off -->
     <div class="row muted">Filters</div>
     <div id="filters" class="row"></div>
+
+    <div class="row muted">Competency</div>
+    <div class="row">
+      <select id="levelFilter" aria-label="Filter topics by competency level">
+        <option value="all">All levels</option>
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+      </select>
+    </div>
 
     <!-- Favourites section for quick access to starred nodes -->
     <div class="row muted">Favorites</div>
@@ -827,6 +880,100 @@ const catColours = [
   "#03a9f4", // blue
   "#ff9800"  // orange
 ];
+const accessibleCatColours = [
+  "#1f77b4", // blue
+  "#ff7f0e", // orange
+  "#2ca02c", // green
+  "#d62728", // red
+  "#9467bd", // purple
+  "#8c564b", // brown
+  "#17becf"  // teal
+];
+
+const nodeMetadata = {
+  "Core Foundations": {
+    level: "beginner",
+    tags: ["basics", "frameworks"],
+    description: "Concepts such as CIA triad, NIST CSF alignment and baseline policies that underpin every cyber programme.",
+    resources: [
+      { label: "NIST Cybersecurity Framework", url: "https://www.nist.gov/cyberframework" },
+      { label: "CISA Cybersecurity Essentials", url: "https://www.cisa.gov/cyber-essentials" }
+    ]
+  },
+  "Cloud Security": {
+    level: "intermediate",
+    tags: ["cloud", "infrastructure"],
+    description: "Practical guardrails for AWS, Azure and GCP along with posture tooling like Prowler, Wiz and Defender.",
+    resources: [
+      { label: "AWS Security Reference", url: "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/security.html" },
+      { label: "fr33s0ul Cloud Posts", url: "https://fr33s0ul.tech/tag/cloud/" }
+    ]
+  },
+  "Detection Engineering & SOC": {
+    level: "advanced",
+    tags: ["soc", "operations"],
+    description: "Building resilient detection pipelines, SIEM content and purple-team feedback loops.",
+    resources: [
+      { label: "Sigma HQ", url: "https://sigmahq.io/" },
+      { label: "Atomic Red Team", url: "https://github.com/redcanaryco/atomic-red-team" }
+    ]
+  },
+  "Offensive Security": {
+    level: "advanced",
+    tags: ["red team", "pentest"],
+    description: "Tradecraft for adversarial simulation, exploit development and post-exploitation workflows.",
+    resources: [
+      { label: "MITRE ATT&CK", url: "https://attack.mitre.org/" },
+      { label: "OffSec Training", url: "https://www.offsec.com/training/" }
+    ]
+  },
+  "AppSec & DevSecOps": {
+    level: "intermediate",
+    tags: ["appsec", "devops"],
+    description: "Secure SDLC practices, threat modelling and supply-chain protections for modern delivery teams.",
+    resources: [
+      { label: "OWASP ASVS", url: "https://owasp.org/www-project-application-security-verification-standard/" },
+      { label: "fr33s0ul DevSecOps", url: "https://fr33s0ul.tech/tag/devsecops/" }
+    ]
+  },
+  "Labs & CTFs": {
+    level: "beginner",
+    tags: ["ctf", "practice"],
+    description: "Hands-on ranges that complement the fr33s0ul walk-throughs.",
+    resources: [
+      { label: "fr33s0ul CTF Notes", url: "https://fr33s0ul.tech/tag/ctf/" },
+      { label: "TryHackMe", url: "https://tryhackme.com/" }
+    ]
+  },
+  "Careers & Learning": {
+    level: "beginner",
+    tags: ["career", "learning"],
+    description: "Roadmaps, certifications and learning hubs for breaking into the field.",
+    resources: [
+      { label: "CyberSeek Career Pathway", url: "https://www.cyberseek.org/pathway.html" },
+      { label: "fr33s0ul Career Posts", url: "https://fr33s0ul.tech/tag/career/" }
+    ]
+  },
+  "Threat Intel & Hunting": {
+    level: "advanced",
+    tags: ["intel", "hunting"],
+    description: "Structured tradecraft for CTI, hunting hypotheses and knowledge-sharing platforms like MISP.",
+    resources: [
+      { label: "OpenCTI", url: "https://www.opencti.io/en/" },
+      { label: "DFIR Report", url: "https://thedfirreport.com/" }
+    ]
+  }
+};
+
+const macroIcons = {
+  "Foundations & Standards": "📚",
+  "Identity, Crypto & Blockchain": "🔐",
+  "Network, Cloud & OT/IoT": "☁️",
+  "Endpoints & Data": "💻",
+  "App & Emerging Security": "🛠️",
+  "Operations, Threat & OffSec": "🛰️",
+  "Guidance & Resources": "🧭"
+};
 
 // ----------------------------------------------------------------------------
 // Build tree nodes
@@ -845,6 +992,7 @@ function mkNode(d, depth=0){
     angleHome:0, // for depth‑1
     ringIndex:0,
     match:false,
+    highlightUntil:0,
     appear:1 // 0..1 for fade/scale on spawn
   };
   if (d.children) n.children = d.children.map(ch => (mkNode(ch, depth+1)));
@@ -950,6 +1098,8 @@ try { favourites = JSON.parse(localStorage.getItem('infosec_favourites')) || [];
 let hoverNode = null;
 // Store mini‑map scaling information for hit detection
 let miniMapBounds = null;
+let levelFilter = 'all';
+let activeNode = root;
 
 // ----------------------------------------------------------------------------
 // Canvas & UI
@@ -974,6 +1124,26 @@ function screenToWorld(sx,sy){ return [sx/scale - offsetX, sy/scale - offsetY]; 
 // ----------------------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------------------
+function passesLevelFilter(n){
+  if (levelFilter === 'all') return true;
+  const key = `${levelFilter}:${n.id}`;
+  if (passesLevelFilter.cache.has(key)){
+    return passesLevelFilter.cache.get(key);
+  }
+  const meta = nodeMetadata[n.name];
+  let result = false;
+  if (meta && meta.level === levelFilter){
+    result = true;
+  } else if (n.children && n.children.length > 0){
+    result = n.children.some(child => passesLevelFilter(child));
+  } else {
+    result = !meta || !meta.level;
+  }
+  passesLevelFilter.cache.set(key, result);
+  return result;
+}
+passesLevelFilter.cache = new Map();
+function clearLevelCache(){ passesLevelFilter.cache.clear(); }
 function walk(n,fn){ fn(n); n.children.forEach(c=>walk(c,fn)); }
 function visible(n){
   // A node is visible if all its ancestors are expanded, and its top-level macro bucket is not filtered out.
@@ -983,11 +1153,57 @@ function visible(n){
   while (top.parent && top.parent !== root){ top = top.parent; }
   if (top.parent === root && !macroVisibility[top.id]) return false;
   if (!n.parent.open) return false;
+  if (!passesLevelFilter(n)) return false;
   return visible(n.parent);
 }
 function pathTo(n){ const p=[]; let cur=n; while(cur){ p.push(cur); cur=cur.parent; } return p.reverse(); }
 function collectVisible(){ const arr=[]; walk(root,n=>{ if(visible(n)) arr.push(n); }); return arr; }
 function collectLinks(){ const L=[]; walk(root,n=>{ if(!visible(n)) return; n.children.forEach(c=>{ if(visible(c)) L.push([n,c]); }); }); return L; }
+
+function macroBranchVisible(n){
+  if (!n.parent) return true;
+  let top = n;
+  while (top.parent && top.parent !== root){ top = top.parent; }
+  if (top.parent === root && !macroVisibility[top.id]) return false;
+  return true;
+}
+
+function closeDescendants(n){
+  if (!n.children) return;
+  n.children.forEach(ch => {
+    walk(ch, desc => { if (desc !== ch) desc.open = false; });
+    ch.open = false;
+  });
+}
+function collapseSiblingBranches(n){
+  if (!n.parent) return;
+  n.parent.children.forEach(sib => {
+    if (sib === n) return;
+    walk(sib, desc => { if (desc !== sib) desc.open = false; });
+    sib.open = false;
+  });
+}
+function highlightNodeTemporarily(n, duration = 2600){
+  if (!n) return;
+  n.highlightUntil = performance.now() + duration;
+}
+function escapeHTML(str){
+  return str.replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch] || ch));
+}
+function highlightTerm(label, term){
+  if (!term){
+    return escapeHTML(label);
+  }
+  const lower = label.toLowerCase();
+  const idx = lower.indexOf(term);
+  if (idx === -1){
+    return escapeHTML(label);
+  }
+  const before = escapeHTML(label.slice(0, idx));
+  const match = escapeHTML(label.slice(idx, idx + term.length));
+  const after = escapeHTML(label.slice(idx + term.length));
+  return `${before}<mark>${match}</mark>${after}`;
+}
 
 function textLinesFor(n, maxWidth, isChip){
   // wrap by measuring.  We support two modes: simple space‑based wrapping
@@ -1086,7 +1302,11 @@ function measureNode(n){
 }
 
 // colours
-const ringColour = i => catColours[i % catColours.length];
+const ringColour = i => {
+  const palette = document.documentElement.getAttribute('data-palette');
+  const arr = palette === 'accessible' ? accessibleCatColours : catColours;
+  return arr[i % arr.length];
+};
 
 // -----------------------------------------------------------------------------
 // Animation helpers
@@ -1272,6 +1492,7 @@ function draw(){
   ctx.lineCap="round"; ctx.lineJoin="round";
   const vis = collectVisible();
   const links = collectLinks();
+  const now = performance.now();
   for (const [a,b] of links){
     const [x1,y1] = worldToScreen(a.x,a.y);
     const [x2,y2] = worldToScreen(b.x,b.y);
@@ -1331,8 +1552,15 @@ function draw(){
       stroke = accent || stroke;
       pulseScale = 1.04;
     }
-    // Set shadow if this node matches the search term
-    if (n.match){
+    const accentColour = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#c75c5c';
+    const pulsingHighlight = n.highlightUntil && now < n.highlightUntil;
+    if (pulsingHighlight){
+      const pulse = 1 + Math.sin(now / 120) * 0.08;
+      ctx.shadowColor = accentColour;
+      ctx.shadowBlur = 32 * scale * pulse;
+      stroke = accentColour;
+      pulseScale = Math.max(pulseScale, 1.05);
+    } else if (n.match){
       ctx.shadowColor = "rgba(234,179,8,0.6)";
       ctx.shadowBlur = 24*scale;
     } else {
@@ -1773,9 +2001,13 @@ function animateZoom(targetScale, anchorWx, anchorWy, ms){
 }
 function toggleNode(n, animated){
   if (n.children.length===0) return;
+  viewStack.push(snapshotView());
   const opening = !n.open;
+  clearLevelCache();
+  activeNode = n;
   n.open = opening;
   if (opening){
+    collapseSiblingBranches(n);
     // Automatically open the immediate children when a node is expanded.
     // Without this, children remain collapsed and the user must click
     // each child individually, which makes exploration cumbersome.  We
@@ -1807,11 +2039,29 @@ function toggleNode(n, animated){
     })(t0);
     // Let physics run briefly to settle the new layout, then freeze
     kickPhysics();
+  } else {
+    closeDescendants(n);
+    kickPhysics();
   }
+  if (n.parent){
+    assignAngles(n.parent);
+    layoutChildren(n.parent);
+  }
+  highlightNodeTemporarily(n);
+  updateBreadcrumb(n);
+  renderAltView();
 }
 const qElem = document.getElementById('q'), resultsElem = document.getElementById('results');
+resultsElem.setAttribute('role', 'listbox');
+resultsElem.setAttribute('aria-live', 'polite');
+qElem.setAttribute('autocomplete', 'off');
+qElem.setAttribute('aria-autocomplete', 'list');
+qElem.setAttribute('aria-expanded', 'false');
+qElem.setAttribute('aria-controls', 'results');
 let currentFocusNode=null;
 let viewStack=[];
+let suggestionNodes=[];
+let suggestionIndex=-1;
 function snapshotView(){
   const openMap={}; walk(root,n=>openMap[n.id]=n.open);
   return {offsetX,offsetY,scale, openMap};
@@ -1819,33 +2069,108 @@ function snapshotView(){
 function restoreView(v){
   offsetX=v.offsetX; offsetY=v.offsetY; scale=v.scale;
   walk(root,n=>{ n.open = !!v.openMap[n.id]; });
+  clearLevelCache();
+}
+function setActiveSuggestion(index){
+  suggestionIndex = index;
+  const children = Array.from(resultsElem.children);
+  children.forEach((child, idx) => {
+    if (idx === index){
+      child.classList.add('active');
+      child.setAttribute('aria-selected', 'true');
+    } else {
+      child.classList.remove('active');
+      child.setAttribute('aria-selected', 'false');
+    }
+  });
+  if (index >= 0 && index < suggestionNodes.length){
+    currentFocusNode = suggestionNodes[index];
+    const activeId = children[index] ? children[index].id : '';
+    if (activeId){ qElem.setAttribute('aria-activedescendant', activeId); }
+    const child = children[index];
+    if (child){
+      const top = child.offsetTop;
+      const bottom = top + child.offsetHeight;
+      if (top < resultsElem.scrollTop){
+        resultsElem.scrollTop = top;
+      } else if (bottom > resultsElem.scrollTop + resultsElem.clientHeight){
+        resultsElem.scrollTop = bottom - resultsElem.clientHeight;
+      }
+    }
+  } else {
+    currentFocusNode = null;
+    qElem.setAttribute('aria-activedescendant', '');
+  }
+}
+resultsElem.addEventListener('mouseleave', ()=> setActiveSuggestion(-1));
+function populateSearchResults(term){
+  resultsElem.innerHTML = '';
+  suggestionNodes = [];
+  suggestionIndex = -1;
+  resultsElem.style.display = 'none';
+  qElem.setAttribute('aria-expanded', 'false');
+  if (!term){
+    return;
+  }
+  const matches=[];
+  walk(root,n=>{ if(n.match) matches.push(n); });
+  suggestionNodes = matches.slice(0,60);
+  suggestionNodes.forEach((n, idx)=>{
+    const div=document.createElement('div');
+    div.className='hit';
+    div.setAttribute('role','option');
+    div.id = `search-option-${n.id}`;
+    div.innerHTML = highlightTerm(n.name, term);
+    div.addEventListener('mouseenter', ()=> setActiveSuggestion(idx));
+    div.addEventListener('mousedown', ev => ev.preventDefault());
+    div.onclick=()=>{
+      setActiveSuggestion(idx);
+      jumpToMatch(n);
+    };
+    resultsElem.appendChild(div);
+  });
+  if (suggestionNodes.length){
+    resultsElem.style.display = 'block';
+    qElem.setAttribute('aria-expanded', 'true');
+    setActiveSuggestion(0);
+  }
 }
 qElem.addEventListener('input', ()=>{
   const term = qElem.value.trim().toLowerCase();
-  resultsElem.innerHTML="";
-  let first=null;
   walk(root,n=>{
     n.match = !!term && n.name.toLowerCase().includes(term);
-    if (n.match && !first) first=n;
   });
-  if (term){
-    const list=[]; walk(root,n=>{ if(n.match) list.push(n); });
-    list.slice(0,60).forEach(n=>{
-      const div=document.createElement('div'); div.className='hit'; div.textContent=n.name;
-      div.onclick=()=>jumpToMatch(n);
-      resultsElem.appendChild(div);
-    });
-    currentFocusNode = first || null;
-  } else {
+  populateSearchResults(term);
+});
+qElem.addEventListener('keydown', (e)=>{
+  if (e.key==='ArrowDown'){
+    if (suggestionNodes.length){
+      e.preventDefault();
+      const next = (suggestionIndex + 1) % suggestionNodes.length;
+      setActiveSuggestion(next);
+    }
+  } else if (e.key==='ArrowUp'){
+    if (suggestionNodes.length){
+      e.preventDefault();
+      const next = (suggestionIndex - 1 + suggestionNodes.length) % suggestionNodes.length;
+      setActiveSuggestion(next);
+    }
+  } else if (e.key==='Enter'){
+    if (currentFocusNode){
+      e.preventDefault();
+      jumpToMatch(currentFocusNode);
+    }
+  } else if (e.key==='Escape'){
+    qElem.value = '';
+    walk(root,n=>{ n.match = false; });
+    resultsElem.innerHTML = '';
+    resultsElem.style.display = 'none';
+    qElem.setAttribute('aria-expanded', 'false');
     currentFocusNode = null;
   }
 });
-qElem.addEventListener('keydown', (e)=>{
-  if (e.key==='Enter'){
-    if (currentFocusNode){ jumpToMatch(currentFocusNode); }
-  }
-});
 function openPathOnly(n){
+  clearLevelCache();
   walk(root,x=>{ x.open=false; });
   const pathNodes = pathTo(n);
   // Mark nodes along the path as open
@@ -1876,41 +2201,90 @@ function jumpToMatch(n){
   focusTo(n, scale, false);
   // Allow the layout to relax after jumping to a search result, then freeze.
   kickPhysics();
+  highlightNodeTemporarily(n);
+  updateBreadcrumb(n);
+  renderAltView();
+  activeNode = n;
+  resultsElem.innerHTML = '';
+  resultsElem.style.display = 'none';
+  qElem.setAttribute('aria-expanded', 'false');
+  suggestionNodes = [];
+  suggestionIndex = -1;
+  currentFocusNode = n;
 }
 document.getElementById('backBtn').onclick=()=>{
   const v=viewStack.pop(); if (!v) return;
   restoreView(v);
+  renderAltView();
+  activeNode = root;
+  updateBreadcrumb(root);
 };
 document.getElementById('centerBtn').onclick=()=>centerOnRoot(true);
-document.getElementById('expandBtn').onclick=()=>{
-  // Expand every node in the tree
-  walk(root, n => { n.open = true; });
-  // Reassign angles for all descendants starting from macros.  Although angles
-  // were precomputed during initialisation, calling assignAngles again ensures
-  // that any dynamic changes (e.g. after altering the number of visible macro
-  // buckets) are reflected across the tree.  We only need to process the
-  // direct children of the root because assignAngles recurses downwards.
-  root.children.forEach(macro => assignAngles(macro));
-  // After expanding everything and recalculating angles, reposition every
-  // node's children according to their assigned angles.  This produces a
-  // uniformly spaced, mycelium‑like layout across the entire map.
-  walk(root,n=>{
-    if (n.open && n.children && n.children.length>0) layoutChildren(n);
-  });
-
-  // After expanding and repositioning every node, allow the layout to
-  // settle briefly before freezing to eliminate post‑expansion drift.
-  kickPhysics(1500);
-};
-// Collapse All handled below with layout and physics adjustments
-// Freeze the layout after collapsing to keep macros stable
-document.getElementById('collapseBtn').onclick=()=>{
-  walk(root,n=>{ if(n!==root) n.open=false; });
-  // After collapsing, recalculate positions of first ring for consistency
-  root.children.forEach(macro => assignAngles(macro));
-  root.children.forEach(macro => layoutChildren(macro));
-  kickPhysics();
-};
+const expandLevelBtn = document.getElementById('expandLevelBtn');
+if (expandLevelBtn){
+  expandLevelBtn.onclick = () => {
+    const target = activeNode || root;
+    viewStack.push(snapshotView());
+    target.open = true;
+    if (target.children){
+      target.children.forEach(child => {
+        child.open = true;
+        assignAngles(child);
+        layoutChildren(child);
+      });
+    }
+    if (target.parent){
+      assignAngles(target.parent);
+      layoutChildren(target.parent);
+    }
+    clearLevelCache();
+    highlightNodeTemporarily(target);
+    updateBreadcrumb(target);
+    renderAltView();
+    kickPhysics();
+  };
+}
+const collapseBranchBtn = document.getElementById('collapseBranchBtn');
+if (collapseBranchBtn){
+  collapseBranchBtn.onclick = () => {
+    const target = activeNode || root;
+    viewStack.push(snapshotView());
+    closeDescendants(target);
+    if (target !== root){
+      target.open = true;
+    }
+    assignAngles(target);
+    layoutChildren(target);
+    if (target.parent){
+      assignAngles(target.parent);
+      layoutChildren(target.parent);
+    }
+    clearLevelCache();
+    highlightNodeTemporarily(target);
+    updateBreadcrumb(target);
+    renderAltView();
+    kickPhysics();
+  };
+}
+const resetBtn = document.getElementById('resetBtn');
+if (resetBtn){
+  resetBtn.onclick = () => {
+    viewStack.push(snapshotView());
+    walk(root, node => {
+      node.open = node.depth < 2;
+    });
+    root.children.forEach(macro => {
+      assignAngles(macro);
+      layoutChildren(macro);
+    });
+    clearLevelCache();
+    activeNode = root;
+    updateBreadcrumb(root);
+    renderAltView();
+    centerOnRoot(true);
+    kickPhysics();
+  };
+}
 const themeBtnElem = document.getElementById('themeBtn');
 themeBtnElem.onclick=()=>{
   const html=document.documentElement;
@@ -1918,6 +2292,20 @@ themeBtnElem.onclick=()=>{
   html.setAttribute('data-theme', light? 'dark':'light');
   themeBtnElem.textContent = light? 'Light':'Dark';
 };
+const paletteBtnElem = document.getElementById('paletteBtn');
+if (paletteBtnElem){
+  paletteBtnElem.onclick = () => {
+    const html = document.documentElement;
+    const accessible = html.getAttribute('data-palette') === 'accessible';
+    if (accessible){
+      html.removeAttribute('data-palette');
+      paletteBtnElem.textContent = 'Accessible palette';
+    } else {
+      html.setAttribute('data-palette', 'accessible');
+      paletteBtnElem.textContent = 'Default palette';
+    }
+  };
+}
 const bucketTagsElem = document.getElementById('bucketTags');
 root.children.forEach((n,i)=>{
   const s=document.createElement('span'); s.className='pill'; s.textContent=n.name;
@@ -2045,6 +2433,7 @@ function updateBreadcrumb(n){
   const bc = document.getElementById('breadcrumb');
   bc.innerHTML = '';
   if (!n) return;
+  activeNode = n;
   const path = pathTo(n);
   path.forEach((node, idx) => {
     const span = document.createElement('span');
@@ -2086,12 +2475,151 @@ function updateFiltersUI(){
     cb.type = 'checkbox';
     cb.checked = macroVisibility[n.id];
     cb.style.marginRight = '6px';
-    cb.onchange = () => { macroVisibility[n.id] = cb.checked; };
+    cb.onchange = () => {
+      macroVisibility[n.id] = cb.checked;
+      renderAltView();
+      kickPhysics();
+    };
     const span = document.createElement('span');
     span.textContent = n.name;
     label.appendChild(cb);
     label.appendChild(span);
     filtersElem.appendChild(label);
+  });
+}
+
+const viewToggleElem = document.getElementById('viewToggle');
+const altViewElem = document.getElementById('altView');
+const levelFilterElem = document.getElementById('levelFilter');
+
+function formatLevel(level){
+  if (!level) return '';
+  return level.charAt(0).toUpperCase() + level.slice(1);
+}
+
+function collectMetadataNodes(){
+  const rows = [];
+  walk(root, node => {
+    if (node === root) return;
+    if (!macroBranchVisible(node)) return;
+    const meta = nodeMetadata[node.name];
+    if (!meta) return;
+    if (!passesLevelFilter(node)) return;
+    rows.push({ node, meta });
+  });
+  rows.sort((a,b) => {
+    const pathA = pathTo(a.node).slice(1).map(n => n.name).join(' › ');
+    const pathB = pathTo(b.node).slice(1).map(n => n.name).join(' › ');
+    return pathA.localeCompare(pathB);
+  });
+  return rows;
+}
+
+function addFocusHandler(element, node){
+  element.addEventListener('click', () => {
+    viewStack.push(snapshotView());
+    openPathOnly(node);
+    focusTo(node, 1.05, true);
+    highlightNodeTemporarily(node);
+    updateBreadcrumb(node);
+    renderAltView();
+  });
+  element.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' '){
+      ev.preventDefault();
+      element.click();
+    }
+  });
+}
+
+function buildTreeOutline(parentNode, container, level){
+  parentNode.children.forEach(child => {
+    if (!macroBranchVisible(child)) return;
+    if (!passesLevelFilter(child)) return;
+    const li = document.createElement('li');
+    li.setAttribute('role', 'treeitem');
+    li.setAttribute('aria-level', level);
+    li.tabIndex = 0;
+    const icon = child.parent === root ? (macroIcons[child.name] || '•') : '•';
+    li.textContent = `${icon} ${child.name}`;
+    addFocusHandler(li, child);
+    container.appendChild(li);
+    if (child.children && child.children.length){
+      const ul = document.createElement('ul');
+      ul.setAttribute('role', 'group');
+      li.appendChild(ul);
+      buildTreeOutline(child, ul, level + 1);
+    }
+  });
+}
+
+function renderAltView(){
+  if (!viewToggleElem || !altViewElem) return;
+  clearLevelCache();
+  const mode = viewToggleElem.value;
+  if (mode === 'radial'){
+    altViewElem.style.display = 'none';
+    altViewElem.innerHTML = '';
+    return;
+  }
+  altViewElem.style.display = 'block';
+  altViewElem.innerHTML = '';
+  if (mode === 'tree'){
+    const ul = document.createElement('ul');
+    ul.setAttribute('role', 'tree');
+    buildTreeOutline(root, ul, 1);
+    if (!ul.childElementCount){
+      const empty = document.createElement('div');
+      empty.className = 'muted';
+      empty.textContent = 'No topics match the current filters yet.';
+      altViewElem.appendChild(empty);
+    } else {
+      altViewElem.appendChild(ul);
+    }
+  } else if (mode === 'list'){
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th>Topic</th><th>Level</th><th>Tags</th></tr>';
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    const rows = collectMetadataNodes();
+    rows.forEach(({node, meta}) => {
+      const tr = document.createElement('tr');
+      tr.tabIndex = 0;
+      const path = pathTo(node).slice(1).map(n => n.name).join(' › ');
+      const tdTopic = document.createElement('td');
+      tdTopic.textContent = path || node.name;
+      const tdLevel = document.createElement('td');
+      tdLevel.textContent = formatLevel(meta.level);
+      const tdTags = document.createElement('td');
+      tdTags.textContent = (meta.tags || []).join(', ');
+      tr.appendChild(tdTopic);
+      tr.appendChild(tdLevel);
+      tr.appendChild(tdTags);
+      addFocusHandler(tr, node);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    if (!tbody.childElementCount){
+      const empty = document.createElement('div');
+      empty.className = 'muted';
+      empty.textContent = 'Add metadata to this area to see curated resources.';
+      altViewElem.appendChild(empty);
+    } else {
+      altViewElem.appendChild(table);
+    }
+  }
+}
+
+if (viewToggleElem){
+  viewToggleElem.addEventListener('change', renderAltView);
+}
+if (levelFilterElem){
+  levelFilterElem.addEventListener('change', (e)=>{
+    levelFilter = e.target.value;
+    clearLevelCache();
+    renderAltView();
+    kickPhysics();
   });
 }
 
@@ -2125,12 +2653,16 @@ function updateFavouritesUI(){
     // openPathOnly, nodes might remain collapsed and the favourite would
     // seemingly do nothing on refresh.
     div.onclick = () => {
+      viewStack.push(snapshotView());
       openPathOnly(node);
       // Instantly centre on the favourite without animation so that
       // returning to a saved node does not cause a jump.  Retain the
       // current zoom level.
       focusTo(node, scale, false);
+      highlightNodeTemporarily(node);
       updateBreadcrumb(node);
+      renderAltView();
+      activeNode = node;
       // Kick physics briefly to settle the layout and then freeze.
       kickPhysics();
     };
@@ -2154,12 +2686,15 @@ function updateSubFiltersUI(){
       pill.style.borderColor = ringColour(macro.ringIndex);
       pill.textContent = child.name;
       pill.onclick = () => {
+        viewStack.push(snapshotView());
         openPathOnly(child);
         // Instantly centre on the subcategory without animation to avoid
         // a zoom or jump effect.  Keep the current scale so the view
         // remains consistent.
         focusTo(child, scale, false);
+        highlightNodeTemporarily(child);
         updateBreadcrumb(child);
+        renderAltView();
         // Kick physics briefly after jumping to a subcategory so the layout
         // settles quickly and freezes.
         kickPhysics();
@@ -2225,6 +2760,56 @@ function showTooltip(n, pageX, pageY){
   };
   // Append star to title line
   title.appendChild(starDiv);
+  const meta = nodeMetadata[n.name];
+  if (meta){
+    if (meta.description){
+      const desc = document.createElement('div');
+      desc.style.fontSize = '12px';
+      desc.style.marginTop = '4px';
+      desc.textContent = meta.description;
+      tooltipElem.appendChild(desc);
+    }
+    if (meta.level){
+      const levelDiv = document.createElement('div');
+      levelDiv.style.fontSize = '11px';
+      levelDiv.style.marginTop = '6px';
+      levelDiv.style.color = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+      levelDiv.textContent = `Level: ${formatLevel(meta.level)}`;
+      tooltipElem.appendChild(levelDiv);
+    }
+    if (meta.tags && meta.tags.length){
+      const tagsDiv = document.createElement('div');
+      tagsDiv.style.fontSize = '11px';
+      tagsDiv.style.marginTop = '2px';
+      tagsDiv.textContent = `Tags: ${meta.tags.join(', ')}`;
+      tooltipElem.appendChild(tagsDiv);
+    }
+    if (meta.resources && meta.resources.length){
+      const resTitle = document.createElement('div');
+      resTitle.style.marginTop = '6px';
+      resTitle.style.fontSize = '11px';
+      resTitle.style.fontWeight = '600';
+      resTitle.textContent = 'Resources';
+      tooltipElem.appendChild(resTitle);
+      const list = document.createElement('ul');
+      list.style.listStyle = 'none';
+      list.style.paddingLeft = '0';
+      list.style.margin = '4px 0 0';
+      meta.resources.forEach(res => {
+        const li = document.createElement('li');
+        li.style.fontSize = '11px';
+        const link = document.createElement('a');
+        link.href = res.url;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = res.label;
+        link.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+        li.appendChild(link);
+        list.appendChild(li);
+      });
+      tooltipElem.appendChild(list);
+    }
+  }
   // Position tooltip near the cursor, offset to avoid covering the pointer
   tooltipElem.style.left = (pageX + 12) + 'px';
   tooltipElem.style.top = (pageY + 12) + 'px';
@@ -2421,6 +3006,7 @@ window.addEventListener('keydown', (e) => {
 updateFiltersUI();
 updateFavouritesUI();
 updateSubFiltersUI();
+renderAltView();
 
 // Sidebar reopen button: when clicked, restore the sidebar and hide the
 // overlay.  Also update the main toggle arrow to reflect the state.
@@ -2518,7 +3104,6 @@ canvas.addEventListener('mouseleave', () => { hideTooltip(); });
 
 // When clicking on a node, also update breadcrumb
 // (we wrap the existing click handler: after toggling open, update breadcrumb)
-const originalClickHandler = canvas.onclick;
 canvas.addEventListener('click', (e) => {
   // this listener runs after the default click handler toggles nodes
   // find node if clicked and update breadcrumb
@@ -2536,7 +3121,9 @@ canvas.addEventListener('click', (e) => {
 const oldFocusTo = focusTo;
 focusTo = function(n, targetScale=1, animated=true){
   oldFocusTo(n, targetScale, animated);
+  highlightNodeTemporarily(n);
   updateBreadcrumb(n);
+  renderAltView();
 };
   // Debug overlay removed for production.
   </script>
