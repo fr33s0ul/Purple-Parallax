@@ -1,0 +1,247 @@
+{
+  "rootId": "infosec-universe-ultimate-map-toolbox-examples",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples",
+      "name": "Toolbox (Examples)",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr",
+      "name": "SIEM/XDR",
+      "x": 119.762,
+      "y": 106.1,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr-microsoft-sentinel-defender-xdr-security-onion-wazuh",
+      "name": "Microsoft Sentinel • Defender XDR • Security Onion/Wazuh",
+      "x": 310.701,
+      "y": 76.581,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr-splunk-elastic-opensearch-graylog-qradar",
+      "name": "Splunk • Elastic • OpenSearch/Graylog • QRadar",
+      "x": 239.523,
+      "y": 212.199,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr-crowdstrike-cortex-xdr-sentinelone",
+      "name": "CrowdStrike • Cortex XDR • SentinelOne",
+      "x": 113.474,
+      "y": 299.205,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-vuln-config",
+      "name": "Vuln & Config",
+      "x": -56.737,
+      "y": 149.603,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-vuln-config-openvas-gvm-lynis-cis-cat-prowler-scoutsuite-nessus-qualys-rapid7",
+      "name": "OpenVAS/GVM, Lynis, CIS‑CAT • Prowler • ScoutSuite • Nessus/Qualys/Rapid7",
+      "x": -38.572,
+      "y": 317.667,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-vuln-config-wsus-mecm-sccm-intune-suse-manager-red-hat-satellite",
+      "name": "WSUS/MECM (SCCM) • Intune • SUSE Manager / Red Hat Satellite",
+      "x": -181.781,
+      "y": 263.355,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing",
+      "name": "Web & API Testing",
+      "x": -155.351,
+      "y": 38.291,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing-burp-suite-owasp-zap-postman",
+      "name": "Burp Suite • OWASP ZAP • Postman",
+      "x": -283.346,
+      "y": 148.711,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing-nuclei-ffuf-dirsearch-sqlmap",
+      "name": "Nuclei • ffuf • dirsearch • SQLMap",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral",
+      "name": "AD & Lateral",
+      "x": -119.762,
+      "y": -106.1,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral-bloodhound-rubeus-mimikatz-sharphound",
+      "name": "BloodHound • Rubeus • Mimikatz • SharpHound",
+      "x": -283.346,
+      "y": -148.711,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral-crackmapexec-responder-impacket",
+      "name": "CrackMapExec • Responder • Impacket",
+      "x": -181.781,
+      "y": -263.355,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware",
+      "name": "Forensics & Malware",
+      "x": 19.286,
+      "y": -158.833,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware-volatility3-velociraptor-kape-autopsy-brim-wireshark",
+      "name": "Volatility3, Velociraptor, KAPE, Autopsy, Brim, Wireshark",
+      "x": -38.572,
+      "y": -317.667,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware-ghidra-ida-free-capa-yara",
+      "name": "Ghidra, IDA Free, CAPA, YARA",
+      "x": 113.474,
+      "y": -299.205,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s",
+      "name": "Cloud & K8s",
+      "x": 141.673,
+      "y": -74.356,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s-wiz-prisma-defender-for-cloud-prowler-scoutsuite",
+      "name": "Wiz • Prisma • Defender for Cloud • Prowler • ScoutSuite",
+      "x": 239.523,
+      "y": -212.199,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s-kubebench-kubeaudit-trivy-falco-kubescape-kube-hunter-regula",
+      "name": "Kubebench/Kubeaudit • Trivy • Falco • Kubescape • kube‑hunter • Regula",
+      "x": 310.701,
+      "y": -76.581,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-toolbox-examples"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr-microsoft-sentinel-defender-xdr-security-onion-wazuh"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr-splunk-elastic-opensearch-graylog-qradar"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr-crowdstrike-cortex-xdr-sentinelone"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-vuln-config"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-vuln-config",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-vuln-config-openvas-gvm-lynis-cis-cat-prowler-scoutsuite-nessus-qualys-rapid7"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-vuln-config",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-vuln-config-wsus-mecm-sccm-intune-suse-manager-red-hat-satellite"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing-burp-suite-owasp-zap-postman"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing-nuclei-ffuf-dirsearch-sqlmap"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral-bloodhound-rubeus-mimikatz-sharphound"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral-crackmapexec-responder-impacket"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware-volatility3-velociraptor-kape-autopsy-brim-wireshark"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware-ghidra-ida-free-capa-yara"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s-wiz-prisma-defender-for-cloud-prowler-scoutsuite"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s",
+      "target": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s-kubebench-kubeaudit-trivy-falco-kubescape-kube-hunter-regula"
+    }
+  ]
+}

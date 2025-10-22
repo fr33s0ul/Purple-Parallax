@@ -1,0 +1,103 @@
+{
+  "rootId": "infosec-universe-ultimate-map-ot-ics-mobile-iot",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot",
+      "name": "OT/ICS & Mobile/IoT",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics",
+      "name": "OT/ICS",
+      "x": -49.443,
+      "y": 152.169,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics-protocols-modbus-dnp3-iec-60870-5-104-opc-ua-bacnet-mqtt",
+      "name": "Protocols: Modbus, DNP3, IEC 60870‑5‑104, OPC‑UA, BACnet, MQTT",
+      "x": 258.885,
+      "y": 188.091,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics-zones-conduits-purdue-model-segmentation",
+      "name": "Zones/Conduits • Purdue Model • Segmentation",
+      "x": -98.885,
+      "y": 304.338,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics-safety-availability-patch-windows-maintenance-discovery-grassmarlin",
+      "name": "Safety • Availability • Patch windows (maintenance) • Discovery: GRASSMARLIN",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot-mobile-iot",
+      "name": "Mobile/IoT",
+      "x": 49.443,
+      "y": -152.169,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot-mobile-iot-mobile-ios-android-security-mdm-app-vetting",
+      "name": "Mobile: iOS/Android security • MDM • App vetting",
+      "x": -98.885,
+      "y": -304.338,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot-mobile-iot-iot-firmware-analysis-binwalk-qemu-sbom-secure-boot-tuf",
+      "name": "IoT: Firmware analysis (Binwalk/QEMU), SBOM, Secure Boot, TUF",
+      "x": 258.885,
+      "y": -188.091,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-ot-ics-mobile-iot"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ot-ics-mobile-iot",
+      "target": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics",
+      "target": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics-protocols-modbus-dnp3-iec-60870-5-104-opc-ua-bacnet-mqtt"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics",
+      "target": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics-zones-conduits-purdue-model-segmentation"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics",
+      "target": "infosec-universe-ultimate-map-ot-ics-mobile-iot-ot-ics-safety-availability-patch-windows-maintenance-discovery-grassmarlin"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ot-ics-mobile-iot",
+      "target": "infosec-universe-ultimate-map-ot-ics-mobile-iot-mobile-iot"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ot-ics-mobile-iot-mobile-iot",
+      "target": "infosec-universe-ultimate-map-ot-ics-mobile-iot-mobile-iot-mobile-ios-android-security-mdm-app-vetting"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ot-ics-mobile-iot-mobile-iot",
+      "target": "infosec-universe-ultimate-map-ot-ics-mobile-iot-mobile-iot-iot-firmware-analysis-binwalk-qemu-sbom-secure-boot-tuf"
+    }
+  ]
+}

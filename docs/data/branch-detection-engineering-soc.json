@@ -1,0 +1,211 @@
+{
+  "rootId": "infosec-universe-ultimate-map-detection-engineering-soc",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc",
+      "name": "Detection Engineering & SOC",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering",
+      "name": "Detection Engineering",
+      "x": 19.286,
+      "y": 158.833,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-siem-elastic-elk-opensearch-wazuh-graylog-splunk-microsoft-sentinel-query-languages-kql-microsoft-sentinel-spl-splunk-splunk-kql-elastic-eql-elastic-ppl-opensearch-opensearch-sigma",
+      "name": "SIEM: Elastic (ELK) • OpenSearch • Wazuh • Graylog • Splunk • Microsoft Sentinel; Query languages: KQL (Microsoft Sentinel), SPL (Splunk) (Splunk), KQL (Elastic), EQL (Elastic), PPL (OpenSearch) (OpenSearch) • Sigma",
+      "x": 310.701,
+      "y": 76.581,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-alerting-correlation-kibana-alerting-detection-rules-opensearch-alerting-elastalert2-legacy-falco-sigma-correlations",
+      "name": "Alerting & Correlation: Kibana Alerting/Detection Rules, OpenSearch Alerting, ElastAlert2 (legacy), Falco, Sigma correlations",
+      "x": 239.523,
+      "y": 212.199,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-threat-rules-att-ck-mapping-d3fend",
+      "name": "Threat Rules: ATT&CK mapping, D3FEND",
+      "x": 113.474,
+      "y": 299.205,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-deception-honeypots-honeytokens",
+      "name": "Deception: Honeypots, Honeytokens",
+      "x": -38.572,
+      "y": 317.667,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-security-data-lake-schemas-ocsf-opentelemetry-logs-object-storage-parquet-delta",
+      "name": "Security data lake & schemas: OCSF • OpenTelemetry logs • object storage (Parquet/Delta)",
+      "x": -181.781,
+      "y": 263.355,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-purple-teaming-adversary-emulation-caldera-atomic-red-team-purplesharp-validate-tune-detections",
+      "name": "Purple Teaming & Adversary Emulation: CALDERA • Atomic Red Team • PurpleSharp — validate & tune detections",
+      "x": -283.346,
+      "y": 148.711,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations",
+      "name": "SOC Operations",
+      "x": -119.762,
+      "y": -106.1,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-tier1-tier2-tier3-roles",
+      "name": "Tier1/Tier2/Tier3 Roles",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-ticketing-escalation",
+      "name": "Ticketing & Escalation",
+      "x": -283.346,
+      "y": -148.711,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-shift-handover-documentation",
+      "name": "Shift Handover & Documentation",
+      "x": -181.781,
+      "y": -263.355,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-soar-cortex-xsoar-splunk-soar-tines-shuffle",
+      "name": "SOAR: Cortex XSOAR • Splunk SOAR • Tines • Shuffle",
+      "x": -38.572,
+      "y": -317.667,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response",
+      "name": "Incident Response",
+      "x": 119.762,
+      "y": -106.1,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response-preparation-identification-containment-playbooks",
+      "name": "Preparation, Identification, Containment • playbooks",
+      "x": 113.474,
+      "y": -299.205,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response-eradication-recovery-lessons-learned-bcp-dr",
+      "name": "Eradication, Recovery, Lessons Learned • BCP/DR",
+      "x": 239.523,
+      "y": -212.199,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response-forensics-evidence-handling-thehive-cortex-velociraptor",
+      "name": "Forensics & Evidence Handling: TheHive, Cortex, Velociraptor",
+      "x": 310.701,
+      "y": -76.581,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-siem-elastic-elk-opensearch-wazuh-graylog-splunk-microsoft-sentinel-query-languages-kql-microsoft-sentinel-spl-splunk-splunk-kql-elastic-eql-elastic-ppl-opensearch-opensearch-sigma"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-alerting-correlation-kibana-alerting-detection-rules-opensearch-alerting-elastalert2-legacy-falco-sigma-correlations"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-threat-rules-att-ck-mapping-d3fend"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-deception-honeypots-honeytokens"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-security-data-lake-schemas-ocsf-opentelemetry-logs-object-storage-parquet-delta"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-purple-teaming-adversary-emulation-caldera-atomic-red-team-purplesharp-validate-tune-detections"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-tier1-tier2-tier3-roles"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-ticketing-escalation"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-shift-handover-documentation"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-soar-cortex-xsoar-splunk-soar-tines-shuffle"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response-preparation-identification-containment-playbooks"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response-eradication-recovery-lessons-learned-bcp-dr"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response-forensics-evidence-handling-thehive-cortex-velociraptor"
+    }
+  ]
+}

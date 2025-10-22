@@ -1,0 +1,274 @@
+{
+  "root": {
+    "id": "infosec-universe-ultimate-map",
+    "name": "InfoSec Universe — Ultimate Map",
+    "x": 0,
+    "y": 0,
+    "depth": 0,
+    "hasChildren": true
+  },
+  "children": [
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations",
+      "name": "Core Foundations",
+      "x": 320.0,
+      "y": 0.0,
+      "depth": 1,
+      "childUrl": "data/branch-core-foundations.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-grc-standards",
+      "name": "GRC & Standards",
+      "x": 304.338,
+      "y": 98.885,
+      "depth": 1,
+      "childUrl": "data/branch-grc-standards.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-identity-access",
+      "name": "Identity & Access",
+      "x": 258.885,
+      "y": 188.091,
+      "depth": 1,
+      "childUrl": "data/branch-identity-access.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-network-security",
+      "name": "Network Security",
+      "x": 188.091,
+      "y": 258.885,
+      "depth": 1,
+      "childUrl": "data/branch-network-security.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-endpoint-email-security",
+      "name": "Endpoint & Email Security",
+      "x": 98.885,
+      "y": 304.338,
+      "depth": 1,
+      "childUrl": "data/branch-endpoint-email-security.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-cloud-security",
+      "name": "Cloud Security",
+      "x": 0.0,
+      "y": 320.0,
+      "depth": 1,
+      "childUrl": "data/branch-cloud-security.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-appsec-devsecops",
+      "name": "AppSec & DevSecOps",
+      "x": -98.885,
+      "y": 304.338,
+      "depth": 1,
+      "childUrl": "data/branch-appsec-devsecops.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-detection-engineering-soc",
+      "name": "Detection Engineering & SOC",
+      "x": -188.091,
+      "y": 258.885,
+      "depth": 1,
+      "childUrl": "data/branch-detection-engineering-soc.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting",
+      "name": "Threat Intel & Hunting",
+      "x": -258.885,
+      "y": 188.091,
+      "depth": 1,
+      "childUrl": "data/branch-threat-intel-hunting.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security",
+      "name": "Offensive Security",
+      "x": -304.338,
+      "y": 98.885,
+      "depth": 1,
+      "childUrl": "data/branch-offensive-security.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot",
+      "name": "OT/ICS & Mobile/IoT",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 1,
+      "childUrl": "data/branch-ot-ics-mobile-iot.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-crypto-protocols",
+      "name": "Crypto & Protocols",
+      "x": -304.338,
+      "y": -98.885,
+      "depth": 1,
+      "childUrl": "data/branch-crypto-protocols.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains",
+      "name": "AI / Quantum / Emerging Security Domains",
+      "x": -258.885,
+      "y": -188.091,
+      "depth": 1,
+      "childUrl": "data/branch-ai-quantum-emerging-security-domains.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-data-protection",
+      "name": "Data Protection",
+      "x": -188.091,
+      "y": -258.885,
+      "depth": 1,
+      "childUrl": "data/branch-data-protection.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints",
+      "name": "Metrics, Reporting & Blueprints",
+      "x": -98.885,
+      "y": -304.338,
+      "depth": 1,
+      "childUrl": "data/branch-metrics-reporting-blueprints.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning",
+      "name": "Careers & Learning",
+      "x": -0.0,
+      "y": -320.0,
+      "depth": 1,
+      "childUrl": "data/branch-careers-learning.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-toolbox-examples",
+      "name": "Toolbox (Examples)",
+      "x": 98.885,
+      "y": -304.338,
+      "depth": 1,
+      "childUrl": "data/branch-toolbox-examples.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-in-security",
+      "name": "AI in Security",
+      "x": 188.091,
+      "y": -258.885,
+      "depth": 1,
+      "childUrl": "data/branch-ai-in-security.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-rf-sdr-satellite",
+      "name": "RF/SDR & Satellite",
+      "x": 258.885,
+      "y": -188.091,
+      "depth": 1,
+      "childUrl": "data/branch-rf-sdr-satellite.json",
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-blockchain-web3-security",
+      "name": "Blockchain / Web3 Security",
+      "x": 304.338,
+      "y": -98.885,
+      "depth": 1,
+      "childUrl": "data/branch-blockchain-web3-security.json",
+      "hasChildren": true
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-core-foundations"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-grc-standards"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-identity-access"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-network-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-endpoint-email-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-cloud-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-appsec-devsecops"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-detection-engineering-soc"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-offensive-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-ot-ics-mobile-iot"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-crypto-protocols"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-data-protection"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-careers-learning"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-toolbox-examples"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-ai-in-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-rf-sdr-satellite"
+    },
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-blockchain-web3-security"
+    }
+  ]
+}

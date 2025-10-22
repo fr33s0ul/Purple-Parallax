@@ -1,0 +1,331 @@
+{
+  "rootId": "infosec-universe-ultimate-map-core-foundations",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations",
+      "name": "Core Foundations",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-networking",
+      "name": "Networking",
+      "x": 99.758,
+      "y": 125.093,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-networking-layers-osi-tcp-ip",
+      "name": "Layers: OSI / TCP/IP",
+      "x": 316.426,
+      "y": 47.694,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-networking-protocols-http-s-dns-smtp-ssh-snmp-smb-rdp-http-3-quic-doh-dot",
+      "name": "Protocols: HTTP(S), DNS, SMTP, SSH, SNMP, SMB, RDP • HTTP/3 (QUIC) • DoH/DoT",
+      "x": 288.31,
+      "y": 138.843,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-networking-subnetting-ipv4-ipv6-vlans-vpn-sd-wan",
+      "name": "Subnetting (IPv4/IPv6) / VLANs / VPN / SD-WAN",
+      "x": 234.577,
+      "y": 217.655,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-networking-routing-ospf-bgp",
+      "name": "Routing: OSPF, BGP",
+      "x": 160.0,
+      "y": 277.128,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-networking-tls-pki-basics",
+      "name": "TLS/PKI basics",
+      "x": 71.207,
+      "y": 311.977,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-networking-capture-analyze-tcpdump-wireshark-zeek",
+      "name": "Capture/Analyze: tcpdump, Wireshark, Zeek",
+      "x": -23.914,
+      "y": 319.105,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-operating-systems",
+      "name": "Operating Systems",
+      "x": -99.758,
+      "y": 125.093,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-operating-systems-linux-priv-esc-systemd-journald-iptables-nftables-selinux-apparmor",
+      "name": "Linux (priv-esc, systemd, journald, iptables/nftables, SELinux, AppArmor)",
+      "x": -116.909,
+      "y": 297.88,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-operating-systems-windows-ad-sysinternals-etw-event-logs",
+      "name": "Windows (AD, Sysinternals, ETW, Event Logs)",
+      "x": -199.517,
+      "y": 250.186,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-operating-systems-macos-launchd-codesign-gatekeeper-sip-system-integrity-protection",
+      "name": "macOS (launchd, codesign, Gatekeeper, SIP (System Integrity Protection))",
+      "x": -264.396,
+      "y": 180.262,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-scripting-automation",
+      "name": "Scripting & Automation",
+      "x": -152.892,
+      "y": -47.161,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-scripting-automation-python-requests-asyncio-pandas",
+      "name": "Python (requests, asyncio, pandas)",
+      "x": -305.783,
+      "y": 94.322,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-scripting-automation-bash-powershell",
+      "name": "Bash/PowerShell",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-scripting-automation-api-rest-graphql",
+      "name": "API/REST/GraphQL",
+      "x": -305.783,
+      "y": -94.322,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-scripting-automation-regex-jq-jmespath",
+      "name": "Regex/JQ/JMESPath",
+      "x": -264.396,
+      "y": -180.262,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-scripting-automation-git-github-gitlab",
+      "name": "Git/GitHub/GitLab",
+      "x": -199.517,
+      "y": -250.186,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-compute-virtualization",
+      "name": "Compute & Virtualization",
+      "x": -11.957,
+      "y": -159.553,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-compute-virtualization-docker-containers",
+      "name": "Docker/Containers",
+      "x": -116.909,
+      "y": -297.88,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-compute-virtualization-kubernetes-basics",
+      "name": "Kubernetes basics",
+      "x": -23.914,
+      "y": -319.105,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-compute-virtualization-hypervisors-vmware-virtualbox-hyper-v",
+      "name": "Hypervisors: VMware/VirtualBox/Hyper-V",
+      "x": 71.207,
+      "y": -311.977,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-security-mindsets",
+      "name": "Security Mindsets",
+      "x": 132.198,
+      "y": -90.131,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-security-mindsets-cia-triad-parkerian-hexad",
+      "name": "CIA Triad • Parkerian Hexad",
+      "x": 160.0,
+      "y": -277.128,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-security-mindsets-assume-breach-defense-in-depth",
+      "name": "Assume Breach & Defense-in-Depth",
+      "x": 234.577,
+      "y": -217.655,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-security-mindsets-threat-modeling-stride-pasta",
+      "name": "Threat Modeling (STRIDE, PASTA)",
+      "x": 288.31,
+      "y": -138.843,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-core-foundations-security-mindsets-kill-chain-att-ck-d3fend",
+      "name": "Kill Chain / ATT&CK / D3FEND",
+      "x": 316.426,
+      "y": -47.694,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-core-foundations"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations",
+      "target": "infosec-universe-ultimate-map-core-foundations-networking"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-networking",
+      "target": "infosec-universe-ultimate-map-core-foundations-networking-layers-osi-tcp-ip"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-networking",
+      "target": "infosec-universe-ultimate-map-core-foundations-networking-protocols-http-s-dns-smtp-ssh-snmp-smb-rdp-http-3-quic-doh-dot"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-networking",
+      "target": "infosec-universe-ultimate-map-core-foundations-networking-subnetting-ipv4-ipv6-vlans-vpn-sd-wan"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-networking",
+      "target": "infosec-universe-ultimate-map-core-foundations-networking-routing-ospf-bgp"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-networking",
+      "target": "infosec-universe-ultimate-map-core-foundations-networking-tls-pki-basics"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-networking",
+      "target": "infosec-universe-ultimate-map-core-foundations-networking-capture-analyze-tcpdump-wireshark-zeek"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations",
+      "target": "infosec-universe-ultimate-map-core-foundations-operating-systems"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-operating-systems",
+      "target": "infosec-universe-ultimate-map-core-foundations-operating-systems-linux-priv-esc-systemd-journald-iptables-nftables-selinux-apparmor"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-operating-systems",
+      "target": "infosec-universe-ultimate-map-core-foundations-operating-systems-windows-ad-sysinternals-etw-event-logs"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-operating-systems",
+      "target": "infosec-universe-ultimate-map-core-foundations-operating-systems-macos-launchd-codesign-gatekeeper-sip-system-integrity-protection"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations",
+      "target": "infosec-universe-ultimate-map-core-foundations-scripting-automation"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-scripting-automation",
+      "target": "infosec-universe-ultimate-map-core-foundations-scripting-automation-python-requests-asyncio-pandas"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-scripting-automation",
+      "target": "infosec-universe-ultimate-map-core-foundations-scripting-automation-bash-powershell"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-scripting-automation",
+      "target": "infosec-universe-ultimate-map-core-foundations-scripting-automation-api-rest-graphql"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-scripting-automation",
+      "target": "infosec-universe-ultimate-map-core-foundations-scripting-automation-regex-jq-jmespath"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-scripting-automation",
+      "target": "infosec-universe-ultimate-map-core-foundations-scripting-automation-git-github-gitlab"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations",
+      "target": "infosec-universe-ultimate-map-core-foundations-compute-virtualization"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-compute-virtualization",
+      "target": "infosec-universe-ultimate-map-core-foundations-compute-virtualization-docker-containers"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-compute-virtualization",
+      "target": "infosec-universe-ultimate-map-core-foundations-compute-virtualization-kubernetes-basics"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-compute-virtualization",
+      "target": "infosec-universe-ultimate-map-core-foundations-compute-virtualization-hypervisors-vmware-virtualbox-hyper-v"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations",
+      "target": "infosec-universe-ultimate-map-core-foundations-security-mindsets"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-security-mindsets",
+      "target": "infosec-universe-ultimate-map-core-foundations-security-mindsets-cia-triad-parkerian-hexad"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-security-mindsets",
+      "target": "infosec-universe-ultimate-map-core-foundations-security-mindsets-assume-breach-defense-in-depth"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-security-mindsets",
+      "target": "infosec-universe-ultimate-map-core-foundations-security-mindsets-threat-modeling-stride-pasta"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-core-foundations-security-mindsets",
+      "target": "infosec-universe-ultimate-map-core-foundations-security-mindsets-kill-chain-att-ck-d3fend"
+    }
+  ]
+}

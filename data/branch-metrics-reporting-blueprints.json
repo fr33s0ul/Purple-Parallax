@@ -1,0 +1,151 @@
+{
+  "rootId": "infosec-universe-ultimate-map-metrics-reporting-blueprints",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints",
+      "name": "Metrics, Reporting & Blueprints",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-kpis-kris",
+      "name": "KPIs/KRIs",
+      "x": 113.137,
+      "y": 113.137,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-kpis-kris-coverage-dwell-time-alert-volumes",
+      "name": "Coverage, Dwell Time, Alert Volumes",
+      "x": 295.641,
+      "y": 122.459,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-kpis-kris-patch-slas-phish-rates-control-efficacy",
+      "name": "Patch SLAs, Phish Rates, Control Efficacy",
+      "x": 122.459,
+      "y": 295.641,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-exec-reporting",
+      "name": "Exec Reporting",
+      "x": -113.137,
+      "y": 113.137,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-exec-reporting-dashboards-risk-heatmaps",
+      "name": "Dashboards • Risk Heatmaps",
+      "x": -122.459,
+      "y": 295.641,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-exec-reporting-board-packs-audit-trails",
+      "name": "Board Packs • Audit Trails",
+      "x": -295.641,
+      "y": 122.459,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures",
+      "name": "Reference Architectures",
+      "x": -0.0,
+      "y": -160.0,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures-zero-trust-sase-ztna",
+      "name": "Zero Trust • SASE • ZTNA",
+      "x": -295.641,
+      "y": -122.459,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures-identity-centric-security",
+      "name": "Identity-Centric Security",
+      "x": -122.459,
+      "y": -295.641,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures-cloud-landing-zones",
+      "name": "Cloud Landing Zones",
+      "x": 122.459,
+      "y": -295.641,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures-secure-sdlc-devsecops",
+      "name": "Secure SDLC & DevSecOps",
+      "x": 295.641,
+      "y": -122.459,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-kpis-kris"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints-kpis-kris",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-kpis-kris-coverage-dwell-time-alert-volumes"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints-kpis-kris",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-kpis-kris-patch-slas-phish-rates-control-efficacy"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-exec-reporting"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints-exec-reporting",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-exec-reporting-dashboards-risk-heatmaps"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints-exec-reporting",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-exec-reporting-board-packs-audit-trails"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures-zero-trust-sase-ztna"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures-identity-centric-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures-cloud-landing-zones"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures",
+      "target": "infosec-universe-ultimate-map-metrics-reporting-blueprints-reference-architectures-secure-sdlc-devsecops"
+    }
+  ]
+}

@@ -1,0 +1,211 @@
+{
+  "rootId": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains",
+      "name": "AI / Quantum / Emerging Security Domains",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security",
+      "name": "AI Security",
+      "x": 56.737,
+      "y": 149.603,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-adversarial-ml-evasion-poisoning",
+      "name": "Adversarial ML (evasion, poisoning)",
+      "x": 310.701,
+      "y": 76.581,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-llm-red-teaming-jailbreak-testing",
+      "name": "LLM Red Teaming & Jailbreak Testing",
+      "x": 239.523,
+      "y": 212.199,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-model-extraction-data-poisoning",
+      "name": "Model Extraction & Data Poisoning",
+      "x": 113.474,
+      "y": 299.205,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-model-watermarking-provenance",
+      "name": "Model Watermarking & Provenance",
+      "x": -38.572,
+      "y": 317.667,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-ai-governance-model-risk-mgmt-nist-ai-rmf",
+      "name": "AI Governance & Model Risk Mgmt (NIST AI RMF)",
+      "x": -181.781,
+      "y": 263.355,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security",
+      "name": "Quantum Security",
+      "x": -155.351,
+      "y": -38.291,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-post-quantum-cryptography-kyber-dilithium-falcon-sphincs",
+      "name": "Post-Quantum Cryptography (Kyber, Dilithium, FALCON, SPHINCS+)",
+      "x": -283.346,
+      "y": 148.711,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-quantum-key-distribution-qkd",
+      "name": "Quantum Key Distribution (QKD)",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-post-quantum-migration-planning",
+      "name": "Post-Quantum Migration Planning",
+      "x": -283.346,
+      "y": -148.711,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-quantum-resistant-algorithms-fips-203-206",
+      "name": "Quantum-Resistant Algorithms (FIPS 203–206)",
+      "x": -181.781,
+      "y": -263.355,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence",
+      "name": "Cyber-Physical Convergence",
+      "x": 90.89,
+      "y": -131.677,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-ics-ai-security-integration",
+      "name": "ICS + AI Security Integration",
+      "x": -38.572,
+      "y": -317.667,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-ot-threat-modeling-isa-iec-62443-ai",
+      "name": "OT Threat Modeling (ISA/IEC 62443 + AI)",
+      "x": 113.474,
+      "y": -299.205,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-autonomous-systems-safety-avs-robotics",
+      "name": "Autonomous Systems Safety (AVs, Robotics)",
+      "x": 239.523,
+      "y": -212.199,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-digital-twins-sensor-integrity",
+      "name": "Digital Twins & Sensor Integrity",
+      "x": 310.701,
+      "y": -76.581,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-adversarial-ml-evasion-poisoning"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-llm-red-teaming-jailbreak-testing"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-model-extraction-data-poisoning"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-model-watermarking-provenance"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-ai-governance-model-risk-mgmt-nist-ai-rmf"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-post-quantum-cryptography-kyber-dilithium-falcon-sphincs"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-quantum-key-distribution-qkd"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-post-quantum-migration-planning"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-quantum-resistant-algorithms-fips-203-206"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-ics-ai-security-integration"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-ot-threat-modeling-isa-iec-62443-ai"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-autonomous-systems-safety-avs-robotics"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence",
+      "target": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-digital-twins-sensor-integrity"
+    }
+  ]
+}
