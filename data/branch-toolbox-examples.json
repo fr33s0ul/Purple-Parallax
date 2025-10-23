@@ -11,80 +11,80 @@
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr",
-      "name": "SIEM/XDR",
-      "x": 119.762,
-      "y": 106.1,
+      "name": "SIEM\n/XDR",
+      "x": 74.851,
+      "y": 66.312,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr-microsoft-sentinel-defender-xdr-security-onion-wazuh",
-      "name": "Microsoft Sentinel • Defender XDR • Security Onion/Wazuh",
-      "x": 310.701,
-      "y": 76.581,
+      "name": "Microsoft Sentinel\n• Defender XDR\n• Security Onion\n/Wazuh",
+      "x": 223.317,
+      "y": 55.043,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr-splunk-elastic-opensearch-graylog-qradar",
-      "name": "Splunk • Elastic • OpenSearch/Graylog • QRadar",
-      "x": 239.523,
-      "y": 212.199,
+      "name": "Splunk\n• Elastic\n• OpenSearch\n/Graylog\n• QRadar",
+      "x": 172.157,
+      "y": 152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-siem-xdr-crowdstrike-cortex-xdr-sentinelone",
-      "name": "CrowdStrike • Cortex XDR • SentinelOne",
-      "x": 113.474,
-      "y": 299.205,
+      "name": "CrowdStrike\n• Cortex XDR\n• SentinelOne",
+      "x": 81.559,
+      "y": 215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-vuln-config",
       "name": "Vuln & Config",
-      "x": -56.737,
-      "y": 149.603,
+      "x": -35.46,
+      "y": 93.502,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-vuln-config-openvas-gvm-lynis-cis-cat-prowler-scoutsuite-nessus-qualys-rapid7",
-      "name": "OpenVAS/GVM, Lynis, CIS‑CAT • Prowler • ScoutSuite • Nessus/Qualys/Rapid7",
-      "x": -38.572,
-      "y": 317.667,
+      "name": "OpenVAS\n/GVM, Lynis, CIS‑CAT\n• Prowler\n• ScoutSuite\n• Nessus\n/Qualys\n/Rapid7",
+      "x": -27.723,
+      "y": 228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-vuln-config-wsus-mecm-sccm-intune-suse-manager-red-hat-satellite",
-      "name": "WSUS/MECM (SCCM) • Intune • SUSE Manager / Red Hat Satellite",
-      "x": -181.781,
-      "y": 263.355,
+      "name": "WSUS\n/MECM (SCCM)\n• Intune\n• SUSE Manager\n/Red Hat Satellite",
+      "x": -130.655,
+      "y": 189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing",
       "name": "Web & API Testing",
-      "x": -155.351,
-      "y": 38.291,
+      "x": -97.094,
+      "y": 23.932,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing-burp-suite-owasp-zap-postman",
-      "name": "Burp Suite • OWASP ZAP • Postman",
-      "x": -283.346,
-      "y": 148.711,
+      "name": "Burp Suite\n• OWASP ZAP\n• Postman",
+      "x": -203.655,
+      "y": 106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-web-api-testing-nuclei-ffuf-dirsearch-sqlmap",
-      "name": "Nuclei • ffuf • dirsearch • SQLMap",
-      "x": -320.0,
+      "name": "Nuclei\n• ffuf\n• dirsearch\n• SQLMap",
+      "x": -230.0,
       "y": 0.0,
       "depth": 2,
       "hasChildren": false
@@ -92,72 +92,72 @@
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral",
       "name": "AD & Lateral",
-      "x": -119.762,
-      "y": -106.1,
+      "x": -74.851,
+      "y": -66.312,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral-bloodhound-rubeus-mimikatz-sharphound",
-      "name": "BloodHound • Rubeus • Mimikatz • SharpHound",
-      "x": -283.346,
-      "y": -148.711,
+      "name": "BloodHound\n• Rubeus\n• Mimikatz\n• SharpHound",
+      "x": -203.655,
+      "y": -106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-ad-lateral-crackmapexec-responder-impacket",
-      "name": "CrackMapExec • Responder • Impacket",
-      "x": -181.781,
-      "y": -263.355,
+      "name": "CrackMapExec\n• Responder\n• Impacket",
+      "x": -130.655,
+      "y": -189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware",
       "name": "Forensics & Malware",
-      "x": 19.286,
-      "y": -158.833,
+      "x": 12.054,
+      "y": -99.271,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware-volatility3-velociraptor-kape-autopsy-brim-wireshark",
       "name": "Volatility3, Velociraptor, KAPE, Autopsy, Brim, Wireshark",
-      "x": -38.572,
-      "y": -317.667,
+      "x": -27.723,
+      "y": -228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-forensics-malware-ghidra-ida-free-capa-yara",
       "name": "Ghidra, IDA Free, CAPA, YARA",
-      "x": 113.474,
-      "y": -299.205,
+      "x": 81.559,
+      "y": -215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s",
       "name": "Cloud & K8s",
-      "x": 141.673,
-      "y": -74.356,
+      "x": 88.546,
+      "y": -46.472,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s-wiz-prisma-defender-for-cloud-prowler-scoutsuite",
-      "name": "Wiz • Prisma • Defender for Cloud • Prowler • ScoutSuite",
-      "x": 239.523,
-      "y": -212.199,
+      "name": "Wiz\n• Prisma\n• Defender for Cloud\n• Prowler\n• ScoutSuite",
+      "x": 172.157,
+      "y": -152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples-cloud-k8s-kubebench-kubeaudit-trivy-falco-kubescape-kube-hunter-regula",
-      "name": "Kubebench/Kubeaudit • Trivy • Falco • Kubescape • kube‑hunter • Regula",
-      "x": 310.701,
-      "y": -76.581,
+      "name": "Kubebench\n/Kubeaudit\n• Trivy\n• Falco\n• Kubescape\n• kube‑hunter\n• Regula",
+      "x": 223.317,
+      "y": -55.043,
       "depth": 2,
       "hasChildren": false
     }

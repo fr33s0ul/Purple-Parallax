@@ -12,232 +12,232 @@
     {
       "id": "infosec-universe-ultimate-map-cloud-security-aws",
       "name": "AWS",
-      "x": 85.732,
-      "y": 135.092,
+      "x": 53.583,
+      "y": 84.433,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-aws-iam-scps-organizations",
       "name": "IAM, SCPs, Organizations",
-      "x": 317.477,
-      "y": 40.107,
+      "x": 228.186,
+      "y": 28.827,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-aws-guardduty-security-hub-detective",
       "name": "GuardDuty, Security Hub, Detective",
-      "x": 297.528,
-      "y": 117.8,
+      "x": 213.849,
+      "y": 84.669,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-aws-cloudtrail-config-vpc-flow-logs",
       "name": "CloudTrail, Config, VPC Flow Logs",
-      "x": 258.885,
-      "y": 188.091,
+      "x": 186.074,
+      "y": 135.191,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-aws-ec2-imdsv2-enforced-account-default-token-required-hop-limit-2",
       "name": "EC2 IMDSv2 enforced (account default; token required; hop limit 2)",
-      "x": 203.976,
-      "y": 246.564,
+      "x": 146.608,
+      "y": 177.218,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-aws-s3-block-public-access-org-account",
       "name": "S3 Block Public Access (org + account)",
-      "x": 136.249,
-      "y": 289.545,
+      "x": 97.929,
+      "y": 208.11,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-aws-kms-secrets-manager-ssm-parameter-store",
       "name": "KMS, Secrets Manager, SSM Parameter Store",
-      "x": 59.962,
-      "y": 314.332,
+      "x": 43.098,
+      "y": 225.926,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-aws-waf-shield-alb-nlb-privatelink",
-      "name": "WAF, Shield, ALB/NLB, PrivateLink",
-      "x": -20.093,
-      "y": 319.369,
+      "name": "WAF, Shield, ALB\n/NLB, PrivateLink",
+      "x": -23.421,
+      "y": 372.264,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-aws-eks-ecs-ecr-image-scanning",
-      "name": "EKS/ECS, ECR • Image Scanning",
-      "x": -98.885,
-      "y": 304.338,
+      "name": "EKS\n/ECS, ECR\n• Image Scanning",
+      "x": -115.263,
+      "y": 354.744,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-azure",
       "name": "Azure",
-      "x": -148.764,
-      "y": 58.9,
+      "x": -92.978,
+      "y": 36.812,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-azure-entra-id-pim-defender-for-cloud",
-      "name": "Entra ID, PIM • Defender for Cloud",
-      "x": -171.465,
-      "y": 270.185,
+      "name": "Entra ID, PIM\n• Defender for Cloud",
+      "x": -123.24,
+      "y": 194.195,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-azure-sentinel-log-analytics",
-      "name": "Sentinel • Log Analytics",
-      "x": -233.27,
-      "y": 219.055,
+      "name": "Sentinel\n• Log Analytics",
+      "x": -167.663,
+      "y": 157.446,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-azure-key-vault-managed-identities",
       "name": "Key Vault, Managed Identities",
-      "x": -280.418,
-      "y": 154.161,
+      "x": -201.551,
+      "y": 110.803,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-azure-storage-accounts-private-endpoints",
       "name": "Storage Accounts, Private Endpoints",
-      "x": -309.947,
-      "y": 79.581,
+      "x": -222.774,
+      "y": 57.199,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-azure-waf-appgw-azure-front-door",
-      "name": "WAF/AppGW/Azure Front Door",
-      "x": -320.0,
+      "name": "WAF\n/AppGW\n/Azure Front Door",
+      "x": -230.0,
       "y": 0.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-azure-azure-virtual-desktop-avd-intune",
-      "name": "Azure Virtual Desktop (AVD) • Intune",
-      "x": -309.947,
-      "y": -79.581,
+      "name": "Azure Virtual Desktop (AVD)\n• Intune",
+      "x": -222.774,
+      "y": -57.199,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-gcp",
       "name": "GCP",
-      "x": -116.635,
-      "y": -109.528,
+      "x": -72.897,
+      "y": -68.455,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-gcp-org-policies-iam-workload-identity",
       "name": "Org Policies, IAM, Workload Identity",
-      "x": -280.418,
-      "y": -154.161,
+      "x": -201.551,
+      "y": -110.803,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-gcp-security-command-center-cloud-armor",
-      "name": "Security Command Center • Cloud Armor",
-      "x": -233.27,
-      "y": -219.055,
+      "name": "Security Command Center\n• Cloud Armor",
+      "x": -167.663,
+      "y": -157.446,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-gcp-cloud-logging-monitoring-kms-iap",
-      "name": "Cloud Logging/Monitoring • KMS • IAP",
-      "x": -171.465,
-      "y": -270.185,
+      "name": "Cloud Logging\n/Monitoring\n• KMS\n• IAP",
+      "x": -123.24,
+      "y": -194.195,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-cloud-native",
       "name": "Cloud-Native",
-      "x": 85.732,
-      "y": -135.092,
+      "x": 53.583,
+      "y": -84.433,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-cloud-native-shared-responsibility-landing-zones",
-      "name": "Shared Responsibility • Landing Zones",
-      "x": -98.885,
-      "y": -304.338,
+      "name": "Shared Responsibility\n• Landing Zones",
+      "x": -71.074,
+      "y": -218.743,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-cloud-native-cspm-cwpp-cnapp-prisma-wiz-defender-open-source-cloud-custodian-prowler-scoutsuite-checkov-tfsec-terrascan-kics-kubescape-falco-kube-bench-kube-hunter",
-      "name": "CSPM/CWPP/CNAPP: Prisma, Wiz, Defender; open-source: Cloud Custodian, Prowler, ScoutSuite, Checkov, tfsec, Terrascan, KICS, Kubescape, Falco, kube-bench, kube-hunter",
-      "x": -20.093,
-      "y": -319.369,
+      "name": "CSPM\n/CWPP\n/CNAPP:\nPrisma, Wiz, Defender; open-source:\nCloud Custodian, Prowler, ScoutSuite, Checkov, tfsec, Terrascan, KICS, Kubescape, Falco, kube-bench, kube-hunter",
+      "x": -14.442,
+      "y": -229.546,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-cloud-native-k8s-rbac-psa-pod-security-admission-opa-gatekeeper-kyverno-pod-security-standards-baseline-restricted",
-      "name": "K8s: RBAC, PSA (Pod Security Admission)/OPA/Gatekeeper, Kyverno • Pod Security Standards (baseline/restricted)",
-      "x": 59.962,
-      "y": -314.332,
+      "name": "K8s:\nRBAC, PSA (Pod Security Admission)\n/OPA\n/Gatekeeper, Kyverno\n• Pod Security Standards (baseline\n/restricted)",
+      "x": 43.098,
+      "y": -225.926,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-cloud-native-service-mesh-istio-linkerd-mtls",
-      "name": "Service Mesh: Istio/Linkerd • mTLS",
-      "x": 136.249,
-      "y": -289.545,
+      "name": "Service Mesh:\nIstio\n/Linkerd\n• mTLS",
+      "x": 97.929,
+      "y": -208.11,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-cloud-native-serverless-iam-vpc-egress-secrets",
-      "name": "Serverless: IAM, VPC egress, Secrets",
-      "x": 203.976,
-      "y": -246.564,
+      "name": "Serverless:\nIAM, VPC egress, Secrets",
+      "x": 146.608,
+      "y": -177.218,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-cloud-native-dspm-data-security-posture-mgmt",
       "name": "DSPM (Data Security Posture Mgmt)",
-      "x": 258.885,
-      "y": -188.091,
+      "x": 186.074,
+      "y": -135.191,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-cloud-native-aspm-application-security-posture-mgmt",
       "name": "ASPM (Application Security Posture Mgmt)",
-      "x": 297.528,
-      "y": -117.8,
+      "x": 346.807,
+      "y": -137.31,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-cloud-security-cloud-native-sspm-saas-security-posture-management",
       "name": "SSPM (SaaS Security Posture Management)",
-      "x": 317.477,
-      "y": -40.107,
+      "x": 370.059,
+      "y": -46.749,
       "depth": 2,
       "hasChildren": false
     }

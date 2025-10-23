@@ -12,104 +12,104 @@
     {
       "id": "infosec-universe-ultimate-map-careers-learning-paths",
       "name": "Paths",
-      "x": 94.046,
-      "y": 129.443,
+      "x": 58.779,
+      "y": 80.902,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-paths-soc-tier1-tier3-detection-eng-ir-dfir",
-      "name": "SOC (Tier1→Tier3) • Detection Eng • IR/DFIR",
-      "x": 304.338,
-      "y": 98.885,
+      "name": "SOC (Tier1→Tier3)\n• Detection Eng\n• IR\n/DFIR",
+      "x": 218.743,
+      "y": 71.074,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-paths-threat-intel-hunter-appsec-cloud-sec",
-      "name": "Threat Intel/Hunter • AppSec • Cloud Sec",
-      "x": 188.091,
-      "y": 258.885,
+      "name": "Threat Intel\n/Hunter\n• AppSec\n• Cloud Sec",
+      "x": 135.191,
+      "y": 186.074,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-paths-grc-risk-privacy-red-team-pentest",
-      "name": "GRC/Risk/Privacy • Red Team/Pentest",
+      "name": "GRC\n/Risk\n/Privacy\n• Red Team\n/Pentest",
       "x": 0.0,
-      "y": 320.0,
+      "y": 230.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-certs-examples",
       "name": "Certs (Examples)",
-      "x": -160.0,
+      "x": -100.0,
       "y": 0.0,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-certs-examples-comptia-sec-cysa-pentest",
-      "name": "CompTIA: Sec+, CySA+, Pentest+",
-      "x": -188.091,
-      "y": 258.885,
+      "name": "CompTIA:\nSec+, CySA+, Pentest+",
+      "x": -135.191,
+      "y": 186.074,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-certs-examples-sans-giac-gcih-gcia-gcfa-gcti",
-      "name": "SANS/GIAC: GCIH, GCIA, GCFA, GCTI",
-      "x": -304.338,
-      "y": 98.885,
+      "name": "SANS\n/GIAC:\nGCIH, GCIA, GCFA, GCTI",
+      "x": -218.743,
+      "y": 71.074,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-certs-examples-offsec-oscp-oswe-osep-osed-osce",
-      "name": "OffSec: OSCP/OSWE/OSEP/OSED (OSCE³)",
-      "x": -304.338,
-      "y": -98.885,
+      "name": "OffSec:\nOSCP\n/OSWE\n/OSEP\n/OSED (OSCE³)",
+      "x": -218.743,
+      "y": -71.074,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-certs-examples-azure-aws-gcp-security-cism-cisa-cissp",
-      "name": "Azure/AWS/GCP Security, CISM/CISA/CISSP",
-      "x": -188.091,
-      "y": -258.885,
+      "name": "Azure\n/AWS\n/GCP Security, CISM\n/CISA\n/CISSP",
+      "x": -135.191,
+      "y": -186.074,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-labs-ctfs",
       "name": "Labs & CTFs",
-      "x": 94.046,
-      "y": -129.443,
+      "x": 58.779,
+      "y": -80.902,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-labs-ctfs-tryhackme-hackthebox-rangeforce",
-      "name": "TryHackMe • HackTheBox • RangeForce",
+      "name": "TryHackMe\n• HackTheBox\n• RangeForce",
       "x": -0.0,
-      "y": -320.0,
+      "y": -230.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-labs-ctfs-detectionlab-blue-team-labs-sigmahq",
-      "name": "DetectionLab • Blue Team Labs • SigmaHQ",
-      "x": 188.091,
-      "y": -258.885,
+      "name": "DetectionLab\n• Blue Team Labs\n• SigmaHQ",
+      "x": 135.191,
+      "y": -186.074,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-careers-learning-labs-ctfs-malware-traffic-analysis-flare-vm",
-      "name": "Malware Traffic Analysis • FLARE-VM",
-      "x": 304.338,
-      "y": -98.885,
+      "name": "Malware Traffic Analysis\n• FLARE-VM",
+      "x": 218.743,
+      "y": -71.074,
       "depth": 2,
       "hasChildren": false
     }
