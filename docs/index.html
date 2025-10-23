@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cybersecurity Atlas</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050608;
+      --panel: #0d1117;
+      --border: #1f2a37;
+      --accent: #ef4444;
+      --accent-soft: rgba(239, 68, 68, 0.18);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --chip-bg: rgba(239, 68, 68, 0.12);
+      --chip-text: #fca5a5;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f9fafb;
+      --panel: #ffffff;
+      --border: #d1d5db;
+      --accent: #be123c;
+      --accent-soft: rgba(190, 18, 60, 0.18);
+      --text: #111827;
+      --muted: #4b5563;
+      --chip-bg: rgba(190, 18, 60, 0.1);
+      --chip-text: #be123c;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), transparent 55%);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      margin: 0;
+    }
+
+    header .controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    button, input {
+      font: inherit;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 0.45rem 0.9rem;
+      background: var(--panel);
+      color: var(--text);
+      transition: border 160ms ease, background 160ms ease;
+    }
+
+    button:hover, input:focus-visible {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    button.toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: transparent;
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      gap: 1px;
+      background: var(--border);
+    }
+
+    aside {
+      background: var(--panel);
+      padding: 1rem 1.2rem 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      background: var(--chip-bg);
+      color: var(--chip-text);
+      font-size: 0.85rem;
+    }
+
+    .log {
+      font-size: 0.85rem;
+      color: var(--muted);
+      border-left: 2px solid var(--border);
+      padding-left: 0.75rem;
+      display: grid;
+      gap: 0.25rem;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    #graph-wrapper {
+      position: relative;
+      background: radial-gradient(circle at center, rgba(239, 68, 68, 0.05) 0%, transparent 58%), var(--bg);
+      overflow: hidden;
+    }
+
+    #graph-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #loading-indicator {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.65));
+      color: var(--muted);
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      transition: opacity 200ms ease;
+    }
+
+    #loading-indicator[data-hidden="true"] {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .node-meta h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .node-meta dl {
+      margin: 0;
+      display: grid;
+      gap: 0.3rem;
+      font-size: 0.9rem;
+    }
+
+    .node-meta dt {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .node-meta dd {
+      margin: 0;
+      color: var(--text);
+    }
+
+    .search-box {
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .search-box label {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .search-results {
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+    }
+
+    .search-results button {
+      justify-content: flex-start;
+      text-align: left;
+      border-radius: 0.75rem;
+      padding: 0.35rem 0.55rem;
+      background: transparent;
+      border-color: var(--border);
+      color: inherit;
+    }
+
+    .search-results button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    @media (max-width: 960px) {
+      main {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(240px, 45vh) 1fr;
+      }
+
+      aside {
+        order: 2;
+      }
+
+      #graph-wrapper {
+        min-height: 240px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <span class="status-chip">Cyber Notes &amp; Future Tech</span>
+      <h1>Cybersecurity Atlas</h1>
+    </div>
+    <div class="controls">
+      <button id="theme-toggle" class="toggle" type="button" aria-pressed="true">🌗 Theme</button>
+      <button id="reset-view" type="button">Reset view</button>
+    </div>
+  </header>
+  <main>
+    <aside>
+      <section class="search-box">
+        <label for="search-input">Search topics</label>
+        <input id="search-input" type="search" placeholder="Start typing…" autocomplete="off" />
+        <div id="search-results" class="search-results" role="listbox" aria-label="Matching topics"></div>
+      </section>
+      <section class="node-meta" aria-live="polite">
+        <h2 id="node-title">Loading…</h2>
+        <dl>
+          <div>
+            <dt>Hierarchy</dt>
+            <dd id="node-path">—</dd>
+          </div>
+          <div>
+            <dt>Children</dt>
+            <dd id="node-children">—</dd>
+          </div>
+        </dl>
+      </section>
+      <section>
+        <h3 style="margin:0;font-size:0.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Activity</h3>
+        <div id="activity-log" class="log" aria-live="polite"></div>
+      </section>
+    </aside>
+    <div id="graph-wrapper">
+      <canvas id="graph-canvas" role="application" aria-label="Cybersecurity Atlas graph"></canvas>
+      <div id="loading-indicator">Preparing atlas…</div>
+    </div>
+  </main>
+  <script>
+  (function() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const resetViewBtn = document.getElementById('reset-view');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const activityLog = document.getElementById('activity-log');
+    const nodeTitle = document.getElementById('node-title');
+    const nodePath = document.getElementById('node-path');
+    const nodeChildren = document.getElementById('node-children');
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+
+    class Graph {
+      constructor() {
+        this.nodes = new Map();
+        this.edges = new Map();
+        this.outgoing = new Map();
+      }
+
+      addNode(id, attrs) {
+        if (this.nodes.has(id)) return;
+        this.nodes.set(id, {...attrs});
+        if (!this.outgoing.has(id)) {
+          this.outgoing.set(id, new Set());
+        }
+      }
+
+      hasNode(id) {
+        return this.nodes.has(id);
+      }
+
+      getNodeAttributes(id) {
+        return this.nodes.get(id);
+      }
+
+      setNodeAttributes(id, nextAttrs) {
+        if (!this.nodes.has(id)) return;
+        Object.assign(this.nodes.get(id), nextAttrs);
+      }
+
+      addEdge(source, target, attrs = {}) {
+        const key = `${source}→${target}`;
+        if (this.edges.has(key)) return;
+        this.edges.set(key, {source, target, attrs: {...attrs}});
+        if (!this.outgoing.has(source)) {
+          this.outgoing.set(source, new Set());
+        }
+        this.outgoing.get(source).add(target);
+      }
+
+      hasEdge(source, target) {
+        return this.edges.has(`${source}→${target}`);
+      }
+
+      outDegree(id) {
+        return this.outgoing.get(id)?.size ?? 0;
+      }
+
+      forEachNode(callback) {
+        this.nodes.forEach((attrs, id) => callback(id, attrs));
+      }
+
+      forEachEdge(callback) {
+        this.edges.forEach(({source, target, attrs}) => callback(source, target, attrs));
+      }
+    }
+
+    const graph = new Graph();
+    const wrapper = document.getElementById('graph-wrapper');
+    const canvas = document.getElementById('graph-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let viewWidth = 0;
+    let viewHeight = 0;
+    let rootId = null;
+    const camera = {x: 0, y: 0, scale: 0.5};
+    let hoveredNode = null;
+    let selectedNode = null;
+    let flashNode = null;
+    let flashUntil = 0;
+    let isDragging = false;
+    let dragPointerId = null;
+    let pointerMoved = false;
+    let lastPointer = {x: 0, y: 0};
+    let lastHoverPoint = {x: 0, y: 0};
+    let needsRender = true;
+
+    const pendingLoads = new Map();
+    const loadedBranches = new Set();
+    const searchIndex = new Map();
+    let searchMatches = new Set();
+
+    const palette = [
+      '#38bdf8', '#f59e0b', '#a855f7', '#22c55e', '#ef4444', '#ec4899', '#0ea5e9', '#f97316'
+    ];
+
+    function log(message) {
+      const entry = document.createElement('div');
+      entry.textContent = message;
+      activityLog.prepend(entry);
+      while (activityLog.childElementCount > 12) {
+        activityLog.removeChild(activityLog.lastElementChild);
+      }
+    }
+
+    function requestRender() {
+      needsRender = true;
+    }
+
+    function resizeCanvas() {
+      const rect = wrapper.getBoundingClientRect();
+      viewWidth = rect.width;
+      viewHeight = rect.height;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(viewWidth * dpr));
+      canvas.height = Math.max(1, Math.floor(viewHeight * dpr));
+      canvas.style.width = `${viewWidth}px`;
+      canvas.style.height = `${viewHeight}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      requestRender();
+    }
+
+    const renderLoop = () => {
+      if (needsRender) {
+        draw();
+        needsRender = false;
+      }
+      requestAnimationFrame(renderLoop);
+    };
+
+    function worldToScreen(x, y) {
+      return {
+        x: (x - camera.x) * camera.scale + viewWidth / 2,
+        y: (y - camera.y) * camera.scale + viewHeight / 2,
+      };
+    }
+
+    function screenToWorld(x, y) {
+      return {
+        x: (x - viewWidth / 2) / camera.scale + camera.x,
+        y: (y - viewHeight / 2) / camera.scale + camera.y,
+      };
+    }
+
+    function nodeSize(attrs) {
+      return Math.max(6, 16 - (attrs.depth || 0) * 1.2);
+    }
+
+    function findNodeAt(x, y) {
+      const world = screenToWorld(x, y);
+      let found = null;
+      let minDepth = Infinity;
+      graph.forEachNode((id, attrs) => {
+        const size = nodeSize(attrs);
+        const dx = world.x - attrs.x;
+        const dy = world.y - attrs.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance <= size * 1.2) {
+          if ((attrs.depth || 0) <= minDepth) {
+            minDepth = attrs.depth || 0;
+            found = id;
+          }
+        }
+      });
+      return found;
+    }
+
+    function draw() {
+      if (!viewWidth || !viewHeight) return;
+      const dpr = window.devicePixelRatio || 1;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, viewWidth, viewHeight);
+
+      ctx.save();
+      ctx.translate(viewWidth / 2, viewHeight / 2);
+      ctx.scale(camera.scale, camera.scale);
+      ctx.translate(-camera.x, -camera.y);
+
+      ctx.lineWidth = Math.max(0.6, 1.2 / camera.scale);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      graph.forEachEdge((source, target) => {
+        const from = graph.getNodeAttributes(source);
+        const to = graph.getNodeAttributes(target);
+        if (!from || !to) return;
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+      });
+
+      const labels = [];
+      const now = performance.now();
+      graph.forEachNode((id, attrs) => {
+        const radius = nodeSize(attrs);
+        let color = attrs.color || '#38bdf8';
+        if (searchMatches.size && !searchMatches.has(id)) {
+          color = 'rgba(148, 163, 184, 0.25)';
+        }
+        if (id === hoveredNode) {
+          color = '#f97316';
+        } else if (id === selectedNode) {
+          color = '#fb7185';
+        }
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.arc(attrs.x, attrs.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (flashNode === id) {
+          if (now < flashUntil) {
+            const pulse = 1 + 0.25 * Math.sin((now / 80) % (Math.PI * 2));
+            ctx.beginPath();
+            ctx.strokeStyle = '#fde68a';
+            ctx.lineWidth = 2 / camera.scale;
+            ctx.arc(attrs.x, attrs.y, radius * (1.8 + pulse * 0.2), 0, Math.PI * 2);
+            ctx.stroke();
+          } else {
+            flashNode = null;
+          }
+        }
+
+        labels.push({id, attrs, radius});
+      });
+
+      ctx.restore();
+
+      ctx.font = '12px "Inter", "Segoe UI", system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const labelColor = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9ca3af';
+      ctx.fillStyle = labelColor;
+      labels.forEach(({id, attrs}) => {
+        if ((attrs.depth || 0) > 2 && id !== hoveredNode && id !== selectedNode) {
+          return;
+        }
+        const screen = worldToScreen(attrs.x, attrs.y);
+        if (screen.x < -80 || screen.x > viewWidth + 80 || screen.y < -40 || screen.y > viewHeight + 80) {
+          return;
+        }
+        ctx.fillText(attrs.label || attrs.name || id, screen.x, screen.y + 10);
+      });
+    }
+
+    function updateNodeDetails(nodeKey) {
+      if (!nodeKey || !graph.hasNode(nodeKey)) {
+        nodeTitle.textContent = 'No selection';
+        nodePath.textContent = '—';
+        nodeChildren.textContent = '—';
+        selectedNode = null;
+        requestRender();
+        return;
+      }
+      const attrs = graph.getNodeAttributes(nodeKey);
+      nodeTitle.textContent = attrs.label || attrs.name || nodeKey;
+      nodePath.textContent = attrs.path || attrs.label || attrs.name || 'Root';
+      const childCount = graph.outDegree(nodeKey);
+      if (childCount) {
+        nodeChildren.textContent = `${childCount} linked ${childCount === 1 ? 'topic' : 'topics'}`;
+      } else if (attrs.hasChildren) {
+        nodeChildren.textContent = 'Tap node to load branch';
+      } else {
+        nodeChildren.textContent = 'Leaf';
+      }
+      selectedNode = nodeKey;
+      requestRender();
+    }
+
+    function animateToNode(nodeKey) {
+      if (!graph.hasNode(nodeKey)) return;
+      const target = graph.getNodeAttributes(nodeKey);
+      const start = {x: camera.x, y: camera.y, scale: camera.scale};
+      const desiredScale = Math.min(2.2, Math.max(0.3, 1.1 - (target.depth || 0) * 0.08));
+      const begin = performance.now();
+      const duration = 600;
+
+      function step(now) {
+        const t = Math.min(1, (now - begin) / duration);
+        const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        camera.x = start.x + (target.x - start.x) * ease;
+        camera.y = start.y + (target.y - start.y) * ease;
+        camera.scale = start.scale + (desiredScale - start.scale) * ease;
+        requestRender();
+        if (t < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      themeToggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      localStorage.setItem('atlas-theme', theme);
+      requestRender();
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+    });
+
+    applyTheme(localStorage.getItem('atlas-theme') || 'dark');
+
+    resetViewBtn.addEventListener('click', () => {
+      if (rootId) {
+        animateToNode(rootId);
+        updateNodeDetails(rootId);
+      }
+    });
+
+    canvas.addEventListener('pointerdown', (event) => {
+      isDragging = true;
+      pointerMoved = false;
+      dragPointerId = event.pointerId;
+      lastPointer = {x: event.clientX, y: event.clientY};
+      lastHoverPoint = {x: event.offsetX, y: event.offsetY};
+      canvas.setPointerCapture(dragPointerId);
+    });
+
+    canvas.addEventListener('pointermove', (event) => {
+      lastHoverPoint = {x: event.offsetX, y: event.offsetY};
+      if (isDragging && dragPointerId === event.pointerId) {
+        const dx = event.clientX - lastPointer.x;
+        const dy = event.clientY - lastPointer.y;
+        if (!pointerMoved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+          pointerMoved = true;
+        }
+        camera.x -= dx / camera.scale;
+        camera.y -= dy / camera.scale;
+        lastPointer = {x: event.clientX, y: event.clientY};
+        requestRender();
+      } else {
+        const hovered = findNodeAt(event.offsetX, event.offsetY);
+        if (hovered !== hoveredNode) {
+          hoveredNode = hovered;
+          requestRender();
+        }
+      }
+    });
+
+    function finishPointerInteraction(event) {
+      if (dragPointerId !== event.pointerId) return;
+      canvas.releasePointerCapture(dragPointerId);
+      isDragging = false;
+      dragPointerId = null;
+      if (!pointerMoved) {
+        const clicked = findNodeAt(lastHoverPoint.x, lastHoverPoint.y);
+        if (clicked) {
+          updateNodeDetails(clicked);
+          animateToNode(clicked);
+          ensureBranchLoaded(clicked).then(() => populateSearch());
+        }
+      } else {
+        pointerMoved = false;
+        const hovered = findNodeAt(lastHoverPoint.x, lastHoverPoint.y);
+        if (hovered !== hoveredNode) {
+          hoveredNode = hovered;
+          requestRender();
+        }
+      }
+    }
+
+    canvas.addEventListener('pointerup', finishPointerInteraction);
+    canvas.addEventListener('pointercancel', finishPointerInteraction);
+
+    canvas.addEventListener('pointerleave', () => {
+      if (!isDragging) {
+        hoveredNode = null;
+        requestRender();
+      }
+    });
+
+    canvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      const zoom = Math.exp(-event.deltaY * 0.001);
+      const before = screenToWorld(event.offsetX, event.offsetY);
+      camera.scale = Math.min(2.8, Math.max(0.25, camera.scale * zoom));
+      const after = screenToWorld(event.offsetX, event.offsetY);
+      camera.x += before.x - after.x;
+      camera.y += before.y - after.y;
+      requestRender();
+    }, {passive: false});
+
+    function populateSearch() {
+      const query = searchInput.value.trim().toLowerCase();
+      searchResults.innerHTML = '';
+      if (!query) {
+        searchMatches = new Set();
+        requestRender();
+        return;
+      }
+      const matches = [];
+      for (const [key, value] of searchIndex.entries()) {
+        if (value.label.toLowerCase().includes(query)) {
+          matches.push({key, label: value.label});
+        }
+      }
+      searchMatches = new Set(matches.map(match => match.key));
+      matches.slice(0, 10).forEach(match => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = match.label;
+        btn.setAttribute('role', 'option');
+        btn.addEventListener('click', () => {
+          animateToNode(match.key);
+          updateNodeDetails(match.key);
+          flashNode = match.key;
+          flashUntil = performance.now() + 1400;
+          searchResults.innerHTML = '';
+          searchMatches = new Set([match.key]);
+          ensureBranchLoaded(match.key).then(() => populateSearch());
+          requestRender();
+        });
+        searchResults.append(btn);
+      });
+      requestRender();
+    }
+
+    searchInput.addEventListener('input', () => {
+      window.requestAnimationFrame(populateSearch);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        searchResults.innerHTML = '';
+        searchMatches = new Set();
+        searchInput.value = '';
+        requestRender();
+      }
+    });
+
+    async function ensureBranchLoaded(nodeKey) {
+      if (!graph.hasNode(nodeKey)) return;
+      const attrs = graph.getNodeAttributes(nodeKey);
+      if (!attrs.childUrl || loadedBranches.has(nodeKey)) {
+        return;
+      }
+      if (pendingLoads.has(nodeKey)) {
+        return pendingLoads.get(nodeKey);
+      }
+      const promise = (async () => {
+        loadingIndicator.dataset.hidden = 'false';
+        log(`Loading ${attrs.label || attrs.name}…`);
+        const response = await fetch(attrs.childUrl);
+        const payload = await response.json();
+        const rootNode = graph.getNodeAttributes(nodeKey);
+        const baseAngle = Math.atan2(rootNode.y, rootNode.x);
+        const cos = Math.cos(baseAngle);
+        const sin = Math.sin(baseAngle);
+        const parentLookup = new Map(payload.edges.map(edge => [edge.target, edge.source]));
+        payload.nodes.forEach(node => {
+          if (node.id === nodeKey || graph.hasNode(node.id)) return;
+          const rotatedX = node.x * cos - node.y * sin;
+          const rotatedY = node.x * sin + node.y * cos;
+          const parentId = parentLookup.get(node.id) || nodeKey;
+          const parent = graph.getNodeAttributes(parentId) || rootNode;
+          const parentPath = parent?.path || parent?.label || parent?.name || 'Root';
+          graph.addNode(node.id, {
+            x: rotatedX + rootNode.x,
+            y: rotatedY + rootNode.y,
+            depth: (rootNode.depth || 0) + node.depth,
+            label: node.name,
+            path: `${parentPath} › ${node.name}`,
+            color: palette[(node.depth + rootNode.depth) % palette.length],
+            hasChildren: node.hasChildren
+          });
+          searchIndex.set(node.id, {label: node.name});
+        });
+        payload.edges.forEach(edge => {
+          if (!graph.hasNode(edge.source) || !graph.hasNode(edge.target)) return;
+          graph.addEdge(edge.source, edge.target);
+        });
+        loadedBranches.add(nodeKey);
+        log(`Loaded ${attrs.label || attrs.name}`);
+        requestRender();
+      })().finally(() => {
+        loadingIndicator.dataset.hidden = 'true';
+        pendingLoads.delete(nodeKey);
+      });
+      pendingLoads.set(nodeKey, promise);
+      return promise;
+    }
+
+    async function bootstrap() {
+      loadingIndicator.dataset.hidden = 'false';
+      const rootData = await fetch('data/root.json').then(r => r.json());
+      rootId = rootData.root.id;
+      graph.addNode(rootData.root.id, {
+        x: rootData.root.x,
+        y: rootData.root.y,
+        depth: rootData.root.depth,
+        label: rootData.root.name,
+        path: rootData.root.name,
+        color: palette[0],
+        hasChildren: true
+      });
+      searchIndex.set(rootData.root.id, {label: rootData.root.name});
+      rootData.children.forEach((child, index) => {
+        graph.addNode(child.id, {
+          x: child.x,
+          y: child.y,
+          depth: child.depth,
+          label: child.name,
+          path: `${rootData.root.name} › ${child.name}`,
+          color: palette[(index + 1) % palette.length],
+          childUrl: child.childUrl,
+          hasChildren: child.hasChildren
+        });
+        graph.addEdge(rootData.root.id, child.id);
+        searchIndex.set(child.id, {label: child.name});
+      });
+      resizeCanvas();
+      updateNodeDetails(rootData.root.id);
+      animateToNode(rootData.root.id);
+      loadingIndicator.dataset.hidden = 'true';
+      log('Atlas ready. Click a macro node to stream its branch.');
+      requestRender();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    renderLoop();
+    bootstrap();
+  })();
+  </script>
+</body>
+</html>

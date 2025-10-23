@@ -1,0 +1,223 @@
+{
+  "rootId": "infosec-universe-ultimate-map-offensive-security",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security",
+      "name": "Offensive Security",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-recon-osint",
+      "name": "Recon & OSINT",
+      "x": 119.762,
+      "y": 106.1,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-recon-osint-subdomains-dns-amass-subfinder-assetfinder-asn-cert-transparency",
+      "name": "Subdomains/DNS: Amass, Subfinder, Assetfinder • ASN • Cert Transparency",
+      "x": 310.701,
+      "y": 76.581,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-recon-osint-tech-stack-fingerprinting-whatweb-wappalyzer-leak-search-dehashed-haveibeenpwned",
+      "name": "Tech stack & Fingerprinting: WhatWeb, Wappalyzer • Leak search: Dehashed, HaveIBeenPwned",
+      "x": 239.523,
+      "y": 212.199,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-recon-osint-osint-shodan-censys-fofa-spiderfoot-social-physical-recon",
+      "name": "OSINT: Shodan, Censys, FOFA, Spiderfoot • Social & Physical Recon",
+      "x": 113.474,
+      "y": 299.205,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-exploitation",
+      "name": "Exploitation",
+      "x": -119.762,
+      "y": 106.1,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-exploitation-web-ssrf-idor-rce-sqli-xxe-xss-csrf",
+      "name": "Web: SSRF, IDOR, RCE, SQLi, XXE, XSS, CSRF",
+      "x": -38.572,
+      "y": 317.667,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-exploitation-ad-kerberoast-as-rep-acl-abuse-dcsync",
+      "name": "AD: Kerberoast/AS-REP, ACL Abuse, DCSync",
+      "x": -181.781,
+      "y": 263.355,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-exploitation-phishing-pretext-social-engineer-toolkit-gophish-initial-access",
+      "name": "Phishing/Pretext: Social‑Engineer Toolkit, GoPhish • Initial Access",
+      "x": -283.346,
+      "y": 148.711,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-exploitation-exploit-dev-bof-rop-shellcode-metasploit-pwntools",
+      "name": "Exploit Dev • BOF • ROP • Shellcode • Metasploit, pwntools",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral",
+      "name": "Post-Ex & Lateral",
+      "x": -90.89,
+      "y": -131.677,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral-credential-dumping-pass-the-hash-ticket",
+      "name": "Credential Dumping • Pass-the-Hash/Ticket",
+      "x": -283.346,
+      "y": -148.711,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral-c2-cobalt-strike-sliver-mythic",
+      "name": "C2: Cobalt Strike, Sliver, Mythic",
+      "x": -181.781,
+      "y": -263.355,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral-opsec-evasion-lolbas-gtfobins",
+      "name": "OPSEC & Evasion • LOLBAS/GTFOBins",
+      "x": -38.572,
+      "y": -317.667,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical",
+      "name": "Wireless/IoT/Physical",
+      "x": 119.762,
+      "y": -106.1,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical-wi-fi-wep-wpa-wpa3-wps-evil-twin-aircrack-ng-kismet",
+      "name": "Wi‑Fi: WEP/WPA/WPA3 • WPS • Evil Twin • Aircrack‑ng • Kismet",
+      "x": 113.474,
+      "y": -299.205,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical-ble-zigbee-z-wave-sdr-hackrf-rtl-sdr",
+      "name": "BLE/Zigbee/Z‑Wave • SDR (HackRF, RTL‑SDR)",
+      "x": 239.523,
+      "y": -212.199,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical-badusb-dropboxes-rubber-ducky-locks-badges",
+      "name": "BadUSB/Dropboxes (Rubber Ducky) • Locks/Badges",
+      "x": 310.701,
+      "y": -76.581,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-offensive-security"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security",
+      "target": "infosec-universe-ultimate-map-offensive-security-recon-osint"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-recon-osint",
+      "target": "infosec-universe-ultimate-map-offensive-security-recon-osint-subdomains-dns-amass-subfinder-assetfinder-asn-cert-transparency"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-recon-osint",
+      "target": "infosec-universe-ultimate-map-offensive-security-recon-osint-tech-stack-fingerprinting-whatweb-wappalyzer-leak-search-dehashed-haveibeenpwned"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-recon-osint",
+      "target": "infosec-universe-ultimate-map-offensive-security-recon-osint-osint-shodan-censys-fofa-spiderfoot-social-physical-recon"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security",
+      "target": "infosec-universe-ultimate-map-offensive-security-exploitation"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-exploitation",
+      "target": "infosec-universe-ultimate-map-offensive-security-exploitation-web-ssrf-idor-rce-sqli-xxe-xss-csrf"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-exploitation",
+      "target": "infosec-universe-ultimate-map-offensive-security-exploitation-ad-kerberoast-as-rep-acl-abuse-dcsync"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-exploitation",
+      "target": "infosec-universe-ultimate-map-offensive-security-exploitation-phishing-pretext-social-engineer-toolkit-gophish-initial-access"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-exploitation",
+      "target": "infosec-universe-ultimate-map-offensive-security-exploitation-exploit-dev-bof-rop-shellcode-metasploit-pwntools"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security",
+      "target": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral",
+      "target": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral-credential-dumping-pass-the-hash-ticket"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral",
+      "target": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral-c2-cobalt-strike-sliver-mythic"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral",
+      "target": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral-opsec-evasion-lolbas-gtfobins"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security",
+      "target": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical",
+      "target": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical-wi-fi-wep-wpa-wpa3-wps-evil-twin-aircrack-ng-kismet"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical",
+      "target": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical-ble-zigbee-z-wave-sdr-hackrf-rtl-sdr"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical",
+      "target": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical-badusb-dropboxes-rubber-ducky-locks-badges"
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "rootId": "infosec-universe-ultimate-map-threat-intel-hunting",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting",
+      "name": "Threat Intel & Hunting",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting-cti",
+      "name": "CTI",
+      "x": 35.603,
+      "y": 155.988,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting-cti-stix-taxii-misp-opencti-yeti-ail",
+      "name": "STIX/TAXII • MISP • OpenCTI • Yeti • AIL",
+      "x": 288.31,
+      "y": 138.843,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting-cti-intel-cycle-direction-collection-processing-analysis-dissemination",
+      "name": "Intel Cycle: Direction, Collection, Processing, Analysis, Dissemination",
+      "x": 71.207,
+      "y": 311.977,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting-cti-actor-profiling-ttps-campaigns",
+      "name": "Actor profiling • TTPs • Campaigns",
+      "x": -199.517,
+      "y": 250.186,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting-hunting",
+      "name": "Hunting",
+      "x": -35.603,
+      "y": -155.988,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting-hunting-hypothesis-driven-att-ck-mapping",
+      "name": "Hypothesis-driven • ATT&CK mapping",
+      "x": -320.0,
+      "y": 0.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting-hunting-windows-sysmon-etw-sysinternals-linux-auditd-ebpf",
+      "name": "Windows: Sysmon/ETW, Sysinternals • Linux: Auditd/eBPF",
+      "x": -199.517,
+      "y": -250.186,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting-hunting-anomaly-baselines-beaconing-living-off-the-land-sigma-yara",
+      "name": "Anomaly baselines • Beaconing • Living‑off‑the‑Land • Sigma/YARA",
+      "x": 71.207,
+      "y": -311.977,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-threat-intel-hunting-hunting-tooling-jupyter-notebooks-kusto-sigmahq-osquery-atomic-red-team-caldera-purplesharp-fleet-osquery-manager",
+      "name": "Tooling: Jupyter notebooks, Kusto, SigmaHQ, OSQuery • Atomic Red Team • CALDERA • PurpleSharp • Fleet (osquery manager)",
+      "x": 288.31,
+      "y": -138.843,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-threat-intel-hunting",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting-cti"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-threat-intel-hunting-cti",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting-cti-stix-taxii-misp-opencti-yeti-ail"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-threat-intel-hunting-cti",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting-cti-intel-cycle-direction-collection-processing-analysis-dissemination"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-threat-intel-hunting-cti",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting-cti-actor-profiling-ttps-campaigns"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-threat-intel-hunting",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting-hunting"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-threat-intel-hunting-hunting",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting-hunting-hypothesis-driven-att-ck-mapping"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-threat-intel-hunting-hunting",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting-hunting-windows-sysmon-etw-sysinternals-linux-auditd-ebpf"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-threat-intel-hunting-hunting",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting-hunting-anomaly-baselines-beaconing-living-off-the-land-sigma-yara"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-threat-intel-hunting-hunting",
+      "target": "infosec-universe-ultimate-map-threat-intel-hunting-hunting-tooling-jupyter-notebooks-kusto-sigmahq-osquery-atomic-red-team-caldera-purplesharp-fleet-osquery-manager"
+    }
+  ]
+}

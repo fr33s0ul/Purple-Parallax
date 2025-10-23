@@ -1,0 +1,175 @@
+{
+  "rootId": "infosec-universe-ultimate-map-careers-learning",
+  "nodes": [
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning",
+      "name": "Careers & Learning",
+      "x": -0.0,
+      "y": 0.0,
+      "depth": 0,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-paths",
+      "name": "Paths",
+      "x": 94.046,
+      "y": 129.443,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-paths-soc-tier1-tier3-detection-eng-ir-dfir",
+      "name": "SOC (Tier1→Tier3) • Detection Eng • IR/DFIR",
+      "x": 304.338,
+      "y": 98.885,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-paths-threat-intel-hunter-appsec-cloud-sec",
+      "name": "Threat Intel/Hunter • AppSec • Cloud Sec",
+      "x": 188.091,
+      "y": 258.885,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-paths-grc-risk-privacy-red-team-pentest",
+      "name": "GRC/Risk/Privacy • Red Team/Pentest",
+      "x": 0.0,
+      "y": 320.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-certs-examples",
+      "name": "Certs (Examples)",
+      "x": -160.0,
+      "y": 0.0,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-certs-examples-comptia-sec-cysa-pentest",
+      "name": "CompTIA: Sec+, CySA+, Pentest+",
+      "x": -188.091,
+      "y": 258.885,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-certs-examples-sans-giac-gcih-gcia-gcfa-gcti",
+      "name": "SANS/GIAC: GCIH, GCIA, GCFA, GCTI",
+      "x": -304.338,
+      "y": 98.885,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-certs-examples-offsec-oscp-oswe-osep-osed-osce",
+      "name": "OffSec: OSCP/OSWE/OSEP/OSED (OSCE³)",
+      "x": -304.338,
+      "y": -98.885,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-certs-examples-azure-aws-gcp-security-cism-cisa-cissp",
+      "name": "Azure/AWS/GCP Security, CISM/CISA/CISSP",
+      "x": -188.091,
+      "y": -258.885,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-labs-ctfs",
+      "name": "Labs & CTFs",
+      "x": 94.046,
+      "y": -129.443,
+      "depth": 1,
+      "hasChildren": true
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-labs-ctfs-tryhackme-hackthebox-rangeforce",
+      "name": "TryHackMe • HackTheBox • RangeForce",
+      "x": -0.0,
+      "y": -320.0,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-labs-ctfs-detectionlab-blue-team-labs-sigmahq",
+      "name": "DetectionLab • Blue Team Labs • SigmaHQ",
+      "x": 188.091,
+      "y": -258.885,
+      "depth": 2,
+      "hasChildren": false
+    },
+    {
+      "id": "infosec-universe-ultimate-map-careers-learning-labs-ctfs-malware-traffic-analysis-flare-vm",
+      "name": "Malware Traffic Analysis • FLARE-VM",
+      "x": 304.338,
+      "y": -98.885,
+      "depth": 2,
+      "hasChildren": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "infosec-universe-ultimate-map",
+      "target": "infosec-universe-ultimate-map-careers-learning"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning",
+      "target": "infosec-universe-ultimate-map-careers-learning-paths"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-paths",
+      "target": "infosec-universe-ultimate-map-careers-learning-paths-soc-tier1-tier3-detection-eng-ir-dfir"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-paths",
+      "target": "infosec-universe-ultimate-map-careers-learning-paths-threat-intel-hunter-appsec-cloud-sec"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-paths",
+      "target": "infosec-universe-ultimate-map-careers-learning-paths-grc-risk-privacy-red-team-pentest"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning",
+      "target": "infosec-universe-ultimate-map-careers-learning-certs-examples"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-certs-examples",
+      "target": "infosec-universe-ultimate-map-careers-learning-certs-examples-comptia-sec-cysa-pentest"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-certs-examples",
+      "target": "infosec-universe-ultimate-map-careers-learning-certs-examples-sans-giac-gcih-gcia-gcfa-gcti"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-certs-examples",
+      "target": "infosec-universe-ultimate-map-careers-learning-certs-examples-offsec-oscp-oswe-osep-osed-osce"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-certs-examples",
+      "target": "infosec-universe-ultimate-map-careers-learning-certs-examples-azure-aws-gcp-security-cism-cisa-cissp"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning",
+      "target": "infosec-universe-ultimate-map-careers-learning-labs-ctfs"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-labs-ctfs",
+      "target": "infosec-universe-ultimate-map-careers-learning-labs-ctfs-tryhackme-hackthebox-rangeforce"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-labs-ctfs",
+      "target": "infosec-universe-ultimate-map-careers-learning-labs-ctfs-detectionlab-blue-team-labs-sigmahq"
+    },
+    {
+      "source": "infosec-universe-ultimate-map-careers-learning-labs-ctfs",
+      "target": "infosec-universe-ultimate-map-careers-learning-labs-ctfs-malware-traffic-analysis-flare-vm"
+    }
+  ]
+}
