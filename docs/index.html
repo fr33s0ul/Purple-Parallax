@@ -161,24 +161,62 @@
       border: 1px solid var(--border);
       border-radius: 22px;
       padding: clamp(1rem, 2vw, 1.6rem);
-      overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 1.4rem;
+      gap: 1rem;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
       backdrop-filter: blur(24px);
     }
 
-    aside::-webkit-scrollbar {
+    aside[data-collapsed="true"] .panel-content {
+      display: none;
+    }
+
+    aside[data-collapsed="true"] {
+      padding-bottom: clamp(0.5rem, 1.5vw, 0.9rem);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    #panel-toggle {
+      background: rgba(148, 163, 184, 0.22);
+      color: var(--text);
+      border-radius: 0.85rem;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.82rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    #panel-toggle:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    aside .panel-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
+      overflow-y: auto;
+      max-height: min(62vh, 540px);
+      padding-right: 0.2rem;
+    }
+
+    aside .panel-content::-webkit-scrollbar {
       width: 10px;
     }
 
-    aside::-webkit-scrollbar-thumb {
+    aside .panel-content::-webkit-scrollbar-thumb {
       background: rgba(148, 163, 184, 0.28);
       border-radius: 999px;
     }
 
-    aside::-webkit-scrollbar-thumb:hover {
+    aside .panel-content::-webkit-scrollbar-thumb:hover {
       background: rgba(249, 115, 22, 0.45);
     }
 
@@ -343,6 +381,62 @@
       transform: translateX(4px);
     }
 
+    .favorites {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .favorites header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .favorites h3 {
+      margin: 0;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    #favorite-list {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    #favorite-list button {
+      justify-content: flex-start;
+      text-align: left;
+      padding: 0.4rem 0.7rem;
+      border-radius: 0.85rem;
+      background: rgba(15, 23, 42, 0.35);
+      border-color: rgba(148, 163, 184, 0.18);
+      color: inherit;
+    }
+
+    #favorite-list button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .accessibility {
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .accessibility label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .accessibility input[type="range"] {
+      width: 100%;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -395,7 +489,12 @@
     </div>
   </header>
   <main>
-    <aside>
+    <aside data-collapsed="false">
+      <div class="panel-header">
+        <span class="status-chip" style="margin:0;">Navigator</span>
+        <button id="panel-toggle" type="button" aria-expanded="true">Collapse</button>
+      </div>
+      <div class="panel-content">
       <section class="search-box">
         <label for="search-input">Search topics</label>
         <input id="search-input" type="search" placeholder="Start typing…" autocomplete="off" />
@@ -413,11 +512,24 @@
             <dd id="node-children">—</dd>
           </div>
         </dl>
+        <button id="favorite-toggle" type="button" aria-pressed="false" style="justify-self:start;">☆ Save to favourites</button>
+      </section>
+      <section class="favorites">
+        <header>
+          <h3>Favourites</h3>
+          <button id="clear-favorites" type="button" style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.6rem;">Clear</button>
+        </header>
+        <div id="favorite-list" role="listbox" aria-label="Favourite topics"></div>
+      </section>
+      <section class="accessibility">
+        <label for="font-scale">Label size</label>
+        <input id="font-scale" type="range" min="0.85" max="1.35" step="0.05" value="1" />
       </section>
       <section>
         <h3 style="margin:0;font-size:0.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Activity</h3>
         <div id="activity-log" class="log" aria-live="polite"></div>
       </section>
+      </div>
     </aside>
     <div id="graph-wrapper">
       <canvas id="graph-canvas" role="application" aria-label="Cybersecurity Atlas graph"></canvas>
@@ -428,6 +540,13 @@
   (function() {
     const themeToggle = document.getElementById('theme-toggle');
     const resetViewBtn = document.getElementById('reset-view');
+    const panelToggle = document.getElementById('panel-toggle');
+    const favoriteToggle = document.getElementById('favorite-toggle');
+    const favoriteList = document.getElementById('favorite-list');
+    const clearFavorites = document.getElementById('clear-favorites');
+    const fontScaleInput = document.getElementById('font-scale');
+    const sidePanel = document.querySelector('aside');
+    favoriteToggle.disabled = true;
     const loadingIndicator = document.getElementById('loading-indicator');
     const activityLog = document.getElementById('activity-log');
     const nodeTitle = document.getElementById('node-title');
@@ -446,6 +565,7 @@
       addNode(id, attrs) {
         if (this.nodes.has(id)) return;
         this.nodes.set(id, {...attrs});
+        nodeMetrics.delete(id);
         if (!this.outgoing.has(id)) {
           this.outgoing.set(id, new Set());
         }
@@ -462,6 +582,7 @@
       setNodeAttributes(id, nextAttrs) {
         if (!this.nodes.has(id)) return;
         Object.assign(this.nodes.get(id), nextAttrs);
+        nodeMetrics.delete(id);
       }
 
       addEdge(source, target, attrs = {}) {
@@ -496,10 +617,46 @@
     const canvas = document.getElementById('graph-canvas');
     const ctx = canvas.getContext('2d');
 
+    const nodeMetrics = new Map();
+    const favorites = new Set(JSON.parse(localStorage.getItem('atlas-favorites') || '[]'));
+    let labelScale = parseFloat(localStorage.getItem('atlas-label-scale') || '1');
+    if (!Number.isFinite(labelScale)) {
+      labelScale = 1;
+    }
+    labelScale = Math.min(1.35, Math.max(0.85, labelScale));
+
+    const layoutConfig = {
+      childrenPerRing: 6,
+      baseLinkDistance(depth) {
+        if (depth <= 0) return 0;
+        if (depth === 1) return 100;
+        if (depth === 2) return 130;
+        return 130 + (depth - 2) * 20;
+      },
+      ringMultiplier(depth, rings = 1) {
+        let base;
+        if (depth <= 1) {
+          base = 1.3;
+        } else if (depth <= 3) {
+          base = 1.5;
+        } else {
+          base = 1.7;
+        }
+        const extra = Math.max(0, rings - 1) * 0.08;
+        return Math.min(base + extra, base + 0.2);
+      }
+    };
+
+    const FONT_FAMILY = '"Inter", "Segoe UI", system-ui, sans-serif';
+    const BOX_PADDING_X = 16;
+    const BOX_PADDING_Y = 12;
+    const LINE_HEIGHT = 18;
+    const MAX_LABEL_WIDTH = 280;
+
     let viewWidth = 0;
     let viewHeight = 0;
     let rootId = null;
-    const camera = {x: 0, y: 0, scale: 0.5};
+    const camera = {x: 0, y: 0, scale: 0.6};
     let hoveredNode = null;
     let selectedNode = null;
     let flashNode = null;
@@ -531,6 +688,50 @@
 
     function requestRender() {
       needsRender = true;
+    }
+
+    function persistFavorites() {
+      localStorage.setItem('atlas-favorites', JSON.stringify([...favorites]));
+    }
+
+    function updateFavoritesUI() {
+      favoriteList.innerHTML = '';
+      clearFavorites.disabled = favorites.size === 0;
+      if (!favorites.size) {
+        const empty = document.createElement('div');
+        empty.textContent = 'No favourites yet';
+        empty.style.color = 'var(--muted)';
+        empty.style.fontSize = '0.8rem';
+        favoriteList.append(empty);
+        return;
+      }
+      const items = [...favorites].map(id => {
+        const label = searchIndex.get(id)?.label || graph.getNodeAttributes(id)?.label || id;
+        return {id, label, display: inlineLabel(label)};
+      }).sort((a, b) => a.display.localeCompare(b.display));
+      items.forEach(item => {
+        if (!graph.hasNode(item.id)) {
+          const notice = document.createElement('div');
+          notice.textContent = `${item.display} (load branch to view)`;
+          notice.style.color = 'var(--muted)';
+          notice.style.fontSize = '0.78rem';
+          favoriteList.append(notice);
+          return;
+        }
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('role', 'option');
+        btn.textContent = item.display;
+        btn.addEventListener('click', () => {
+          animateToNode(item.id);
+          updateNodeDetails(item.id);
+          flashNode = item.id;
+          flashUntil = performance.now() + 1200;
+          ensureBranchLoaded(item.id).then(() => populateSearch());
+          requestRender();
+        });
+        favoriteList.append(btn);
+      });
     }
 
     function resizeCanvas() {
@@ -568,8 +769,76 @@
       };
     }
 
-    function nodeSize(attrs) {
-      return Math.max(6, 16 - (attrs.depth || 0) * 1.2);
+    function labelFont() {
+      return `${(12 * labelScale).toFixed(2)}px ${FONT_FAMILY}`;
+    }
+
+    function wrapLines(paragraph) {
+      const tokens = paragraph.split(/\s+/).filter(Boolean);
+      if (!tokens.length) return [''];
+      const lines = [];
+      let current = tokens.shift();
+      tokens.forEach(token => {
+        const tentative = current ? `${current} ${token}` : token;
+        if (ctx.measureText(tentative).width > MAX_LABEL_WIDTH && current) {
+          lines.push(current);
+          current = token;
+        } else {
+          current = tentative;
+        }
+      });
+      if (current) {
+        lines.push(current);
+      }
+      return lines;
+    }
+
+    function inlineLabel(text) {
+      return (text || '').replace(/\s*\n\s*/g, ' · ');
+    }
+
+    function getNodeMetrics(id, attrs) {
+      const label = attrs.label || attrs.name || id;
+      const cached = nodeMetrics.get(id);
+      if (cached && cached.scale === labelScale && cached.label === label) {
+        return cached.metrics;
+      }
+      ctx.save();
+      ctx.font = labelFont();
+      const segments = label.split(/\n+/);
+      const lines = [];
+      segments.forEach((segment, index) => {
+        const trimmed = segment.trim();
+        if (!trimmed) {
+          if (index !== segments.length - 1) {
+            lines.push('');
+          }
+          return;
+        }
+        wrapLines(trimmed).forEach(line => lines.push(line));
+      });
+      if (!lines.length) {
+        lines.push(label || id);
+      }
+      let maxWidth = 0;
+      lines.forEach(line => {
+        maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
+      });
+      const paddingX = BOX_PADDING_X * labelScale;
+      const paddingY = BOX_PADDING_Y * labelScale;
+      const lineHeight = LINE_HEIGHT * labelScale;
+      const metrics = {
+        label,
+        lines,
+        width: maxWidth + paddingX * 2,
+        height: lines.length * lineHeight + paddingY * 2,
+        paddingX,
+        paddingY,
+        lineHeight,
+      };
+      ctx.restore();
+      nodeMetrics.set(id, {scale: labelScale, label, metrics});
+      return metrics;
     }
 
     function findNodeAt(x, y) {
@@ -577,18 +846,73 @@
       let found = null;
       let minDepth = Infinity;
       graph.forEachNode((id, attrs) => {
-        const size = nodeSize(attrs);
-        const dx = world.x - attrs.x;
-        const dy = world.y - attrs.y;
-        const distance = Math.hypot(dx, dy);
-        if (distance <= size * 1.2) {
-          if ((attrs.depth || 0) <= minDepth) {
-            minDepth = attrs.depth || 0;
+        const metrics = getNodeMetrics(id, attrs);
+        const left = attrs.x - metrics.width / 2;
+        const top = attrs.y - metrics.height / 2;
+        if (world.x >= left && world.x <= left + metrics.width && world.y >= top && world.y <= top + metrics.height) {
+          const depth = attrs.depth || 0;
+          if (depth <= minDepth) {
+            minDepth = depth;
             found = id;
           }
         }
       });
       return found;
+    }
+
+    function hexToRgb(hex) {
+      const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (!match) return {r: 148, g: 163, b: 184};
+      return {
+        r: parseInt(match[1], 16),
+        g: parseInt(match[2], 16),
+        b: parseInt(match[3], 16),
+      };
+    }
+
+    function rgba(rgb, alpha) {
+      return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+    }
+
+    function drawRoundedRect(x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + width, y, x + width, y + height, r);
+      ctx.arcTo(x + width, y + height, x, y + height, r);
+      ctx.arcTo(x, y + height, x, y, r);
+      ctx.arcTo(x, y, x + width, y, r);
+      ctx.closePath();
+    }
+
+    function computeNodeColors(id, attrs, themeText, themeMuted) {
+      const baseHex = attrs.color || '#38bdf8';
+      const rgb = hexToRgb(baseHex);
+      if (searchMatches.size && !searchMatches.has(id)) {
+        const muted = {r: 148, g: 163, b: 184};
+        return {
+          stroke: rgba(muted, 0.25),
+          fill: rgba(muted, 0.14),
+          text: themeMuted || 'rgba(148, 163, 184, 0.7)',
+        };
+      }
+      if (id === hoveredNode) {
+        const hover = hexToRgb('#f97316');
+        return {stroke: rgba(hover, 0.95), fill: rgba(hover, 0.22), text: '#f8fafc'};
+      }
+      if (id === selectedNode) {
+        const sel = hexToRgb('#fb7185');
+        return {stroke: rgba(sel, 0.95), fill: rgba(sel, 0.25), text: '#fff7ed'};
+      }
+      if (favorites.has(id)) {
+        const fav = hexToRgb('#facc15');
+        return {stroke: rgba(fav, 0.95), fill: rgba(rgb, 0.2), text: '#fefce8'};
+      }
+      return {
+        stroke: rgba(rgb, 0.9),
+        fill: rgba(rgb, 0.2),
+        text: themeText || '#f8fafc',
+      };
     }
 
     function draw() {
@@ -602,8 +926,14 @@
       ctx.scale(camera.scale, camera.scale);
       ctx.translate(-camera.x, -camera.y);
 
-      ctx.lineWidth = Math.max(0.6, 1.2 / camera.scale);
+      const styles = getComputedStyle(document.documentElement);
+      const themeText = styles.getPropertyValue('--text');
+      const themeMuted = styles.getPropertyValue('--muted');
+
+      ctx.lineWidth = Math.max(0.6, 1.1 / camera.scale);
       ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       graph.forEachEdge((source, target) => {
         const from = graph.getNodeAttributes(source);
         const to = graph.getNodeAttributes(target);
@@ -614,56 +944,72 @@
         ctx.stroke();
       });
 
-      const labels = [];
+      const textQueue = [];
       const now = performance.now();
       graph.forEachNode((id, attrs) => {
-        const radius = nodeSize(attrs);
-        let color = attrs.color || '#38bdf8';
-        if (searchMatches.size && !searchMatches.has(id)) {
-          color = 'rgba(148, 163, 184, 0.25)';
-        }
-        if (id === hoveredNode) {
-          color = '#f97316';
-        } else if (id === selectedNode) {
-          color = '#fb7185';
-        }
-        ctx.beginPath();
-        ctx.fillStyle = color;
-        ctx.arc(attrs.x, attrs.y, radius, 0, Math.PI * 2);
+        const metrics = getNodeMetrics(id, attrs);
+        const left = attrs.x - metrics.width / 2;
+        const top = attrs.y - metrics.height / 2;
+        const colors = computeNodeColors(id, attrs, themeText, themeMuted);
+
+        const cornerRadius = Math.max(12, 18 * labelScale);
+        ctx.fillStyle = colors.fill;
+        drawRoundedRect(left, top, metrics.width, metrics.height, cornerRadius);
         ctx.fill();
+        ctx.strokeStyle = colors.stroke;
+        ctx.lineWidth = Math.max(1.2, 2.2 / camera.scale);
+        ctx.stroke();
 
         if (flashNode === id) {
           if (now < flashUntil) {
-            const pulse = 1 + 0.25 * Math.sin((now / 80) % (Math.PI * 2));
-            ctx.beginPath();
-            ctx.strokeStyle = '#fde68a';
-            ctx.lineWidth = 2 / camera.scale;
-            ctx.arc(attrs.x, attrs.y, radius * (1.8 + pulse * 0.2), 0, Math.PI * 2);
+            const pulse = 1 + 0.25 * Math.sin((now / 120) % (Math.PI * 2));
+            const padding = (8 + metrics.paddingX * 0.2) * pulse;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(253, 230, 138, 0.9)';
+            ctx.lineWidth = Math.max(1.5, 3.2 / camera.scale);
+            drawRoundedRect(left - padding, top - padding, metrics.width + padding * 2, metrics.height + padding * 2, cornerRadius + 4);
             ctx.stroke();
+            ctx.restore();
           } else {
             flashNode = null;
           }
         }
 
-        labels.push({id, attrs, radius});
+        textQueue.push({id, attrs, metrics, left, top, textColor: colors.text});
       });
 
       ctx.restore();
 
-      ctx.font = '12px "Inter", "Segoe UI", system-ui, sans-serif';
-      ctx.textAlign = 'center';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = labelFont();
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
-      const labelColor = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9ca3af';
-      ctx.fillStyle = labelColor;
-      labels.forEach(({id, attrs}) => {
-        if ((attrs.depth || 0) > 2 && id !== hoveredNode && id !== selectedNode) {
-          return;
-        }
+      textQueue.forEach(({id, attrs, metrics, left, top, textColor}) => {
         const screen = worldToScreen(attrs.x, attrs.y);
-        if (screen.x < -80 || screen.x > viewWidth + 80 || screen.y < -40 || screen.y > viewHeight + 80) {
+        const screenLeft = screen.x - (metrics.width / 2) * camera.scale;
+        const screenTop = screen.y - (metrics.height / 2) * camera.scale;
+        if (
+          screenLeft + metrics.width * camera.scale < -40 ||
+          screenLeft > viewWidth + 40 ||
+          screenTop + metrics.height * camera.scale < -40 ||
+          screenTop > viewHeight + 40
+        ) {
           return;
         }
-        ctx.fillText(attrs.label || attrs.name || id, screen.x, screen.y + 10);
+        ctx.fillStyle = textColor;
+        metrics.lines.forEach((line, index) => {
+          const x = screenLeft + metrics.paddingX * camera.scale;
+          const y = screenTop + metrics.paddingY * camera.scale + index * metrics.lineHeight * camera.scale;
+          ctx.fillText(line, x, y);
+        });
+        if (favorites.has(id)) {
+          ctx.fillStyle = '#facc15';
+          ctx.font = `${(10 * labelScale).toFixed(2)}px ${FONT_FAMILY}`;
+          const starX = screenLeft + (metrics.width - metrics.paddingX * 0.8) * camera.scale - 10 * labelScale;
+          const starY = screenTop + metrics.paddingY * 0.6 * camera.scale;
+          ctx.fillText('★', starX, starY);
+          ctx.font = labelFont();
+        }
       });
     }
 
@@ -673,6 +1019,9 @@
         nodePath.textContent = '—';
         nodeChildren.textContent = '—';
         selectedNode = null;
+        favoriteToggle.disabled = true;
+        favoriteToggle.setAttribute('aria-pressed', 'false');
+        favoriteToggle.textContent = '☆ Save to favourites';
         requestRender();
         return;
       }
@@ -687,24 +1036,30 @@
       } else {
         nodeChildren.textContent = 'Leaf';
       }
+      const isFavorite = favorites.has(nodeKey);
+      favoriteToggle.disabled = false;
+      favoriteToggle.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+      favoriteToggle.textContent = isFavorite ? '★ Remove favourite' : '☆ Save to favourites';
       selectedNode = nodeKey;
       requestRender();
     }
 
-    function animateToNode(nodeKey) {
+    function animateToNode(nodeKey, options = {}) {
       if (!graph.hasNode(nodeKey)) return;
       const target = graph.getNodeAttributes(nodeKey);
       const start = {x: camera.x, y: camera.y, scale: camera.scale};
-      const desiredScale = Math.min(2.2, Math.max(0.3, 1.1 - (target.depth || 0) * 0.08));
+      const duration = options.duration ?? 260;
+      const preserveScale = options.preserveScale ?? true;
+      const requestedScale = options.scale !== undefined ? options.scale : start.scale;
+      const endScale = preserveScale ? start.scale : requestedScale;
       const begin = performance.now();
-      const duration = 600;
 
       function step(now) {
         const t = Math.min(1, (now - begin) / duration);
         const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
         camera.x = start.x + (target.x - start.x) * ease;
         camera.y = start.y + (target.y - start.y) * ease;
-        camera.scale = start.scale + (desiredScale - start.scale) * ease;
+        camera.scale = start.scale + (endScale - start.scale) * ease;
         requestRender();
         if (t < 1) {
           requestAnimationFrame(step);
@@ -728,9 +1083,46 @@
 
     applyTheme(localStorage.getItem('atlas-theme') || 'dark');
 
+    panelToggle.addEventListener('click', () => {
+      const collapsed = sidePanel.dataset.collapsed === 'true';
+      const nextState = !collapsed;
+      sidePanel.dataset.collapsed = nextState ? 'true' : 'false';
+      panelToggle.textContent = nextState ? 'Expand' : 'Collapse';
+      panelToggle.setAttribute('aria-expanded', nextState ? 'false' : 'true');
+    });
+
+    favoriteToggle.addEventListener('click', () => {
+      if (!selectedNode) return;
+      if (favorites.has(selectedNode)) {
+        favorites.delete(selectedNode);
+      } else {
+        favorites.add(selectedNode);
+      }
+      persistFavorites();
+      updateFavoritesUI();
+      updateNodeDetails(selectedNode);
+    });
+
+    clearFavorites.addEventListener('click', () => {
+      favorites.clear();
+      persistFavorites();
+      updateFavoritesUI();
+      updateNodeDetails(selectedNode);
+    });
+
+    fontScaleInput.value = labelScale.toString();
+    fontScaleInput.addEventListener('input', () => {
+      labelScale = parseFloat(fontScaleInput.value);
+      nodeMetrics.clear();
+      localStorage.setItem('atlas-label-scale', labelScale.toString());
+      requestRender();
+    });
+
+    updateFavoritesUI();
+
     resetViewBtn.addEventListener('click', () => {
       if (rootId) {
-        animateToNode(rootId);
+        animateToNode(rootId, {scale: 0.6, preserveScale: false, duration: 420});
         updateNodeDetails(rootId);
       }
     });
@@ -797,16 +1189,40 @@
       }
     });
 
-    canvas.addEventListener('wheel', (event) => {
+    function handleWheel(event) {
+      const rect = canvas.getBoundingClientRect();
+      const withinX = event.clientX >= rect.left && event.clientX <= rect.right;
+      const withinY = event.clientY >= rect.top && event.clientY <= rect.bottom;
+      if (!withinX || !withinY) {
+        return;
+      }
       event.preventDefault();
-      const zoom = Math.exp(-event.deltaY * 0.001);
-      const before = screenToWorld(event.offsetX, event.offsetY);
-      camera.scale = Math.min(2.8, Math.max(0.25, camera.scale * zoom));
-      const after = screenToWorld(event.offsetX, event.offsetY);
+      event.stopPropagation();
+      const offsetX = event.clientX - rect.left;
+      const offsetY = event.clientY - rect.top;
+      const delta = event.deltaY !== undefined ? event.deltaY : -event.wheelDelta;
+      const normalized = event.deltaMode === 1 ? delta * 16 : delta;
+      if (normalized === 0) {
+        return;
+      }
+      const direction = normalized > 0 ? 1 : -1;
+      const magnitude = Math.min(3, Math.abs(normalized) / 160);
+      const baseFactor = direction > 0 ? 0.85 : 1.15;
+      const zoomFactor = Math.pow(baseFactor, 1 + magnitude);
+      const before = screenToWorld(offsetX, offsetY);
+      camera.scale = Math.min(3.2, Math.max(0.25, camera.scale * zoomFactor));
+      const after = screenToWorld(offsetX, offsetY);
       camera.x += before.x - after.x;
       camera.y += before.y - after.y;
       requestRender();
-    }, {passive: false});
+    }
+
+    canvas.addEventListener('wheel', handleWheel, {passive: false});
+    canvas.addEventListener('mousewheel', handleWheel, {passive: false});
+    document.addEventListener('wheel', handleWheel, {passive: false});
+    document.addEventListener('mousewheel', handleWheel, {passive: false});
+    window.addEventListener('wheel', handleWheel, {passive: false});
+    window.addEventListener('mousewheel', handleWheel, {passive: false});
 
     function populateSearch() {
       const query = searchInput.value.trim().toLowerCase();
@@ -826,7 +1242,7 @@
       matches.slice(0, 10).forEach(match => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.textContent = match.label;
+        btn.textContent = inlineLabel(match.label);
         btn.setAttribute('role', 'option');
         btn.addEventListener('click', () => {
           animateToNode(match.key);
@@ -848,6 +1264,27 @@
     });
 
     document.addEventListener('keydown', (event) => {
+      const isTyping = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+      if (!isTyping && (event.key === '+' || event.key === '=')) {
+        event.preventDefault();
+        const before = screenToWorld(viewWidth / 2, viewHeight / 2);
+        camera.scale = Math.min(3.2, camera.scale * 1.1);
+        const after = screenToWorld(viewWidth / 2, viewHeight / 2);
+        camera.x += before.x - after.x;
+        camera.y += before.y - after.y;
+        requestRender();
+        return;
+      }
+      if (!isTyping && (event.key === '-' || event.key === '_')) {
+        event.preventDefault();
+        const before = screenToWorld(viewWidth / 2, viewHeight / 2);
+        camera.scale = Math.max(0.25, camera.scale / 1.1);
+        const after = screenToWorld(viewWidth / 2, viewHeight / 2);
+        camera.x += before.x - after.x;
+        camera.y += before.y - after.y;
+        requestRender();
+        return;
+      }
       if (event.key === 'Escape') {
         searchResults.innerHTML = '';
         searchMatches = new Set();
@@ -867,38 +1304,112 @@
       }
       const promise = (async () => {
         loadingIndicator.dataset.hidden = 'false';
-        log(`Loading ${attrs.label || attrs.name}…`);
+        const readableLabel = inlineLabel(attrs.label || attrs.name || nodeKey);
+        log(`Loading ${readableLabel}…`);
         const response = await fetch(attrs.childUrl);
         const payload = await response.json();
         const rootNode = graph.getNodeAttributes(nodeKey);
+        const nodeLookup = new Map(payload.nodes.map(node => [node.id, node]));
+        const childrenMap = new Map();
+        const parentLookup = new Map(payload.edges.map(edge => [edge.target, edge.source]));
+        payload.edges.forEach(edge => {
+          if (!childrenMap.has(edge.source)) {
+            childrenMap.set(edge.source, []);
+          }
+          childrenMap.get(edge.source).push(edge.target);
+        });
+
+        const leafCounts = new Map();
+        function countLeaves(id) {
+          const children = childrenMap.get(id) || [];
+          if (!children.length) {
+            leafCounts.set(id, 1);
+            return 1;
+          }
+          let total = 0;
+          children.forEach(childId => {
+            total += countLeaves(childId);
+          });
+          leafCounts.set(id, total);
+          return total;
+        }
+        countLeaves(payload.rootId);
+
+        const layoutPositions = new Map();
+        function layoutNode(id, depth, radius, start, end) {
+          const angle = (start + end) / 2;
+          const x = radius * Math.cos(angle);
+          const y = radius * Math.sin(angle);
+          layoutPositions.set(id, {x, y, depth});
+          const children = childrenMap.get(id) || [];
+          if (!children.length) return;
+          const baseDistance = layoutConfig.baseLinkDistance(depth + 1);
+          const rings = Math.max(1, Math.ceil(children.length / layoutConfig.childrenPerRing));
+          const maxMultiplier = layoutConfig.ringMultiplier(depth + 1, rings);
+          const extraDistance = baseDistance * Math.max(0, maxMultiplier - 1);
+          const ringSpacing = rings > 1 ? extraDistance / (rings - 1) : 0;
+          const totalLeaves = children.reduce((sum, childId) => sum + (leafCounts.get(childId) || 1), 0);
+          let cursor = start;
+          children.forEach((childId, index) => {
+            const leaves = leafCounts.get(childId) || 1;
+            const span = totalLeaves ? (end - start) * (leaves / totalLeaves) : (end - start) / children.length;
+            const childStart = cursor;
+            const childEnd = cursor + span;
+            const ringIndex = Math.floor(index / layoutConfig.childrenPerRing);
+            const childRadius = radius + baseDistance + ringIndex * ringSpacing;
+            layoutNode(childId, depth + 1, childRadius, childStart, childEnd);
+            cursor = childEnd;
+          });
+        }
+
+        layoutNode(payload.rootId, 0, 0, 0, Math.PI * 2);
+
         const baseAngle = Math.atan2(rootNode.y, rootNode.x);
         const cos = Math.cos(baseAngle);
         const sin = Math.sin(baseAngle);
-        const parentLookup = new Map(payload.edges.map(edge => [edge.target, edge.source]));
+
         payload.nodes.forEach(node => {
-          if (node.id === nodeKey || graph.hasNode(node.id)) return;
-          const rotatedX = node.x * cos - node.y * sin;
-          const rotatedY = node.x * sin + node.y * cos;
+          if (node.id === nodeKey) return;
+          const layout = layoutPositions.get(node.id);
+          if (!layout) return;
+          const rotatedX = layout.x * cos - layout.y * sin;
+          const rotatedY = layout.x * sin + layout.y * cos;
           const parentId = parentLookup.get(node.id) || nodeKey;
           const parent = graph.getNodeAttributes(parentId) || rootNode;
           const parentPath = parent?.path || parent?.label || parent?.name || 'Root';
-          graph.addNode(node.id, {
-            x: rotatedX + rootNode.x,
-            y: rotatedY + rootNode.y,
-            depth: (rootNode.depth || 0) + node.depth,
-            label: node.name,
-            path: `${parentPath} › ${node.name}`,
-            color: palette[(node.depth + rootNode.depth) % palette.length],
-            hasChildren: node.hasChildren
-          });
+          const depth = (rootNode.depth || 0) + layout.depth;
+          const colorIndex = (layout.depth + (rootNode.depth || 0) + 1) % palette.length;
+          if (graph.hasNode(node.id)) {
+            graph.setNodeAttributes(node.id, {
+              x: rotatedX + rootNode.x,
+              y: rotatedY + rootNode.y,
+              depth,
+              label: node.name,
+              path: `${parentPath} › ${node.name}`,
+              color: palette[colorIndex],
+              hasChildren: node.hasChildren,
+            });
+          } else {
+            graph.addNode(node.id, {
+              x: rotatedX + rootNode.x,
+              y: rotatedY + rootNode.y,
+              depth,
+              label: node.name,
+              path: `${parentPath} › ${node.name}`,
+              color: palette[colorIndex],
+              hasChildren: node.hasChildren,
+            });
+          }
           searchIndex.set(node.id, {label: node.name});
         });
+
         payload.edges.forEach(edge => {
           if (!graph.hasNode(edge.source) || !graph.hasNode(edge.target)) return;
           graph.addEdge(edge.source, edge.target);
         });
         loadedBranches.add(nodeKey);
-        log(`Loaded ${attrs.label || attrs.name}`);
+        log(`Loaded ${readableLabel}`);
+        updateFavoritesUI();
         requestRender();
       })().finally(() => {
         loadingIndicator.dataset.hidden = 'true';
@@ -934,15 +1445,16 @@
           hasChildren: child.hasChildren
         });
         graph.addEdge(rootData.root.id, child.id);
-        searchIndex.set(child.id, {label: child.name});
-      });
-      resizeCanvas();
-      updateNodeDetails(rootData.root.id);
-      animateToNode(rootData.root.id);
-      loadingIndicator.dataset.hidden = 'true';
-      log('Atlas ready. Click a macro node to stream its branch.');
-      requestRender();
-    }
+      searchIndex.set(child.id, {label: child.name});
+    });
+    resizeCanvas();
+    updateNodeDetails(rootData.root.id);
+    updateFavoritesUI();
+    animateToNode(rootData.root.id, {scale: camera.scale, preserveScale: false, duration: 600});
+    loadingIndicator.dataset.hidden = 'true';
+    log('Atlas ready. Click a macro node to stream its branch.');
+    requestRender();
+  }
 
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();

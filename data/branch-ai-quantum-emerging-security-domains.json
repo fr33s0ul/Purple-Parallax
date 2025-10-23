@@ -3,7 +3,7 @@
   "nodes": [
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains",
-      "name": "AI / Quantum / Emerging Security Domains",
+      "name": "AI\n/Quantum\n/Emerging Security Domains",
       "x": -0.0,
       "y": 0.0,
       "depth": 0,
@@ -12,71 +12,71 @@
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security",
       "name": "AI Security",
-      "x": 56.737,
-      "y": 149.603,
+      "x": 35.46,
+      "y": 93.502,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-adversarial-ml-evasion-poisoning",
       "name": "Adversarial ML (evasion, poisoning)",
-      "x": 310.701,
-      "y": 76.581,
+      "x": 223.317,
+      "y": 55.043,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-llm-red-teaming-jailbreak-testing",
       "name": "LLM Red Teaming & Jailbreak Testing",
-      "x": 239.523,
-      "y": 212.199,
+      "x": 172.157,
+      "y": 152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-model-extraction-data-poisoning",
       "name": "Model Extraction & Data Poisoning",
-      "x": 113.474,
-      "y": 299.205,
+      "x": 81.559,
+      "y": 215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-model-watermarking-provenance",
       "name": "Model Watermarking & Provenance",
-      "x": -38.572,
-      "y": 317.667,
+      "x": -27.723,
+      "y": 228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-ai-security-ai-governance-model-risk-mgmt-nist-ai-rmf",
       "name": "AI Governance & Model Risk Mgmt (NIST AI RMF)",
-      "x": -181.781,
-      "y": 263.355,
+      "x": -130.655,
+      "y": 189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security",
       "name": "Quantum Security",
-      "x": -155.351,
-      "y": -38.291,
+      "x": -97.094,
+      "y": -23.932,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-post-quantum-cryptography-kyber-dilithium-falcon-sphincs",
       "name": "Post-Quantum Cryptography (Kyber, Dilithium, FALCON, SPHINCS+)",
-      "x": -283.346,
-      "y": 148.711,
+      "x": -203.655,
+      "y": 106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-quantum-key-distribution-qkd",
       "name": "Quantum Key Distribution (QKD)",
-      "x": -320.0,
+      "x": -230.0,
       "y": 0.0,
       "depth": 2,
       "hasChildren": false
@@ -84,56 +84,56 @@
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-post-quantum-migration-planning",
       "name": "Post-Quantum Migration Planning",
-      "x": -283.346,
-      "y": -148.711,
+      "x": -203.655,
+      "y": -106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-quantum-security-quantum-resistant-algorithms-fips-203-206",
       "name": "Quantum-Resistant Algorithms (FIPS 203–206)",
-      "x": -181.781,
-      "y": -263.355,
+      "x": -130.655,
+      "y": -189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence",
       "name": "Cyber-Physical Convergence",
-      "x": 90.89,
-      "y": -131.677,
+      "x": 56.806,
+      "y": -82.298,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-ics-ai-security-integration",
       "name": "ICS + AI Security Integration",
-      "x": -38.572,
-      "y": -317.667,
+      "x": -27.723,
+      "y": -228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-ot-threat-modeling-isa-iec-62443-ai",
-      "name": "OT Threat Modeling (ISA/IEC 62443 + AI)",
-      "x": 113.474,
-      "y": -299.205,
+      "name": "OT Threat Modeling (ISA\n/IEC 62443 + AI)",
+      "x": 81.559,
+      "y": -215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-autonomous-systems-safety-avs-robotics",
       "name": "Autonomous Systems Safety (AVs, Robotics)",
-      "x": 239.523,
-      "y": -212.199,
+      "x": 172.157,
+      "y": -152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains-cyber-physical-convergence-digital-twins-sensor-integrity",
       "name": "Digital Twins & Sensor Integrity",
-      "x": 310.701,
-      "y": -76.581,
+      "x": 223.317,
+      "y": -55.043,
       "depth": 2,
       "hasChildren": false
     }

@@ -12,128 +12,128 @@
     {
       "id": "infosec-universe-ultimate-map-identity-access-directories-federation",
       "name": "Directories & Federation",
-      "x": 19.286,
-      "y": 158.833,
+      "x": 12.054,
+      "y": 99.271,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-directories-federation-ad-entra-id-azure-ad-hybrid",
-      "name": "AD/Entra ID (Azure AD) • Hybrid",
-      "x": 310.701,
-      "y": 76.581,
+      "name": "AD\n/Entra ID (Azure AD)\n• Hybrid",
+      "x": 223.317,
+      "y": 55.043,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-directories-federation-okta-ping-keycloak-ad-fs-legacy",
-      "name": "Okta • Ping • Keycloak • AD FS (legacy)",
-      "x": 239.523,
-      "y": 212.199,
+      "name": "Okta\n• Ping\n• Keycloak\n• AD FS (legacy)",
+      "x": 172.157,
+      "y": 152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-directories-federation-break-glass-emergency-accounts-temporary-mfa-exempt-access-with-monitoring",
-      "name": "Break-glass/Emergency Accounts (temporary MFA-exempt access with monitoring)",
-      "x": 113.474,
-      "y": 299.205,
+      "name": "Break-glass\n/Emergency Accounts (temporary MFA-exempt access with monitoring)",
+      "x": 81.559,
+      "y": 215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-directories-federation-sso-saml-oidc-oauth2",
-      "name": "SSO: SAML/OIDC/OAuth2",
-      "x": -38.572,
-      "y": 317.667,
+      "name": "SSO:\nSAML\n/OIDC\n/OAuth2",
+      "x": -27.723,
+      "y": 228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-directories-federation-kerberos-ntlm-ldap",
-      "name": "Kerberos/NTLM • LDAP",
-      "x": -181.781,
-      "y": 263.355,
+      "name": "Kerberos\n/NTLM\n• LDAP",
+      "x": -130.655,
+      "y": 189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-directories-federation-provisioning-scim-system-for-cross-domain-identity-management",
-      "name": "Provisioning: SCIM (System for Cross-domain Identity Management)",
-      "x": -283.346,
-      "y": 148.711,
+      "name": "Provisioning:\nSCIM (System for Cross-domain Identity Management)",
+      "x": -203.655,
+      "y": 106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-authz-models",
       "name": "AuthZ Models",
-      "x": -141.673,
-      "y": -74.356,
+      "x": -88.546,
+      "y": -46.472,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-authz-models-rbac-abac-rebac",
-      "name": "RBAC/ABAC/ReBAC",
-      "x": -320.0,
+      "name": "RBAC\n/ABAC\n/ReBAC",
+      "x": -230.0,
       "y": 0.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-authz-models-least-privilege-jit-jea",
-      "name": "Least Privilege • JIT/JEA",
-      "x": -283.346,
-      "y": -148.711,
+      "name": "Least Privilege\n• JIT\n/JEA",
+      "x": -203.655,
+      "y": -106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-authz-models-segregation-of-duties-sod",
       "name": "Segregation of Duties (SoD)",
-      "x": -181.781,
-      "y": -263.355,
+      "x": -130.655,
+      "y": -189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-secrets-pam",
       "name": "Secrets & PAM",
-      "x": 90.89,
-      "y": -131.677,
+      "x": 56.806,
+      "y": -82.298,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-secrets-pam-pam-cyberark-beyondtrust-delinea",
-      "name": "PAM: CyberArk, BeyondTrust, Delinea",
-      "x": -38.572,
-      "y": -317.667,
+      "name": "PAM:\nCyberArk, BeyondTrust, Delinea",
+      "x": -27.723,
+      "y": -228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-secrets-pam-vault-secrets-mgmt-hashicorp-sops",
-      "name": "Vault/Secrets Mgmt: HashiCorp, SOPS",
-      "x": 113.474,
-      "y": -299.205,
+      "name": "Vault\n/Secrets Mgmt:\nHashiCorp, SOPS",
+      "x": 81.559,
+      "y": -215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-secrets-pam-mfa-passkeys-phish-resistant-mfa",
-      "name": "MFA/Passkeys • Phish-Resistant MFA",
-      "x": 239.523,
-      "y": -212.199,
+      "name": "MFA\n/Passkeys\n• Phish-Resistant MFA",
+      "x": 172.157,
+      "y": -152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-identity-access-secrets-pam-privileged-session-management-psm-session-recording",
       "name": "Privileged Session Management (PSM) session recording",
-      "x": 310.701,
-      "y": -76.581,
+      "x": 223.317,
+      "y": -55.043,
       "depth": 2,
       "hasChildren": false
     }

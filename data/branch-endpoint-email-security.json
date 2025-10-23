@@ -12,88 +12,88 @@
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-endpoint",
       "name": "Endpoint",
-      "x": -80.0,
-      "y": 138.564,
+      "x": -50.0,
+      "y": 86.603,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-endpoint-edr-xdr-platforms-microsoft-defender-for-endpoint-crowdstrike-falcon-cortex-xdr-sentinelone",
-      "name": "EDR/XDR Platforms: Microsoft Defender for Endpoint, CrowdStrike Falcon, Cortex XDR, SentinelOne",
-      "x": 300.702,
-      "y": 109.446,
+      "name": "EDR\n/XDR Platforms:\nMicrosoft Defender for Endpoint, CrowdStrike Falcon, Cortex XDR, SentinelOne",
+      "x": 216.129,
+      "y": 78.665,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-endpoint-anti-virus-ngav-file-integrity-monitoring-aide-tripwire-wazuh",
-      "name": "Anti-Virus/NGAV • File Integrity Monitoring (AIDE, Tripwire, Wazuh)",
-      "x": 160.0,
-      "y": 277.128,
+      "name": "Anti-Virus\n/NGAV\n• File Integrity Monitoring (AIDE, Tripwire, Wazuh)",
+      "x": 115.0,
+      "y": 199.186,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-endpoint-app-control-hardening-wdac-applocker-asr-rules-exploit-protection",
-      "name": "App Control & Hardening: WDAC/AppLocker • ASR rules • Exploit Protection",
-      "x": -55.567,
-      "y": 315.138,
+      "name": "App Control & Hardening:\nWDAC\n/AppLocker\n• ASR rules\n• Exploit Protection",
+      "x": -39.939,
+      "y": 226.506,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-endpoint-mdm-mam-intune-jamf-hardening-baselines-open-source-micromdm",
-      "name": "MDM/MAM: Intune, JAMF • Hardening Baselines • open-source: MicroMDM",
-      "x": -245.134,
-      "y": 205.692,
+      "name": "MDM\n/MAM:\nIntune, JAMF\n• Hardening Baselines\n• open-source:\nMicroMDM",
+      "x": -176.19,
+      "y": 147.841,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-endpoint-usb-removable-media-controls-device-control",
-      "name": "USB/Removable Media Controls • Device Control",
-      "x": -320.0,
+      "name": "USB\n/Removable Media Controls\n• Device Control",
+      "x": -230.0,
       "y": 0.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-endpoint-endpoint-telemetry-ir-open-source-wazuh-hids-osquery-telemetry-velociraptor-dfir",
-      "name": "Endpoint Telemetry & IR (Open-Source): Wazuh (HIDS), OSQuery (telemetry), Velociraptor (DFIR)",
-      "x": -245.134,
-      "y": -205.692,
+      "name": "Endpoint Telemetry & IR (Open-Source):\nWazuh (HIDS), OSQuery (telemetry), Velociraptor (DFIR)",
+      "x": -176.19,
+      "y": -147.841,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-email-collaboration",
       "name": "Email & Collaboration",
-      "x": 80.0,
-      "y": -138.564,
+      "x": 50.0,
+      "y": -86.603,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-email-collaboration-secure-email-gateway-seg-mailscanner-spamassassin-postfix-exim-dovecot-imap-plus-mimecast-proofpoint-microsoft-defender-for-office-365-eop-safe-links-attachments",
-      "name": "Secure Email Gateway (SEG): MailScanner/SpamAssassin, Postfix/Exim; Dovecot (IMAP); plus Mimecast, Proofpoint, Microsoft Defender for Office 365 (EOP, Safe Links/Attachments)",
-      "x": -55.567,
-      "y": -315.138,
+      "name": "Secure Email Gateway (SEG):\nMailScanner\n/SpamAssassin, Postfix\n/Exim; Dovecot (IMAP); plus Mimecast, Proofpoint, Microsoft Defender for Office 365 (EOP, Safe Links\n/Attachments)",
+      "x": -39.939,
+      "y": -226.506,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-email-collaboration-phishing-sim-bec-business-email-compromise-controls-time-of-click-url-rewriting",
-      "name": "Phishing Sim • BEC (Business Email Compromise) controls • Time-of-click URL rewriting",
-      "x": 160.0,
-      "y": -277.128,
+      "name": "Phishing Sim\n• BEC (Business Email Compromise) controls\n• Time-of-click URL rewriting",
+      "x": 115.0,
+      "y": -199.186,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security-email-collaboration-dlp-sensitivity-labels-retention",
-      "name": "DLP • Sensitivity Labels • Retention",
-      "x": 300.702,
-      "y": -109.446,
+      "name": "DLP\n• Sensitivity Labels\n• Retention",
+      "x": 216.129,
+      "y": -78.665,
       "depth": 2,
       "hasChildren": false
     }

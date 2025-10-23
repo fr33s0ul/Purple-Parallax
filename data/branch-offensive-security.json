@@ -12,71 +12,71 @@
     {
       "id": "infosec-universe-ultimate-map-offensive-security-recon-osint",
       "name": "Recon & OSINT",
-      "x": 119.762,
-      "y": 106.1,
+      "x": 74.851,
+      "y": 66.312,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-recon-osint-subdomains-dns-amass-subfinder-assetfinder-asn-cert-transparency",
-      "name": "Subdomains/DNS: Amass, Subfinder, Assetfinder • ASN • Cert Transparency",
-      "x": 310.701,
-      "y": 76.581,
+      "name": "Subdomains\n/DNS:\nAmass, Subfinder, Assetfinder\n• ASN\n• Cert Transparency",
+      "x": 223.317,
+      "y": 55.043,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-recon-osint-tech-stack-fingerprinting-whatweb-wappalyzer-leak-search-dehashed-haveibeenpwned",
-      "name": "Tech stack & Fingerprinting: WhatWeb, Wappalyzer • Leak search: Dehashed, HaveIBeenPwned",
-      "x": 239.523,
-      "y": 212.199,
+      "name": "Tech stack & Fingerprinting:\nWhatWeb, Wappalyzer\n• Leak search:\nDehashed, HaveIBeenPwned",
+      "x": 172.157,
+      "y": 152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-recon-osint-osint-shodan-censys-fofa-spiderfoot-social-physical-recon",
-      "name": "OSINT: Shodan, Censys, FOFA, Spiderfoot • Social & Physical Recon",
-      "x": 113.474,
-      "y": 299.205,
+      "name": "OSINT:\nShodan, Censys, FOFA, Spiderfoot\n• Social & Physical Recon",
+      "x": 81.559,
+      "y": 215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-exploitation",
       "name": "Exploitation",
-      "x": -119.762,
-      "y": 106.1,
+      "x": -74.851,
+      "y": 66.312,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-exploitation-web-ssrf-idor-rce-sqli-xxe-xss-csrf",
-      "name": "Web: SSRF, IDOR, RCE, SQLi, XXE, XSS, CSRF",
-      "x": -38.572,
-      "y": 317.667,
+      "name": "Web:\nSSRF, IDOR, RCE, SQLi, XXE, XSS, CSRF",
+      "x": -27.723,
+      "y": 228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-exploitation-ad-kerberoast-as-rep-acl-abuse-dcsync",
-      "name": "AD: Kerberoast/AS-REP, ACL Abuse, DCSync",
-      "x": -181.781,
-      "y": 263.355,
+      "name": "AD:\nKerberoast\n/AS-REP, ACL Abuse, DCSync",
+      "x": -130.655,
+      "y": 189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-exploitation-phishing-pretext-social-engineer-toolkit-gophish-initial-access",
-      "name": "Phishing/Pretext: Social‑Engineer Toolkit, GoPhish • Initial Access",
-      "x": -283.346,
-      "y": 148.711,
+      "name": "Phishing\n/Pretext:\nSocial‑Engineer Toolkit, GoPhish\n• Initial Access",
+      "x": -203.655,
+      "y": 106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-exploitation-exploit-dev-bof-rop-shellcode-metasploit-pwntools",
-      "name": "Exploit Dev • BOF • ROP • Shellcode • Metasploit, pwntools",
-      "x": -320.0,
+      "name": "Exploit Dev\n• BOF\n• ROP\n• Shellcode\n• Metasploit, pwntools",
+      "x": -230.0,
       "y": 0.0,
       "depth": 2,
       "hasChildren": false
@@ -84,64 +84,64 @@
     {
       "id": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral",
       "name": "Post-Ex & Lateral",
-      "x": -90.89,
-      "y": -131.677,
+      "x": -56.806,
+      "y": -82.298,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral-credential-dumping-pass-the-hash-ticket",
-      "name": "Credential Dumping • Pass-the-Hash/Ticket",
-      "x": -283.346,
-      "y": -148.711,
+      "name": "Credential Dumping\n• Pass-the-Hash\n/Ticket",
+      "x": -203.655,
+      "y": -106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral-c2-cobalt-strike-sliver-mythic",
-      "name": "C2: Cobalt Strike, Sliver, Mythic",
-      "x": -181.781,
-      "y": -263.355,
+      "name": "C2:\nCobalt Strike, Sliver, Mythic",
+      "x": -130.655,
+      "y": -189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-post-ex-lateral-opsec-evasion-lolbas-gtfobins",
-      "name": "OPSEC & Evasion • LOLBAS/GTFOBins",
-      "x": -38.572,
-      "y": -317.667,
+      "name": "OPSEC & Evasion\n• LOLBAS\n/GTFOBins",
+      "x": -27.723,
+      "y": -228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical",
-      "name": "Wireless/IoT/Physical",
-      "x": 119.762,
-      "y": -106.1,
+      "name": "Wireless\n/IoT\n/Physical",
+      "x": 74.851,
+      "y": -66.312,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical-wi-fi-wep-wpa-wpa3-wps-evil-twin-aircrack-ng-kismet",
-      "name": "Wi‑Fi: WEP/WPA/WPA3 • WPS • Evil Twin • Aircrack‑ng • Kismet",
-      "x": 113.474,
-      "y": -299.205,
+      "name": "Wi‑Fi:\nWEP\n/WPA\n/WPA3\n• WPS\n• Evil Twin\n• Aircrack‑ng\n• Kismet",
+      "x": 81.559,
+      "y": -215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical-ble-zigbee-z-wave-sdr-hackrf-rtl-sdr",
-      "name": "BLE/Zigbee/Z‑Wave • SDR (HackRF, RTL‑SDR)",
-      "x": 239.523,
-      "y": -212.199,
+      "name": "BLE\n/Zigbee\n/Z‑Wave\n• SDR (HackRF, RTL‑SDR)",
+      "x": 172.157,
+      "y": -152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-offensive-security-wireless-iot-physical-badusb-dropboxes-rubber-ducky-locks-badges",
-      "name": "BadUSB/Dropboxes (Rubber Ducky) • Locks/Badges",
-      "x": 310.701,
-      "y": -76.581,
+      "name": "BadUSB\n/Dropboxes (Rubber Ducky)\n• Locks\n/Badges",
+      "x": 223.317,
+      "y": -55.043,
       "depth": 2,
       "hasChildren": false
     }

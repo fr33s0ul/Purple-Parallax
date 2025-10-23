@@ -3,7 +3,7 @@
   "nodes": [
     {
       "id": "infosec-universe-ultimate-map-blockchain-web3-security",
-      "name": "Blockchain / Web3 Security",
+      "name": "Blockchain\n/Web3 Security",
       "x": -0.0,
       "y": 0.0,
       "depth": 0,
@@ -11,9 +11,9 @@
     },
     {
       "id": "infosec-universe-ultimate-map-blockchain-web3-security-smart-contract-auditing-solidity-evm",
-      "name": "Smart contract auditing (Solidity/EVM)",
-      "x": 138.564,
-      "y": 80.0,
+      "name": "Smart contract auditing (Solidity\n/EVM)",
+      "x": 86.603,
+      "y": 50.0,
       "depth": 1,
       "hasChildren": false
     },
@@ -21,39 +21,39 @@
       "id": "infosec-universe-ultimate-map-blockchain-web3-security-wallet-key-security-hsms-mpc-wallets",
       "name": "Wallet & key security (HSMs, MPC wallets)",
       "x": 0.0,
-      "y": 160.0,
+      "y": 100.0,
       "depth": 1,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-blockchain-web3-security-defi-risks-oracle-manipulation-flash-loans",
       "name": "DeFi risks (oracle manipulation, flash loans)",
-      "x": -138.564,
-      "y": 80.0,
+      "x": -86.603,
+      "y": 50.0,
       "depth": 1,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-blockchain-web3-security-smart-contract-vulns-reentrancy-integer-overflow-underflow-access-control",
-      "name": "Smart contract vulns: reentrancy, integer overflow/underflow, access control",
-      "x": -138.564,
-      "y": -80.0,
+      "name": "Smart contract vulns:\nreentrancy, integer overflow\n/underflow, access control",
+      "x": -86.603,
+      "y": -50.0,
       "depth": 1,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-blockchain-web3-security-security-tooling-slither-mythril-echidna-foundry-forge",
-      "name": "Security tooling: Slither, Mythril, Echidna, Foundry/Forge",
+      "name": "Security tooling:\nSlither, Mythril, Echidna, Foundry\n/Forge",
       "x": -0.0,
-      "y": -160.0,
+      "y": -100.0,
       "depth": 1,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-blockchain-web3-security-audit-practices-formal-verification-fuzzing-time-locked-upgrades",
-      "name": "Audit practices: formal verification, fuzzing, time-locked upgrades",
-      "x": 138.564,
-      "y": -80.0,
+      "name": "Audit practices:\nformal verification, fuzzing, time-locked upgrades",
+      "x": 86.603,
+      "y": -50.0,
       "depth": 1,
       "hasChildren": false
     }
