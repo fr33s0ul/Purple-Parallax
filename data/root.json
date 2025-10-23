@@ -11,8 +11,8 @@
     {
       "id": "infosec-universe-ultimate-map-core-foundations",
       "name": "Core Foundations",
-      "x": 320.0,
-      "y": 0.0,
+      "x": 96.214,
+      "y": 27.255,
       "depth": 1,
       "childUrl": "data/branch-core-foundations.json",
       "hasChildren": true
@@ -20,8 +20,8 @@
     {
       "id": "infosec-universe-ultimate-map-grc-standards",
       "name": "GRC & Standards",
-      "x": 304.338,
-      "y": 98.885,
+      "x": 67.626,
+      "y": 73.666,
       "depth": 1,
       "childUrl": "data/branch-grc-standards.json",
       "hasChildren": true
@@ -29,8 +29,8 @@
     {
       "id": "infosec-universe-ultimate-map-identity-access",
       "name": "Identity & Access",
-      "x": 258.885,
-      "y": 188.091,
+      "x": 29.146,
+      "y": 95.658,
       "depth": 1,
       "childUrl": "data/branch-identity-access.json",
       "hasChildren": true
@@ -38,8 +38,8 @@
     {
       "id": "infosec-universe-ultimate-map-network-security",
       "name": "Network Security",
-      "x": 188.091,
-      "y": 258.885,
+      "x": -8.534,
+      "y": 99.635,
       "depth": 1,
       "childUrl": "data/branch-network-security.json",
       "hasChildren": true
@@ -47,8 +47,8 @@
     {
       "id": "infosec-universe-ultimate-map-endpoint-email-security",
       "name": "Endpoint & Email Security",
-      "x": 98.885,
-      "y": 304.338,
+      "x": -40.233,
+      "y": 91.55,
       "depth": 1,
       "childUrl": "data/branch-endpoint-email-security.json",
       "hasChildren": true
@@ -56,8 +56,8 @@
     {
       "id": "infosec-universe-ultimate-map-cloud-security",
       "name": "Cloud Security",
-      "x": 0.0,
-      "y": 320.0,
+      "x": -75.848,
+      "y": 65.169,
       "depth": 1,
       "childUrl": "data/branch-cloud-security.json",
       "hasChildren": true
@@ -65,8 +65,8 @@
     {
       "id": "infosec-universe-ultimate-map-appsec-devsecops",
       "name": "AppSec & DevSecOps",
-      "x": -98.885,
-      "y": 304.338,
+      "x": -118.748,
+      "y": 17.291,
       "depth": 1,
       "childUrl": "data/branch-appsec-devsecops.json",
       "hasChildren": true
@@ -74,8 +74,8 @@
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc",
       "name": "Detection Engineering & SOC",
-      "x": -188.091,
-      "y": 258.885,
+      "x": -115.877,
+      "y": -31.185,
       "depth": 1,
       "childUrl": "data/branch-detection-engineering-soc.json",
       "hasChildren": true
@@ -83,8 +83,8 @@
     {
       "id": "infosec-universe-ultimate-map-threat-intel-hunting",
       "name": "Threat Intel & Hunting",
-      "x": -258.885,
-      "y": 188.091,
+      "x": -103.791,
+      "y": -60.228,
       "depth": 1,
       "childUrl": "data/branch-threat-intel-hunting.json",
       "hasChildren": true
@@ -92,17 +92,17 @@
     {
       "id": "infosec-universe-ultimate-map-offensive-security",
       "name": "Offensive Security",
-      "x": -304.338,
-      "y": 98.885,
+      "x": -84.574,
+      "y": -85.131,
       "depth": 1,
       "childUrl": "data/branch-offensive-security.json",
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-ot-ics-mobile-iot",
-      "name": "OT/ICS & Mobile/IoT",
-      "x": -320.0,
-      "y": 0.0,
+      "name": "OT\n/ICS & Mobile\n/IoT",
+      "x": -62.262,
+      "y": -102.584,
       "depth": 1,
       "childUrl": "data/branch-ot-ics-mobile-iot.json",
       "hasChildren": true
@@ -110,17 +110,17 @@
     {
       "id": "infosec-universe-ultimate-map-crypto-protocols",
       "name": "Crypto & Protocols",
-      "x": -304.338,
-      "y": -98.885,
+      "x": -46.831,
+      "y": -110.485,
       "depth": 1,
       "childUrl": "data/branch-crypto-protocols.json",
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-ai-quantum-emerging-security-domains",
-      "name": "AI / Quantum / Emerging Security Domains",
-      "x": -258.885,
-      "y": -188.091,
+      "name": "AI\n/Quantum\n/Emerging Security Domains",
+      "x": -21.083,
+      "y": -138.403,
       "depth": 1,
       "childUrl": "data/branch-ai-quantum-emerging-security-domains.json",
       "hasChildren": true
@@ -128,8 +128,8 @@
     {
       "id": "infosec-universe-ultimate-map-data-protection",
       "name": "Data Protection",
-      "x": -188.091,
-      "y": -258.885,
+      "x": 15.61,
+      "y": -139.127,
       "depth": 1,
       "childUrl": "data/branch-data-protection.json",
       "hasChildren": true
@@ -137,8 +137,8 @@
     {
       "id": "infosec-universe-ultimate-map-metrics-reporting-blueprints",
       "name": "Metrics, Reporting & Blueprints",
-      "x": -98.885,
-      "y": -304.338,
+      "x": 42.562,
+      "y": -133.374,
       "depth": 1,
       "childUrl": "data/branch-metrics-reporting-blueprints.json",
       "hasChildren": true
@@ -146,8 +146,8 @@
     {
       "id": "infosec-universe-ultimate-map-careers-learning",
       "name": "Careers & Learning",
-      "x": -0.0,
-      "y": -320.0,
+      "x": 72.639,
+      "y": -119.681,
       "depth": 1,
       "childUrl": "data/branch-careers-learning.json",
       "hasChildren": true
@@ -155,8 +155,8 @@
     {
       "id": "infosec-universe-ultimate-map-toolbox-examples",
       "name": "Toolbox (Examples)",
-      "x": 98.885,
-      "y": -304.338,
+      "x": 104.979,
+      "y": -92.625,
       "depth": 1,
       "childUrl": "data/branch-toolbox-examples.json",
       "hasChildren": true
@@ -164,26 +164,26 @@
     {
       "id": "infosec-universe-ultimate-map-ai-in-security",
       "name": "AI in Security",
-      "x": 188.091,
-      "y": -258.885,
+      "x": 124.615,
+      "y": -63.804,
       "depth": 1,
       "childUrl": "data/branch-ai-in-security.json",
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-rf-sdr-satellite",
-      "name": "RF/SDR & Satellite",
-      "x": 258.885,
-      "y": -188.091,
+      "name": "RF\n/SDR & Satellite",
+      "x": 153.943,
+      "y": -43.608,
       "depth": 1,
       "childUrl": "data/branch-rf-sdr-satellite.json",
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-blockchain-web3-security",
-      "name": "Blockchain / Web3 Security",
-      "x": 304.338,
-      "y": -98.885,
+      "name": "Blockchain\n/Web3 Security",
+      "x": 159.503,
+      "y": -12.606,
       "depth": 1,
       "childUrl": "data/branch-blockchain-web3-security.json",
       "hasChildren": true

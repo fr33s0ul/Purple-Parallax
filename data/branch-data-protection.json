@@ -12,72 +12,72 @@
     {
       "id": "infosec-universe-ultimate-map-data-protection-classification-controls",
       "name": "Classification & Controls",
-      "x": 35.603,
-      "y": 155.988,
+      "x": 22.252,
+      "y": 97.493,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-data-protection-classification-controls-labels-policies-dlp-endpoint-network-cloud",
-      "name": "Labels/Policies • DLP (Endpoint, Network, Cloud)",
-      "x": 288.31,
-      "y": 138.843,
+      "name": "Labels\n/Policies\n• DLP (Endpoint, Network, Cloud)",
+      "x": 207.223,
+      "y": 99.793,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-data-protection-classification-controls-encryption-at-rest-in-transit-key-mgmt-veracrypt-luks-dm-crypt-sops",
-      "name": "Encryption at Rest/In Transit • Key Mgmt (Veracrypt, LUKS/dm‑crypt, SOPS)",
-      "x": 71.207,
-      "y": 311.977,
+      "name": "Encryption at Rest\n/In Transit\n• Key Mgmt (Veracrypt, LUKS\n/dm‑crypt, SOPS)",
+      "x": 51.18,
+      "y": 224.233,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-data-protection-classification-controls-backups-retention-restic-borg-duplicity-drm",
-      "name": "Backups/Retention: restic, Borg, Duplicity • DRM",
-      "x": -199.517,
-      "y": 250.186,
+      "name": "Backups\n/Retention:\nrestic, Borg, Duplicity\n• DRM",
+      "x": -143.403,
+      "y": 179.821,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering",
       "name": "Privacy Engineering",
-      "x": -35.603,
-      "y": -155.988,
+      "x": -22.252,
+      "y": -97.493,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering-pii-phi-pci-minimisation-consent-management",
-      "name": "PII/PHI/PCI • Minimisation & Consent management",
-      "x": -320.0,
+      "name": "PII\n/PHI\n/PCI\n• Minimisation & Consent management",
+      "x": -230.0,
       "y": 0.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering-anonymisation-pseudonymisation-differential-privacy",
-      "name": "Anonymisation/Pseudonymisation • Differential Privacy",
-      "x": -199.517,
-      "y": -250.186,
+      "name": "Anonymisation\n/Pseudonymisation\n• Differential Privacy",
+      "x": -143.403,
+      "y": -179.821,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering-federated-local-processing-edge-homomorphic-encryption-mpc",
-      "name": "Federated/Local processing (Edge) • Homomorphic encryption & MPC",
-      "x": 71.207,
-      "y": -311.977,
+      "name": "Federated\n/Local processing (Edge)\n• Homomorphic encryption & MPC",
+      "x": 51.18,
+      "y": -224.233,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-data-protection-privacy-engineering-zero-knowledge-proofs-verification-without-revealing-data",
       "name": "Zero-Knowledge Proofs (verification without revealing data)",
-      "x": 288.31,
-      "y": -138.843,
+      "x": 207.223,
+      "y": -99.793,
       "depth": 2,
       "hasChildren": false
     }

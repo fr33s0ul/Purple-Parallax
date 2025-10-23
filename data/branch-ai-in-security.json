@@ -13,31 +13,31 @@
       "id": "infosec-universe-ultimate-map-ai-in-security-use-cases",
       "name": "Use Cases",
       "x": 0.0,
-      "y": 160.0,
+      "y": 100.0,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-ai-in-security-use-cases-triage-assistance-threat-summarisation",
-      "name": "Triage assistance • Threat summarisation",
-      "x": 277.128,
-      "y": 160.0,
+      "name": "Triage assistance\n• Threat summarisation",
+      "x": 199.186,
+      "y": 115.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-in-security-use-cases-alert-dedup-entity-linking-playbook-assist",
-      "name": "Alert dedup • Entity linking • Playbook assist",
+      "name": "Alert dedup\n• Entity linking\n• Playbook assist",
       "x": 0.0,
-      "y": 320.0,
+      "y": 230.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-in-security-use-cases-risk-text-analysis-policy-qa",
-      "name": "Risk text analysis • Policy QA",
-      "x": -277.128,
-      "y": 160.0,
+      "name": "Risk text analysis\n• Policy QA",
+      "x": -199.186,
+      "y": 115.0,
       "depth": 2,
       "hasChildren": false
     },
@@ -45,31 +45,31 @@
       "id": "infosec-universe-ultimate-map-ai-in-security-risks-controls",
       "name": "Risks & Controls",
       "x": -0.0,
-      "y": -160.0,
+      "y": -100.0,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-ai-in-security-risks-controls-model-prompt-injection-data-leakage",
-      "name": "Model/Prompt Injection • Data leakage",
-      "x": -277.128,
-      "y": -160.0,
+      "name": "Model\n/Prompt Injection\n• Data leakage",
+      "x": -199.186,
+      "y": -115.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-in-security-risks-controls-eval-red-teaming-guardrails",
-      "name": "Eval/Red-Teaming • Guardrails",
+      "name": "Eval\n/Red-Teaming\n• Guardrails",
       "x": -0.0,
-      "y": -320.0,
+      "y": -230.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-ai-in-security-risks-controls-adversarial-ml-attacks-evasion-poisoning",
       "name": "Adversarial ML attacks (evasion, poisoning)",
-      "x": 277.128,
-      "y": -160.0,
+      "x": 199.186,
+      "y": -115.0,
       "depth": 2,
       "hasChildren": false
     }

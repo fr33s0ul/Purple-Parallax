@@ -12,64 +12,64 @@
     {
       "id": "infosec-universe-ultimate-map-crypto-protocols-crypto",
       "name": "Crypto",
-      "x": -80.0,
-      "y": 138.564,
+      "x": -50.0,
+      "y": 86.603,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-crypto-protocols-crypto-symmetric-asymmetric-hashing-macs-openssl-libsodium-openpgp",
-      "name": "Symmetric/Asymmetric • Hashing • MACs (OpenSSL, Libsodium, OpenPGP)",
-      "x": 277.128,
-      "y": 160.0,
+      "name": "Symmetric\n/Asymmetric\n• Hashing\n• MACs (OpenSSL, Libsodium, OpenPGP)",
+      "x": 199.186,
+      "y": 115.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-crypto-protocols-crypto-tls-pfs-key-exchange-pki-ssh-libssh",
-      "name": "TLS, PFS, Key Exchange • PKI • SSH/Libssh",
+      "name": "TLS, PFS, Key Exchange\n• PKI\n• SSH\n/Libssh",
       "x": 0.0,
-      "y": 320.0,
+      "y": 230.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-crypto-protocols-crypto-fpe-tokenization-hsm-kms-secret-sharing-shamir-sops-age",
-      "name": "FPE/Tokenization • HSM/KMS • Secret sharing (Shamir/SOPS/age)",
-      "x": -277.128,
-      "y": 160.0,
+      "name": "FPE\n/Tokenization\n• HSM\n/KMS\n• Secret sharing (Shamir\n/SOPS\n/age)",
+      "x": -199.186,
+      "y": 115.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-crypto-protocols-crypto-pqc-fips-203-ml-kem-kyber-fips-204-ml-dsa-dilithium-fips-205-slh-dsa-sphincs-migration-planning-fips-206-falcon",
-      "name": "PQC: FIPS 203 (ML-KEM/Kyber), FIPS 204 (ML-DSA/Dilithium), FIPS 205 (SLH-DSA/SPHINCS+) — migration planning • FIPS 206 (FALCON)",
-      "x": -277.128,
-      "y": -160.0,
+      "name": "PQC:\nFIPS 203 (ML-KEM\n/Kyber), FIPS 204 (ML-DSA\n/Dilithium), FIPS 205 (SLH-DSA\n/SPHINCS+) — migration planning\n• FIPS 206 (FALCON)",
+      "x": -199.186,
+      "y": -115.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-crypto-protocols-identity-protocols",
       "name": "Identity Protocols",
-      "x": 80.0,
-      "y": -138.564,
+      "x": 50.0,
+      "y": -86.603,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-crypto-protocols-identity-protocols-oauth2-oidc-par-jar-dpop-saml-fido2-passkeys",
-      "name": "OAuth2/OIDC (PAR, JAR, DPoP) • SAML • FIDO2/Passkeys",
+      "name": "OAuth2\n/OIDC (PAR, JAR, DPoP)\n• SAML\n• FIDO2\n/Passkeys",
       "x": -0.0,
-      "y": -320.0,
+      "y": -230.0,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-crypto-protocols-identity-protocols-jwt-jws-jwe",
-      "name": "JWT/JWS/JWE",
-      "x": 277.128,
-      "y": -160.0,
+      "name": "JWT\n/JWS\n/JWE",
+      "x": 199.186,
+      "y": -115.0,
       "depth": 2,
       "hasChildren": false
     }

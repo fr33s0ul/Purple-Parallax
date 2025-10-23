@@ -12,71 +12,71 @@
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering",
       "name": "Detection Engineering",
-      "x": 19.286,
-      "y": 158.833,
+      "x": 12.054,
+      "y": 99.271,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-siem-elastic-elk-opensearch-wazuh-graylog-splunk-microsoft-sentinel-query-languages-kql-microsoft-sentinel-spl-splunk-splunk-kql-elastic-eql-elastic-ppl-opensearch-opensearch-sigma",
-      "name": "SIEM: Elastic (ELK) • OpenSearch • Wazuh • Graylog • Splunk • Microsoft Sentinel; Query languages: KQL (Microsoft Sentinel), SPL (Splunk) (Splunk), KQL (Elastic), EQL (Elastic), PPL (OpenSearch) (OpenSearch) • Sigma",
-      "x": 310.701,
-      "y": 76.581,
+      "name": "SIEM:\nElastic (ELK)\n• OpenSearch\n• Wazuh\n• Graylog\n• Splunk\n• Microsoft Sentinel; Query languages:\nKQL (Microsoft Sentinel), SPL (Splunk) (Splunk), KQL (Elastic), EQL (Elastic), PPL (OpenSearch) (OpenSearch)\n• Sigma",
+      "x": 223.317,
+      "y": 55.043,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-alerting-correlation-kibana-alerting-detection-rules-opensearch-alerting-elastalert2-legacy-falco-sigma-correlations",
-      "name": "Alerting & Correlation: Kibana Alerting/Detection Rules, OpenSearch Alerting, ElastAlert2 (legacy), Falco, Sigma correlations",
-      "x": 239.523,
-      "y": 212.199,
+      "name": "Alerting & Correlation:\nKibana Alerting\n/Detection Rules, OpenSearch Alerting, ElastAlert2 (legacy), Falco, Sigma correlations",
+      "x": 172.157,
+      "y": 152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-threat-rules-att-ck-mapping-d3fend",
-      "name": "Threat Rules: ATT&CK mapping, D3FEND",
-      "x": 113.474,
-      "y": 299.205,
+      "name": "Threat Rules:\nATT&CK mapping, D3FEND",
+      "x": 81.559,
+      "y": 215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-deception-honeypots-honeytokens",
-      "name": "Deception: Honeypots, Honeytokens",
-      "x": -38.572,
-      "y": 317.667,
+      "name": "Deception:\nHoneypots, Honeytokens",
+      "x": -27.723,
+      "y": 228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-security-data-lake-schemas-ocsf-opentelemetry-logs-object-storage-parquet-delta",
-      "name": "Security data lake & schemas: OCSF • OpenTelemetry logs • object storage (Parquet/Delta)",
-      "x": -181.781,
-      "y": 263.355,
+      "name": "Security data lake & schemas:\nOCSF\n• OpenTelemetry logs\n• object storage (Parquet\n/Delta)",
+      "x": -130.655,
+      "y": 189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-detection-engineering-purple-teaming-adversary-emulation-caldera-atomic-red-team-purplesharp-validate-tune-detections",
-      "name": "Purple Teaming & Adversary Emulation: CALDERA • Atomic Red Team • PurpleSharp — validate & tune detections",
-      "x": -283.346,
-      "y": 148.711,
+      "name": "Purple Teaming & Adversary Emulation:\nCALDERA\n• Atomic Red Team\n• PurpleSharp — validate & tune detections",
+      "x": -203.655,
+      "y": 106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations",
       "name": "SOC Operations",
-      "x": -119.762,
-      "y": -106.1,
+      "x": -74.851,
+      "y": -66.312,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-tier1-tier2-tier3-roles",
-      "name": "Tier1/Tier2/Tier3 Roles",
-      "x": -320.0,
+      "name": "Tier1\n/Tier2\n/Tier3 Roles",
+      "x": -230.0,
       "y": 0.0,
       "depth": 2,
       "hasChildren": false
@@ -84,56 +84,56 @@
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-ticketing-escalation",
       "name": "Ticketing & Escalation",
-      "x": -283.346,
-      "y": -148.711,
+      "x": -203.655,
+      "y": -106.886,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-shift-handover-documentation",
       "name": "Shift Handover & Documentation",
-      "x": -181.781,
-      "y": -263.355,
+      "x": -130.655,
+      "y": -189.286,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-soc-operations-soar-cortex-xsoar-splunk-soar-tines-shuffle",
-      "name": "SOAR: Cortex XSOAR • Splunk SOAR • Tines • Shuffle",
-      "x": -38.572,
-      "y": -317.667,
+      "name": "SOAR:\nCortex XSOAR\n• Splunk SOAR\n• Tines\n• Shuffle",
+      "x": -27.723,
+      "y": -228.323,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response",
       "name": "Incident Response",
-      "x": 119.762,
-      "y": -106.1,
+      "x": 74.851,
+      "y": -66.312,
       "depth": 1,
       "hasChildren": true
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response-preparation-identification-containment-playbooks",
-      "name": "Preparation, Identification, Containment • playbooks",
-      "x": 113.474,
-      "y": -299.205,
+      "name": "Preparation, Identification, Containment\n• playbooks",
+      "x": 81.559,
+      "y": -215.054,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response-eradication-recovery-lessons-learned-bcp-dr",
-      "name": "Eradication, Recovery, Lessons Learned • BCP/DR",
-      "x": 239.523,
-      "y": -212.199,
+      "name": "Eradication, Recovery, Lessons Learned\n• BCP\n/DR",
+      "x": 172.157,
+      "y": -152.518,
       "depth": 2,
       "hasChildren": false
     },
     {
       "id": "infosec-universe-ultimate-map-detection-engineering-soc-incident-response-forensics-evidence-handling-thehive-cortex-velociraptor",
-      "name": "Forensics & Evidence Handling: TheHive, Cortex, Velociraptor",
-      "x": 310.701,
-      "y": -76.581,
+      "name": "Forensics & Evidence Handling:\nTheHive, Cortex, Velociraptor",
+      "x": 223.317,
+      "y": -55.043,
       "depth": 2,
       "hasChildren": false
     }
