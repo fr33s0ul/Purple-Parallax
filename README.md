@@ -1,30 +1,19 @@
 # Cybersecurity Atlas
 
-An interactive, radial knowledge map for the fr33s0ul blog. The atlas streams
-branch data on demand, renders with a lightweight canvas viewer, and can be
-served directly from this repository.
+A self-contained, canvas-accelerated knowledge map for the fr33s0ul Cybersecurity Atlas. The atlas preserves the original UX: radial sector layout, drag/zoom navigation, minimap, search, filters, favorites, PNG export, theming, and keyboard shortcuts.
 
-## Development
+## Usage
 
-1. Update the branch layouts (optional) by regenerating the data files:
+- Local open: just double-click `docs/index.html` and explore the atlas offline.
+- Favorites and theme choices persist automatically in `localStorage`.
 
-   ```bash
-   python tools/build_data.py
-   ```
+## Publishing with GitHub Pages
 
-2. Launch any static server from the repository root and open `CyberAtlas.html`
-   in your browser, or simply double-click the file for offline viewing. The
-   viewer loads additional branch JSON on demand from the `data/` directory.
+1. Commit your changes to the `main` branch and push to GitHub.
+2. In repository **Settings → Pages**, choose **Deploy from a branch** with the `main` branch and `/docs` folder.
+3. Save. GitHub Pages will publish `docs/index.html` at your repository Pages URL. Refer to the [GitHub Pages documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site) for troubleshooting and advanced configuration.
 
-## Publishing to GitHub Pages
+## Future work
 
-The repository includes a `docs/` directory that is ready for GitHub Pages. To
-refresh it after making content or layout changes, run:
-
-```bash
-python tools/publish_site.py
-```
-
-This copies the latest `CyberAtlas.html` and all JSON data into `docs/`. Enable
-GitHub Pages in the repository settings and choose the **`docs/` folder** as the
-source to host the atlas directly from the repo.
+- Evaluate higher-scale renderers such as [`d3-force`](https://github.com/d3/d3-force), [`force-graph`](https://github.com/vasturiano/force-graph), or [`react-force-graph`](https://github.com/vasturiano/react-force-graph) if the taxonomy grows to 10k+ nodes.
+- Consider enabling the optional layout persistence snippet (documented inline in `docs/index.html`) if collaborative layout tweaks are needed.
