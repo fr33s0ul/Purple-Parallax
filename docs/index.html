@@ -3,56 +3,51 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Purple Parallax Atlas</title>
+    <title>miniature funicular</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-    />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
     <style>
       :root {
         color-scheme: dark;
-        --bg: #06030f;
-        --bg-accent: radial-gradient(circle at 20% 20%, rgba(140, 82, 255, 0.35), transparent 60%),
-          radial-gradient(circle at 80% 10%, rgba(56, 189, 248, 0.25), transparent 60%),
-          radial-gradient(circle at 50% 80%, rgba(248, 113, 113, 0.18), transparent 65%),
-          linear-gradient(140deg, #06030f 0%, #04020c 55%, #06030f 100%);
-        --surface: rgba(13, 16, 33, 0.85);
-        --surface-strong: rgba(26, 30, 63, 0.8);
-        --border: rgba(96, 110, 143, 0.45);
-        --border-soft: rgba(96, 110, 143, 0.28);
-        --text: #f9fafc;
-        --text-muted: rgba(223, 230, 255, 0.72);
-        --accent: #7f5af0;
-        --accent-soft: rgba(127, 90, 240, 0.18);
-        --success: #3dd68c;
-        --warning: #f4a261;
-        --danger: #ef476f;
-        --shadow: 0 20px 40px rgba(16, 16, 48, 0.55);
-        font-size: clamp(15px, 0.9vw + 14px, 17px);
+        --bg: #05040a;
+        --bg-alt: radial-gradient(circle at 10% 10%, rgba(137, 90, 255, 0.38), transparent 55%),
+          radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.3), transparent 60%),
+          radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.2), transparent 65%),
+          linear-gradient(160deg, #05040a 0%, #09071a 55%, #05040a 100%);
+        --surface: rgba(15, 16, 32, 0.72);
+        --surface-strong: rgba(20, 24, 46, 0.85);
+        --surface-soft: rgba(27, 30, 55, 0.45);
+        --border: rgba(108, 115, 148, 0.35);
+        --border-strong: rgba(148, 163, 184, 0.55);
+        --text: #f8f9ff;
+        --muted: rgba(214, 219, 238, 0.72);
+        --accent: #8f62ff;
+        --accent-soft: rgba(143, 98, 255, 0.24);
+        --accent-strong: #9775fa;
+        --chip: rgba(56, 189, 248, 0.22);
+        --chip-text: #38bdf8;
+        --shadow: 0 25px 60px rgba(8, 9, 20, 0.65);
       }
 
-      *,
-      *::before,
-      *::after {
+      * {
         box-sizing: border-box;
       }
 
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: "Inter", "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
         background: var(--bg);
         color: var(--text);
         position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         overflow-x: hidden;
       }
 
@@ -60,7 +55,7 @@
         content: "";
         position: fixed;
         inset: 0;
-        background: var(--bg-accent);
+        background: var(--bg-alt);
         z-index: -2;
       }
 
@@ -68,412 +63,399 @@
         content: "";
         position: fixed;
         inset: 0;
+        background: linear-gradient(130deg, rgba(143, 98, 255, 0.15), transparent 60%, rgba(56, 189, 248, 0.15));
         pointer-events: none;
-        background: linear-gradient(120deg, rgba(127, 90, 240, 0.1) 0%, transparent 40%, rgba(16, 185, 129, 0.08) 100%);
         mix-blend-mode: screen;
-        opacity: 0.8;
+        opacity: 0.75;
         z-index: -1;
       }
 
       a {
         color: inherit;
+        text-decoration: none;
       }
 
       .page-shell {
-        width: min(1200px, 92%);
-        margin: 0 auto;
-        padding: clamp(1.8rem, 4vw, 3.2rem) 0 clamp(3rem, 5vw, 4rem);
-        display: grid;
-        gap: clamp(2.4rem, 6vw, 3.8rem);
+        width: min(1160px, 92vw);
+        padding: clamp(1.6rem, 4vw, 3rem) 0 clamp(4rem, 5vw, 5rem);
+        display: flex;
+        flex-direction: column;
+        gap: clamp(2.8rem, 5vw, 4rem);
       }
 
       header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: clamp(1.2rem, 4vw, 2rem);
+        gap: 2.4rem;
       }
 
       .brand {
-        display: flex;
-        align-items: center;
-        gap: 0.9rem;
-      }
-
-      .brand-mark {
-        width: 44px;
-        height: 44px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, rgba(127, 90, 240, 0.35), rgba(56, 189, 248, 0.3));
-        border: 1px solid rgba(127, 90, 240, 0.45);
         display: grid;
-        place-items: center;
-        box-shadow: 0 12px 25px rgba(127, 90, 240, 0.25);
+        gap: 0.25rem;
       }
 
-      .brand-mark span {
+      .brand span {
+        font-family: "Space Grotesk", "Inter", sans-serif;
         font-weight: 700;
-        font-size: 1.05rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .brand h1 {
-        margin: 0;
+        letter-spacing: -0.02em;
+        text-transform: lowercase;
         font-size: clamp(1.4rem, 3vw, 1.9rem);
-        font-weight: 600;
-        letter-spacing: -0.01em;
       }
 
-      .brand p {
-        margin: 0.25rem 0 0;
-        color: var(--text-muted);
-        font-size: 0.88rem;
+      .brand small {
+        font-size: 0.95rem;
+        color: var(--muted);
+        letter-spacing: 0.02em;
       }
 
       nav {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
-      nav a {
+      .nav-link {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
-        padding: 0.5rem 0.9rem;
+        gap: 0.4rem;
+        padding: 0.45rem 0.9rem;
         border-radius: 999px;
         border: 1px solid transparent;
-        color: var(--text-muted);
+        color: var(--muted);
         font-weight: 500;
-        text-decoration: none;
         transition: all 0.25s ease;
-        background: rgba(127, 90, 240, 0.08);
+        background: rgba(143, 98, 255, 0.08);
       }
 
-      nav a:hover,
-      nav a:focus-visible {
-        border-color: rgba(127, 90, 240, 0.45);
+      .nav-link:hover,
+      .nav-link:focus-visible {
         color: var(--text);
-        background: rgba(127, 90, 240, 0.16);
+        border-color: rgba(143, 98, 255, 0.45);
+        background: rgba(143, 98, 255, 0.18);
       }
 
       .hero {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: clamp(2rem, 5vw, 3rem);
+      }
+
+      .hero-heading {
+        display: grid;
+        gap: 1.2rem;
+      }
+
+      .tag {
+        display: inline-flex;
         align-items: center;
+        gap: 0.4rem;
+        border-radius: 999px;
+        padding: 0.35rem 0.85rem;
+        border: 1px solid rgba(143, 98, 255, 0.45);
+        background: rgba(143, 98, 255, 0.14);
+        color: var(--accent-strong);
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
       }
 
-      .hero-copy h2 {
+      h1 {
         margin: 0;
-        font-size: clamp(2.6rem, 6vw, 3.6rem);
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: clamp(3.2rem, 8vw, 5.2rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
         line-height: 1.05;
-        letter-spacing: -0.02em;
+        text-transform: lowercase;
       }
 
-      .hero-copy p {
-        margin: 1.1rem 0 1.6rem;
-        color: var(--text-muted);
+      .hero p {
+        margin: 0;
+        max-width: 560px;
+        color: var(--muted);
         font-size: 1.05rem;
-        line-height: 1.65;
+        line-height: 1.7;
       }
 
       .hero-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.9rem;
+        gap: 0.85rem;
       }
 
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 0.78rem 1.5rem;
-        border-radius: 999px;
-        border: 1px solid transparent;
-        font-weight: 600;
-        text-decoration: none;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-      }
-
-      .btn-primary {
-        background: linear-gradient(135deg, #7f5af0, #64d2ff);
-        color: #030712;
-        box-shadow: 0 14px 30px rgba(127, 90, 240, 0.35);
-      }
-
-      .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 18px 35px rgba(127, 90, 240, 0.4);
-      }
-
-      .btn-secondary {
-        background: rgba(15, 23, 42, 0.6);
+      .hero-actions a {
+        padding: 0.65rem 1.15rem;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: var(--surface);
         color: var(--text);
-        border-color: rgba(100, 116, 139, 0.28);
-      }
-
-      .btn-secondary:hover {
-        border-color: rgba(148, 163, 184, 0.45);
-        background: rgba(30, 41, 59, 0.8);
-      }
-
-      .stat-strip {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1.2rem;
-        margin-top: 1.4rem;
-      }
-
-      .stat {
-        padding: 1rem 1.4rem;
-        border-radius: 16px;
-        border: 1px solid var(--border-soft);
-        background: rgba(11, 13, 30, 0.9);
-        min-width: 160px;
-      }
-
-      .stat strong {
-        display: block;
-        font-size: 1.8rem;
-        letter-spacing: -0.03em;
-      }
-
-      .stat span {
-        color: var(--text-muted);
-        font-size: 0.85rem;
-      }
-
-      .hero-visual {
-        position: relative;
-        border-radius: 28px;
-        overflow: hidden;
-        padding: 2.2rem;
-        background: radial-gradient(circle at 22% 20%, rgba(127, 90, 240, 0.45), transparent 65%),
-          radial-gradient(circle at 75% 78%, rgba(56, 189, 248, 0.45), transparent 60%),
-          rgba(4, 7, 23, 0.9);
-        border: 1px solid rgba(127, 90, 240, 0.35);
-        box-shadow: var(--shadow);
-      }
-
-      .hero-visual::before {
-        content: "live telemetry";
-        position: absolute;
-        top: 1.2rem;
-        right: 1.5rem;
-        font-size: 0.75rem;
-        letter-spacing: 0.32em;
-        text-transform: uppercase;
-        color: rgba(223, 230, 255, 0.65);
-      }
-
-      .hero-visual canvas,
-      .hero-visual img {
-        width: 100%;
-        display: block;
-        border-radius: 18px;
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        background: rgba(15, 23, 42, 0.6);
-      }
-
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        padding: 0.4rem 0.9rem;
-        border-radius: 999px;
-        background: rgba(127, 90, 240, 0.2);
-        border: 1px solid rgba(127, 90, 240, 0.45);
-        color: #0f172a;
         font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        font-size: 0.7rem;
+        letter-spacing: 0.01em;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border 0.25s ease;
       }
 
-      .section {
+      .hero-actions a:hover,
+      .hero-actions a:focus-visible {
+        transform: translateY(-2px);
+        border-color: var(--accent);
+        box-shadow: 0 15px 30px rgba(143, 98, 255, 0.25);
+      }
+
+      .hero-grid {
         display: grid;
-        gap: 1.2rem;
-      }
-
-      .section-header {
-        display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
-        max-width: 640px;
-      }
-
-      .section-header h3 {
-        margin: 0;
-        font-size: 1.9rem;
-        letter-spacing: -0.01em;
-      }
-
-      .section-header p {
-        margin: 0;
-        color: var(--text-muted);
-        line-height: 1.7;
-      }
-
-      .grid {
-        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 1.4rem;
       }
 
-      .grid.columns-3 {
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      }
-
-      .grid.columns-2 {
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      }
-
-      .card {
+      .hero-card {
         position: relative;
-        padding: 1.6rem;
-        border-radius: 20px;
+        display: grid;
+        gap: 0.75rem;
+        padding: 1.4rem;
+        border-radius: 18px;
         border: 1px solid var(--border);
         background: var(--surface);
-        backdrop-filter: blur(16px);
         box-shadow: var(--shadow);
+        overflow: hidden;
       }
 
-      .card h4 {
-        margin: 0;
-        font-size: 1.3rem;
+      .hero-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top left, rgba(143, 98, 255, 0.4), transparent 55%);
+        opacity: 0.75;
+        pointer-events: none;
+      }
+
+      .hero-card strong {
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: 1.35rem;
         letter-spacing: -0.01em;
       }
 
-      .card p {
-        margin: 0.75rem 0 0;
-        color: var(--text-muted);
+      .hero-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
         line-height: 1.6;
       }
 
-      .card footer {
-        margin-top: 1.2rem;
+      section {
+        display: grid;
+        gap: 2rem;
+      }
+
+      .section-heading {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.85rem;
-        color: rgba(223, 230, 255, 0.6);
+        flex-direction: column;
+        gap: 0.75rem;
       }
 
-      .card footer span {
-        display: inline-flex;
-        align-items: center;
+      .section-heading h2 {
+        margin: 0;
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: clamp(1.9rem, 4vw, 2.8rem);
+        letter-spacing: -0.01em;
+      }
+
+      .section-heading p {
+        margin: 0;
+        max-width: 560px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.6rem;
+      }
+
+      .panel {
+        position: relative;
+        display: grid;
+        gap: 0.85rem;
+        padding: 1.6rem;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface-strong);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .panel::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(143, 98, 255, 0.2), transparent 50%, rgba(56, 189, 248, 0.18));
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      .panel h3 {
+        margin: 0;
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: 1.35rem;
+        letter-spacing: -0.01em;
+      }
+
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .panel ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        color: var(--muted);
+        display: grid;
         gap: 0.45rem;
+        line-height: 1.55;
       }
 
-      .meta-tag {
+      .panel .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .chip {
         display: inline-flex;
         align-items: center;
-        gap: 0.4rem;
-        padding: 0.4rem 0.8rem;
+        padding: 0.25rem 0.75rem;
         border-radius: 999px;
-        background: rgba(63, 131, 248, 0.18);
-        color: rgba(226, 232, 255, 0.92);
-        font-size: 0.75rem;
+        background: var(--chip);
+        color: var(--chip-text);
+        font-size: 0.78rem;
         font-weight: 600;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
       .timeline {
         display: grid;
-        gap: 1.1rem;
-        position: relative;
-        padding-left: 1.8rem;
-      }
-
-      .timeline::before {
-        content: "";
-        position: absolute;
-        left: 0.55rem;
-        top: 0.35rem;
-        bottom: 0.35rem;
-        border-left: 1px dashed rgba(127, 90, 240, 0.35);
+        gap: 1.6rem;
       }
 
       .timeline-item {
         position: relative;
-        padding: 1.1rem 1.4rem;
-        border-radius: 18px;
-        border: 1px solid rgba(127, 90, 240, 0.25);
-        background: rgba(15, 17, 34, 0.9);
-        backdrop-filter: blur(10px);
+        padding-left: 2.2rem;
       }
 
       .timeline-item::before {
         content: "";
         position: absolute;
-        left: -1.33rem;
-        top: 1.2rem;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(127, 90, 240, 0.85), rgba(56, 189, 248, 0.85));
-        border: 2px solid rgba(6, 3, 15, 0.95);
-        box-shadow: 0 0 0 4px rgba(127, 90, 240, 0.18);
+        left: 0.75rem;
+        top: 0.2rem;
+        bottom: 0;
+        border-left: 1px dashed rgba(143, 98, 255, 0.4);
       }
 
-      .timeline-item h5 {
-        margin: 0;
-        font-size: 1.1rem;
+      .timeline-item::after {
+        content: "";
+        position: absolute;
+        top: 0.15rem;
+        left: 0.4rem;
+        width: 0.65rem;
+        height: 0.65rem;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 6px rgba(143, 98, 255, 0.15);
+      }
+
+      .timeline-item strong {
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: 1.05rem;
       }
 
       .timeline-item span {
         display: block;
-        margin-top: 0.5rem;
-        color: var(--text-muted);
-        font-size: 0.95rem;
+        margin-top: 0.35rem;
+        color: var(--muted);
         line-height: 1.6;
+        max-width: 620px;
       }
 
-      .double-column {
+      .cta-card {
         display: grid;
-        gap: 1.2rem;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      }
-
-      .insight {
-        border-radius: 20px;
-        padding: 1.6rem;
-        background: rgba(12, 15, 31, 0.86);
-        border: 1px solid rgba(63, 81, 181, 0.35);
+        gap: 1rem;
+        padding: clamp(1.8rem, 5vw, 2.6rem);
+        border-radius: 22px;
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), transparent 55%, rgba(236, 72, 153, 0.24));
         box-shadow: var(--shadow);
       }
 
-      .insight h4 {
+      .cta-card h3 {
         margin: 0;
-        font-size: 1.35rem;
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: clamp(1.6rem, 4vw, 2.3rem);
       }
 
-      .insight p {
-        margin: 0.8rem 0 0;
-        color: var(--text-muted);
-        line-height: 1.65;
+      .cta-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+        max-width: 640px;
       }
 
-      .footer {
-        margin-top: 2.6rem;
-        padding: 2rem;
-        border-radius: 20px;
-        background: rgba(6, 12, 32, 0.92);
-        border: 1px solid rgba(99, 102, 241, 0.25);
-        display: flex;
-        flex-direction: column;
+      .cta-card a {
+        justify-self: start;
+        padding: 0.75rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid rgba(56, 189, 248, 0.5);
+        background: rgba(5, 4, 10, 0.45);
+        color: #7dd3fc;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        transition: all 0.25s ease;
+      }
+
+      .cta-card a:hover,
+      .cta-card a:focus-visible {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: rgba(56, 189, 248, 0.75);
+      }
+
+      footer {
+        display: grid;
         gap: 1rem;
-        align-items: flex-start;
+        padding: 3rem 0 1.6rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
       }
 
-      .footer small {
-        color: rgba(226, 232, 255, 0.6);
+      .footer-links {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.8rem;
       }
 
-      @media (max-width: 720px) {
+      .footer-links a {
+        padding: 0.3rem 0.65rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: rgba(143, 98, 255, 0.08);
+        color: var(--muted);
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+
+      .footer-links a:hover,
+      .footer-links a:focus-visible {
+        color: var(--text);
+        border-color: rgba(143, 98, 255, 0.45);
+        background: rgba(143, 98, 255, 0.18);
+      }
+
+      @media (max-width: 820px) {
         header {
           flex-direction: column;
           align-items: flex-start;
@@ -481,231 +463,244 @@
 
         nav {
           flex-wrap: wrap;
-          justify-content: flex-start;
         }
 
-        .hero-visual::before {
-          top: 1rem;
-          right: 1.2rem;
+        .hero-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 620px) {
+        h1 {
+          font-size: clamp(2.6rem, 10vw, 3rem);
         }
 
-        .timeline {
-          padding-left: 1.4rem;
+        .page-shell {
+          gap: 2.5rem;
         }
 
-        .timeline-item::before {
-          left: -1.1rem;
+        .hero-actions a {
+          width: 100%;
+          justify-content: center;
         }
 
-        .footer {
-          align-items: stretch;
+        .panel,
+        .hero-card {
+          padding: 1.25rem;
         }
       }
     </style>
   </head>
   <body>
-    <div class="page-shell">
+    <main class="page-shell">
       <header>
         <div class="brand">
-          <div class="brand-mark"><span>PP</span></div>
-          <div>
-            <h1>Purple Parallax Atlas</h1>
-            <p>Threat research workstation for adversary mapping and cross-team orchestration.</p>
-          </div>
+          <span>miniature funicular</span>
+          <small>high-fidelity strategy, systems &amp; storytelling</small>
         </div>
         <nav>
-          <a href="#overview">Overview</a>
-          <a href="#collections">Collections</a>
-          <a href="#playbooks">Playbooks</a>
-          <a href="#insights">Insights</a>
+          <a class="nav-link" href="#atlas">atlas</a>
+          <a class="nav-link" href="#work">work</a>
+          <a class="nav-link" href="#process">process</a>
+          <a class="nav-link" href="#connect">connect</a>
         </nav>
       </header>
 
-      <section class="hero" id="overview">
-        <div class="hero-copy">
-          <span class="pill">Immersive intelligence surface</span>
-          <h2>Reframe adversary intelligence as a living atlas for your teams.</h2>
+      <section class="hero" id="atlas">
+        <div class="hero-heading">
+          <span class="tag">integrated studio</span>
+          <h1>precision-crafted journeys for people, product &amp; purpose.</h1>
           <p>
-            Purple Parallax brings together structured threat data, collaborative playbooks, and live telemetry overlays to shorten the path between
-            research and response. Explore campaigns with cinematic clarity and publish context directly into your operational tooling.
+            We choreograph strategic intelligence, cross-functional operations, and evocative experience
+            design into a single cinematic thread. From zero-to-one to scale, miniature funicular brings
+            cohesion to the entire customer cosmos.
           </p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="#collections">Browse Collections</a>
-            <a class="btn btn-secondary" href="#insights">View Release Notes</a>
-          </div>
-          <div class="stat-strip">
-            <div class="stat">
-              <strong>320+</strong>
-              <span>Tracked threat collectives</span>
-            </div>
-            <div class="stat">
-              <strong>1.8M</strong>
-              <span>Signals normalized weekly</span>
-            </div>
-            <div class="stat">
-              <strong>92%</strong>
-              <span>Faster intel-to-action handoff</span>
-            </div>
+            <a href="#work">view recent chapters</a>
+            <a href="#process">explore the playbook</a>
+            <a href="#connect">start a project</a>
           </div>
         </div>
-        <div class="hero-visual">
-          <img src="data:image/svg+xml,%3Csvg width='680' height='420' viewBox='0 0 680 420' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='1' y='1' width='678' height='418' rx='22' fill='rgba(15,23,42,0.75)' stroke='rgba(148,163,184,0.25)' stroke-width='2'/%3E%3Cg stroke='rgba(127,90,240,0.55)' stroke-width='1.5'%3E%3Cpath d='M60 320C96 260 142 210 198 206C244 203 278 233 320 228C372 222 404 170 452 162C520 152 576 218 620 190' stroke-linecap='round'/%3E%3Cpath d='M60 280C120 220 174 260 218 250C252 242 278 202 322 202C372 202 404 242 452 234C520 224 568 162 620 134' stroke-linecap='round' stroke-dasharray='6 10'/%3E%3C/g%3E%3Cg fill='rgba(56,189,248,0.9)'%3E%3Ccircle cx='198' cy='206' r='6'/%3E%3Ccircle cx='320' cy='228' r='6'/%3E%3Ccircle cx='452' cy='162' r='6'/%3E%3Ccircle cx='620' cy='190' r='6'/%3E%3C/g%3E%3Ctext x='60' y='70' fill='rgba(223,230,255,0.7)' font-family='Inter' font-size='18' letter-spacing='0.28em'%3EATLAS OVERLAY%3C/text%3E%3Ctext x='60' y='110' fill='rgba(148,163,184,0.7)' font-family='Inter' font-size='12'%3EWEEKLY INSIGHT BLEND%3C/text%3E%3C/svg%3E" alt="Atlas telemetry" />
-        </div>
-      </section>
-
-      <section class="section" id="collections">
-        <div class="section-header">
-          <span class="pill">Curated Intelligence</span>
-          <h3>Collections tuned for strategic, operational, and tactical missions.</h3>
-          <p>
-            Navigate by campaigns, actor tradecraft, or the defensive stack. Each collection is orchestrated for briefing-first consumption with
-            exportable context, confidence annotations, and structured relationships ready for graph ingestion.
-          </p>
-        </div>
-        <div class="grid columns-3">
-          <article class="card">
-            <div class="meta-tag">Strategic</div>
-            <h4>Executive Campaign Decks</h4>
+        <div class="hero-grid">
+          <article class="hero-card">
+            <strong>dynamic telemetry.</strong>
             <p>
-              Quarterly briefings that translate multi-vector campaigns into executive storylines. Includes impact forecasts, disruption models, and
-              recommended board talking points.
+              Real-time orchestration of research, product intelligence, and strategic telemetry to map
+              trajectories with absolute clarity.
             </p>
-            <footer>
-              <span>12 live decks</span>
-              <span>Updated weekly</span>
-            </footer>
           </article>
-          <article class="card">
-            <div class="meta-tag">Operational</div>
-            <h4>Adversary Method Kits</h4>
+          <article class="hero-card">
+            <strong>systems choreography.</strong>
             <p>
-              Hands-on breakdowns of adversary playbooks mapped to MITRE ATT&CK, Sigma, and OSQuery artifacts. Drill into payload evolutions and
-              inline pivot suggestions.
+              We harmonize product, marketing, and revenue engines, aligning teams on shared timelines,
+              language, and velocity.
             </p>
-            <footer>
-              <span>43 kits</span>
-              <span>Last refresh: 2d ago</span>
-            </footer>
           </article>
-          <article class="card">
-            <div class="meta-tag">Tactical</div>
-            <h4>Detection Burst Streams</h4>
+          <article class="hero-card">
+            <strong>immersive narratives.</strong>
             <p>
-              High-signal detection bundles shipped as streaming JSON and Splunk macros. Includes suppression logic and enrichment hooks for fast
-              deployment.
+              Cinematic storytelling that translates complex architectures into human momentum across the
+              entire customer atlas.
             </p>
-            <footer>
-              <span>31 bursts</span>
-              <span>Live ingest</span>
-            </footer>
           </article>
         </div>
       </section>
 
-      <section class="section" id="playbooks">
-        <div class="section-header">
-          <span class="pill">Orchestrated Response</span>
-          <h3>Playbooks that bridge intel to engineering execution.</h3>
+      <section id="work">
+        <div class="section-heading">
+          <span class="tag">selected work</span>
+          <h2>curated programs that bend reality toward resonance.</h2>
           <p>
-            Align cross-functional squads with curated timelines, decision logs, and code-ready artifacts. Every playbook knits together triggers,
-            automations, and validation loops so incident readiness becomes a shared muscle.
+            From emergent ventures to enterprise transformations, these engagements demonstrate how
+            miniature funicular merges intelligence, design craft, and operational excellence into singular
+            experiences.
           </p>
         </div>
-        <div class="double-column">
-          <div class="card">
-            <h4>Fusion Response Ladder</h4>
+        <div class="grid-3">
+          <article class="panel">
+            <h3>atlas of sentinels</h3>
             <p>
-              Merge threat intel, detection engineering, and IR in a shared progression framework. Includes warm-start runbooks, cross-team callouts,
-              and instrumentation checkpoints to de-risk escalations.
+              Orchestrated a multi-layer threat intelligence platform combining telemetry visualizations,
+              adaptive playbooks, and executive readiness narratives.
             </p>
-            <footer>
-              <span>Includes Jira + Slack automations</span>
-              <span>v3.4</span>
-            </footer>
-          </div>
-          <div class="card">
-            <h4>Telemetry Spotlight</h4>
+            <div class="chip-row">
+              <span class="chip">cyber</span>
+              <span class="chip">strategy</span>
+              <span class="chip">design systems</span>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>celestial runway</h3>
             <p>
-              A guided routine for identifying telemetry blind spots using Purple Parallax signal diffing. Prioritize sensor uplift work with ready-made
-              dashboards and validation probes.
+              Built a growth cockpit aligning product, marketing, and revenue teams with dynamic roadmaps,
+              KPI orchestrations, and cross-functional rituals.
             </p>
-            <footer>
-              <span>Bundled Looker + Grafana views</span>
-              <span>v2.1</span>
-            </footer>
-          </div>
+            <div class="chip-row">
+              <span class="chip">ops</span>
+              <span class="chip">product</span>
+              <span class="chip">enablement</span>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>parallel observatory</h3>
+            <p>
+              Crafted an immersive executive briefing center blending spatial computing prototypes with
+              narrative arcs that accelerate enterprise adoption.
+            </p>
+            <div class="chip-row">
+              <span class="chip">experience</span>
+              <span class="chip">storytelling</span>
+              <span class="chip">labs</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="process">
+        <div class="section-heading">
+          <span class="tag">method</span>
+          <h2>a calibrated operating system spanning insight to impact.</h2>
+          <p>
+            Every engagement follows a deliberate cadence that syncs intelligence gathering, systems
+            architecture, and narrative activation.
+          </p>
+        </div>
+        <div class="grid-3">
+          <article class="panel">
+            <h3>sense</h3>
+            <p>
+              Deep reconnaissance to identify drivers, constraints, and latent opportunities. We weave
+              product analytics, human research, and market telemetry into an actionable source of truth.
+            </p>
+            <ul>
+              <li>multi-signal research and modeling</li>
+              <li>decision intelligence frameworks</li>
+              <li>executive briefings and alignment</li>
+            </ul>
+          </article>
+          <article class="panel">
+            <h3>shape</h3>
+            <p>
+              Rapid synthesis into operating narratives, orchestrated roadmaps, and systems blueprints that
+              guide teams with clarity and momentum.
+            </p>
+            <ul>
+              <li>experience choreography &amp; interaction design</li>
+              <li>service + system architecture</li>
+              <li>ritual design for cross-functional teams</li>
+            </ul>
+          </article>
+          <article class="panel">
+            <h3>signal</h3>
+            <p>
+              Launch, iterate, and signal progress with cinematic storytelling and measurable outcomes that
+              cement long-term value.
+            </p>
+            <ul>
+              <li>executive communications &amp; enablement</li>
+              <li>operational telemetry dashboards</li>
+              <li>evergreen narrative systems</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-heading">
+          <span class="tag">changelog</span>
+          <h2>recent movements across the studio.</h2>
+          <p>
+            Velocity matters. Here are a few signals from the miniature funicular workstream that highlight
+            ongoing collaborations and explorations.
+          </p>
         </div>
         <div class="timeline">
           <div class="timeline-item">
-            <h5>Launch incident rehearsal</h5>
-            <span>Spin up a synthetic intrusion scenario anchored to your threat profile. Observe collaborative moves inside Atlas Liveboards to
-              validate response choreography.</span>
+            <strong>launching an adaptive go-to-market nerve center</strong>
+            <span>
+              Architected a GTM intelligence hub that connects revenue telemetry, integrated campaign ops,
+              and enablement rituals for a scale-up entering three new markets.
+            </span>
           </div>
           <div class="timeline-item">
-            <h5>Promote validated automations</h5>
-            <span>Promote ready-made detection or enrichment automations into your SIEM/SOAR tooling with version control and rollback baked in.</span>
+            <strong>designing an executive threat rehearsal arena</strong>
+            <span>
+              Built an immersive simulation program for global CISOs, blending scenario design, critical
+              response choreography, and live storytelling.
+            </span>
           </div>
           <div class="timeline-item">
-            <h5>Measure readiness delta</h5>
-            <span>Compare before/after coverage, response timing, and intel recall to quantify team lift and highlight next quarter's priorities.</span>
+            <strong>spinning up a spatial computing exploration lab</strong>
+            <span>
+              Partnered with product leadership to prototype mixed-reality customer journeys that compress
+              onboarding timelines and elevate brand resonance.
+            </span>
           </div>
         </div>
       </section>
 
-      <section class="section" id="insights">
-        <div class="section-header">
-          <span class="pill">Latest Insights</span>
-          <h3>Release highlights from the Purple Parallax research crew.</h3>
+      <section id="connect">
+        <div class="cta-card">
+          <span class="tag">collaborate</span>
+          <h3>let's engineer the next chapter together.</h3>
           <p>
-            Watch the atlas evolve with a cadence of curated updates—from actor profile refreshes to signal analysis notebooks and automation packs.
+            miniature funicular thrives in the tension between complex systems and human experience. If you
+            need a partner to orchestrate clarity, craft, and velocity across your organization, drop a
+            note and let's map the ascent.
           </p>
-        </div>
-        <div class="grid columns-2">
-          <article class="insight">
-            <h4>Atlas Liveboards: Multi-campaign replay</h4>
-            <p>
-              Replay entire adversary campaigns with synchronized timeline, infrastructure graph, and telemetry overlays. New predictive narratives add
-              likely next-move scoring with analyst attribution.
-            </p>
-          </article>
-          <article class="insight">
-            <h4>Detection lab package 08.24</h4>
-            <p>
-              Drop-in detection bundles covering the latest cloud persistence tradecraft. Includes Suspicious Automation loops, IAM drift maps, and
-              accompanying ATT&CK heatmaps for exec briefings.
-            </p>
-          </article>
-          <article class="insight">
-            <h4>Source confidence tuning</h4>
-            <p>
-              Calibrate intelligence confidence with new scoring models across HUMINT, OSINT, and product telemetry. Outliers auto-flagged for manual
-              analyst review and collaboration tagging.
-            </p>
-          </article>
-          <article class="insight">
-            <h4>Response runway dashboards</h4>
-            <p>
-              Consolidated dashboards for readiness metrics, automation coverage, and backlog surfacing. Export-ready for QBRs and security council
-              reporting.
-            </p>
-          </article>
+          <a href="mailto:hello@miniaturefunicular.com">hello@miniaturefunicular.com</a>
         </div>
       </section>
+    </main>
 
-      <footer class="footer">
-        <div>
-          <span class="pill">Contact</span>
-        </div>
-        <div>
-          <strong>Work alongside the Purple Parallax crew.</strong>
-          <p>
-            Ready to align your security teams around a living atlas? Reach out to schedule a guided tour or integrate Purple Parallax intel into your
-            stack.
-          </p>
-        </div>
-        <a class="btn btn-primary" href="mailto:hello@purpleparallax.io">Book a session</a>
-        <small>© 2024 Purple Parallax Research Cooperative. Built for immersive threat analysis.</small>
-      </footer>
-    </div>
+    <footer>
+      <div class="footer-links">
+        <a href="#atlas">atlas</a>
+        <a href="#work">work</a>
+        <a href="#process">process</a>
+        <a href="#connect">connect</a>
+      </div>
+      <span>© miniature funicular · cinematic strategy studio</span>
+    </footer>
   </body>
 </html>
