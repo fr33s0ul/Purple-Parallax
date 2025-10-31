@@ -4,747 +4,763 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cybersecurity Atlas</title>
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #020617;
-      --bg-alt: radial-gradient(circle at 20% 10%, rgba(59, 130, 246, 0.32), transparent 55%),
-        radial-gradient(circle at 75% 85%, rgba(236, 72, 153, 0.28), transparent 60%),
-        linear-gradient(160deg, #020617 0%, #040c1b 60%, #020617 100%);
-      --panel: rgba(10, 17, 32, 0.8);
-      --panel-solid: #0f172a;
-      --border: rgba(148, 163, 184, 0.2);
-      --border-strong: rgba(148, 163, 184, 0.5);
-      --accent: #f97316;
-      --accent-soft: rgba(249, 115, 22, 0.18);
-      --highlight: #38bdf8;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --chip-bg: rgba(56, 189, 248, 0.16);
-      --chip-text: #38bdf8;
-      --glass: rgba(12, 20, 38, 0.68);
-      --tool-bg: rgba(15, 23, 42, 0.82);
-      --tool-border: rgba(148, 163, 184, 0.28);
-    }
+  
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #05060f;
+    --bg-soft: radial-gradient(circle at 20% 15%, rgba(91, 178, 255, 0.16), transparent 55%),
+      radial-gradient(circle at 78% 80%, rgba(244, 114, 182, 0.14), transparent 60%),
+      linear-gradient(160deg, #05060f 0%, #090f1e 55%, #05060f 100%);
+    --surface: #0b1220;
+    --surface-raised: rgba(17, 24, 39, 0.85);
+    --border: rgba(100, 116, 139, 0.35);
+    --border-strong: rgba(148, 163, 184, 0.6);
+    --text: #f4f7ff;
+    --muted: #93a3c1;
+    --accent: #38bdf8;
+    --accent-soft: rgba(56, 189, 248, 0.18);
+    --action: #f97316;
+    --canvas-bg: radial-gradient(circle at 24% 20%, rgba(56, 189, 248, 0.14), transparent 65%),
+      radial-gradient(circle at 72% 78%, rgba(249, 115, 22, 0.14), transparent 70%),
+      linear-gradient(140deg, rgba(5, 11, 23, 0.95), rgba(9, 13, 27, 0.92));
+    --chip-bg: rgba(148, 163, 184, 0.12);
+    --chip-text: #e2e8f0;
+    --success: #34d399;
+  }
 
-    :root[data-theme="light"] {
-      color-scheme: light;
-      --bg: #f8fafc;
-      --bg-alt: radial-gradient(circle at 20% 10%, rgba(59, 130, 246, 0.18), transparent 60%),
-        radial-gradient(circle at 75% 85%, rgba(236, 72, 153, 0.18), transparent 65%),
-        linear-gradient(160deg, #f8fafc 0%, #e0f2fe 60%, #f8fafc 100%);
-      --panel: rgba(255, 255, 255, 0.92);
-      --panel-solid: #ffffff;
-      --border: rgba(148, 163, 184, 0.35);
-      --border-strong: rgba(29, 78, 216, 0.38);
-      --accent: #ea580c;
-      --accent-soft: rgba(234, 88, 12, 0.16);
-      --highlight: #2563eb;
-      --text: #0f172a;
-      --muted: #475569;
-      --chip-bg: rgba(37, 99, 235, 0.12);
-      --chip-text: #2563eb;
-      --glass: rgba(255, 255, 255, 0.8);
-      --tool-bg: rgba(255, 255, 255, 0.9);
-      --tool-border: rgba(148, 163, 184, 0.4);
-    }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f4f7ff;
+    --bg-soft: radial-gradient(circle at 20% 15%, rgba(59, 130, 246, 0.12), transparent 58%),
+      radial-gradient(circle at 80% 80%, rgba(249, 168, 212, 0.16), transparent 65%),
+      linear-gradient(150deg, #f9fbff 0%, #e8f3ff 55%, #f9fbff 100%);
+    --surface: rgba(255, 255, 255, 0.9);
+    --surface-raised: rgba(255, 255, 255, 0.86);
+    --border: rgba(148, 163, 184, 0.35);
+    --border-strong: rgba(99, 102, 241, 0.45);
+    --text: #0f172a;
+    --muted: #475569;
+    --accent: #2563eb;
+    --accent-soft: rgba(37, 99, 235, 0.14);
+    --action: #ea580c;
+    --canvas-bg: radial-gradient(circle at 24% 20%, rgba(37, 99, 235, 0.14), transparent 65%),
+      radial-gradient(circle at 72% 78%, rgba(236, 72, 153, 0.14), transparent 70%),
+      linear-gradient(140deg, rgba(236, 244, 255, 0.95), rgba(214, 227, 255, 0.92));
+    --chip-bg: rgba(99, 102, 241, 0.12);
+    --chip-text: #1d4ed8;
+    --success: #15803d;
+  }
 
-    * {
-      box-sizing: border-box;
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-    }
+  * {
+    box-sizing: border-box;
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    position: relative;
+  }
 
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background: var(--bg-alt);
-      z-index: -2;
-    }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: var(--bg-soft);
+    z-index: -2;
+  }
 
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at center, rgba(59, 130, 246, 0.08), transparent 60%);
-      pointer-events: none;
-      z-index: -1;
-      mix-blend-mode: screen;
-    }
+  .app-shell {
+    width: min(1240px, 100%);
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1rem, 5vw, 2.5rem) clamp(2rem, 6vw, 3.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.5rem, 3vw, 2.2rem);
+  }
 
-    header {
-      padding: clamp(1.5rem, 3vw, 2.8rem) clamp(1.25rem, 3vw, 3rem) 1.4rem;
-      display: grid;
-      gap: clamp(1.5rem, 3vw, 2.5rem);
-      backdrop-filter: blur(22px);
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.55), transparent 60%);
-    }
+  .app-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
 
-    header .brand {
-      display: grid;
-      gap: 0.75rem;
-      max-width: 720px;
-    }
+  .app-header h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
 
-    .brand-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.35rem 0.9rem;
-      border-radius: 999px;
-      background: var(--chip-bg);
-      color: var(--chip-text);
-      font-size: 0.78rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      width: fit-content;
-    }
+  .app-header p {
+    margin: 0;
+    color: var(--muted);
+    max-width: 58ch;
+    line-height: 1.6;
+  }
 
-    header h1 {
-      font-size: clamp(2rem, 5vw, 3rem);
-      letter-spacing: 0.01em;
-      margin: 0;
-      font-weight: 600;
-    }
+  .utility-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-    header p {
-      margin: 0;
-      color: var(--muted);
-      font-size: clamp(0.95rem, 2.3vw, 1.1rem);
-      max-width: 58ch;
-      line-height: 1.6;
-    }
+  .search-stack {
+    flex: 1 1 420px;
+    max-width: 620px;
+    position: relative;
+  }
 
-    .brand-pills {
-      list-style: none;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      padding: 0;
-      margin: 0;
-    }
+  .search-field {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface-raised);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
 
-    .brand-pills li {
-      padding: 0.3rem 0.75rem;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      color: var(--muted);
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
+  .search-field svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
 
-    .header-actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1.2rem;
-      flex-wrap: wrap;
-    }
+  .search-field input {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    flex: 1;
+    font-size: 0.95rem;
+    padding: 0;
+  }
 
-    .header-actions .controls {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.65rem;
-      flex-wrap: wrap;
-    }
+  .search-field input::placeholder {
+    color: rgba(148, 163, 184, 0.68);
+  }
 
-    .header-note {
-      padding: 0.9rem 1.1rem;
-      border-radius: 1.1rem;
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      background: rgba(15, 23, 42, 0.45);
-      color: var(--muted);
-      font-size: 0.85rem;
-      max-width: clamp(220px, 28vw, 320px);
-      line-height: 1.4;
-    }
+  .search-field input:focus {
+    outline: none;
+  }
 
-    .header-note strong {
-      display: block;
-      color: var(--text);
-      font-size: 0.78rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 0.35rem;
-    }
+  .search-results {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 0;
+    right: 0;
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.65rem;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface-raised);
+    box-shadow: 0 18px 45px rgba(3, 8, 23, 0.28);
+    max-height: 320px;
+    overflow-y: auto;
+    z-index: 6;
+  }
 
-    button,
-    input {
-      font: inherit;
-      border-radius: 999px;
-      border: 1px solid transparent;
-      padding: 0.5rem 1rem;
-      background: var(--panel);
-      color: var(--text);
-      transition: border 160ms ease, background 160ms ease, transform 160ms ease;
-    }
+  .search-results:empty {
+    display: none;
+  }
 
-    button:hover,
-    input:focus-visible {
-      border-color: var(--accent);
-      outline: none;
-    }
+  .search-results button {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    text-align: left;
+    padding: 0.55rem 0.6rem;
+    color: inherit;
+    cursor: pointer;
+    transition: border 160ms ease, color 160ms ease, transform 160ms ease;
+  }
 
-    button:active {
-      transform: translateY(1px);
-    }
+  .search-results button:hover {
+    border-color: var(--border-strong);
+    color: var(--accent);
+    transform: translateX(4px);
+  }
 
-    button.toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      cursor: pointer;
-      background: var(--accent-soft);
-      color: var(--accent);
-      border-color: transparent;
-      box-shadow: 0 12px 30px rgba(249, 115, 22, 0.18);
-    }
+  .quick-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: center;
+  }
 
-    .icon-button {
-      width: 2.4rem;
-      height: 2.4rem;
-      display: grid;
-      place-items: center;
-      padding: 0;
-      border-radius: 50%;
-      background: rgba(15, 23, 42, 0.65);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      color: var(--text);
-      transition: transform 160ms ease, border 160ms ease, background 160ms ease;
-    }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0.5rem 1.05rem;
+    background: rgba(148, 163, 184, 0.12);
+    color: inherit;
+    transition: transform 160ms ease, border 160ms ease, background 160ms ease;
+  }
 
-    .icon-button:hover {
-      transform: translateY(-1px);
-      border-color: var(--border-strong);
-      background: rgba(56, 189, 248, 0.16);
-    }
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 
+  button:hover {
+    transform: translateY(-1px);
+    border-color: var(--border-strong);
+  }
+
+  .ghost {
+    background: rgba(148, 163, 184, 0.16);
+  }
+
+  .accent {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  main {
+    display: grid;
+    gap: clamp(1.2rem, 3vw, 2rem);
+    grid-template-columns: minmax(280px, 340px) 1fr;
+  }
+
+  aside {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    max-height: calc(100vh - 8rem);
+    overflow: hidden;
+  }
+
+  aside[data-collapsed="true"] .panel-content {
+    display: none;
+  }
+
+  aside[data-collapsed="true"] {
+    max-height: none;
+    padding-bottom: 1rem;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+  }
+
+  .panel-header h2 {
+    margin: 0;
+    font-size: 0.95rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    overflow-y: auto;
+    padding-right: 0.3rem;
+  }
+
+  .panel-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .panel-content::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.28);
+    border-radius: 999px;
+  }
+
+  .filters-section,
+  .macro-section,
+  .selection-card,
+  .favorites,
+  .accessibility,
+  .activity {
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .section-heading h3 {
+    margin: 0;
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .filter-grid {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .filter-chip {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.65rem;
+    align-items: center;
+    padding: 0.55rem 0.65rem;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(15, 23, 42, 0.35);
+    transition: border 160ms ease, background 160ms ease;
+  }
+
+  .filter-chip input {
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.35rem;
+    border: 2px solid rgba(148, 163, 184, 0.35);
+    display: grid;
+    place-items: center;
+    background: transparent;
+    position: relative;
+  }
+
+  .filter-chip input:checked {
+    border-color: var(--accent);
+  }
+
+  .filter-chip input:checked::after {
+    content: "";
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 0.2rem;
+    background: var(--accent);
+  }
+
+  .filter-chip .color-dot {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    background: var(--dot-color, var(--accent));
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+    margin-left: 0.1rem;
+  }
+
+  .filter-chip span.label {
+    color: inherit;
+    font-size: 0.9rem;
+  }
+
+  .filter-chip.is-active {
+    border-color: rgba(56, 189, 248, 0.38);
+    background: rgba(56, 189, 248, 0.12);
+  }
+
+  .macro-section ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .macro-button {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 14px;
+    padding: 0.55rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    justify-content: flex-start;
+    color: inherit;
+    transition: border 160ms ease, transform 160ms ease;
+  }
+
+  .macro-button .color-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--dot-color, var(--accent));
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.08);
+  }
+
+  .macro-button.is-active {
+    border-color: rgba(56, 189, 248, 0.4);
+    transform: translateX(4px);
+  }
+
+  .selection-card h2 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .selection-card dl {
+    margin: 0;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .selection-card dt {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .selection-card dd {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .favorites header,
+  .favorites h3 {
+    margin: 0;
+  }
+
+  .favorites header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .favorites button[type="button"] {
+    text-align: left;
+  }
+
+  #favorite-list {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  #favorite-list button {
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 12px;
+    padding: 0.5rem 0.65rem;
+    color: inherit;
+  }
+
+  #favorite-list button[data-muted="true"] {
+    opacity: 0.55;
+  }
+
+  .accessibility label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .accessibility input[type="range"] {
+    accent-color: var(--accent);
+  }
+
+  .activity-log {
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 14px;
+    padding: 0.75rem;
+    display: grid;
+    gap: 0.4rem;
+    max-height: 240px;
+    overflow-y: auto;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .activity-log::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .activity-log::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.28);
+    border-radius: 999px;
+  }
+
+  #graph-wrapper {
+    position: relative;
+    border-radius: 28px;
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    background: var(--canvas-bg);
+    min-height: clamp(420px, 60vh, 720px);
+    overflow: hidden;
+    box-shadow: 0 28px 60px rgba(3, 8, 23, 0.45);
+  }
+
+  .map-tools {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    display: grid;
+    gap: 0.8rem;
+    padding: 0.85rem 1rem;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(8, 13, 24, 0.78);
+    backdrop-filter: blur(18px);
+    min-width: 200px;
+    z-index: 5;
+  }
+
+  .tool-block {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .tool-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .zoom-controls {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .zoom-controls button {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+  }
+
+  .zoom-controls input[type="range"],
+  .leaf-controls input[type="range"] {
+    accent-color: var(--accent);
+    background: transparent;
+  }
+
+  .leaf-controls {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .tool-value {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  #graph-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  #loading-indicator {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 0.95rem;
+    background: rgba(5, 10, 20, 0.6);
+    color: var(--chip-text);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  #loading-indicator[data-hidden="true"] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+  }
+
+  @media (max-width: 1080px) {
     main {
-      flex: 1;
-      width: min(1280px, 100%);
-      margin: clamp(1.5rem, 3vw, 3.5rem) auto clamp(2rem, 4vw, 4rem);
-      display: grid;
-      grid-template-columns: minmax(300px, 360px) 1fr;
-      gap: clamp(1.4rem, 2.5vw, 2.4rem);
-      padding: clamp(1.2rem, 2.2vw, 2rem);
-      border-radius: 32px;
-      background: linear-gradient(135deg, rgba(148, 163, 184, 0.08), rgba(30, 41, 59, 0.45));
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      box-shadow: 0 30px 70px rgba(8, 15, 35, 0.45);
-      backdrop-filter: blur(28px);
-    }
-
-    aside {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: clamp(1.1rem, 2.1vw, 1.8rem);
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(26px);
-    }
-
-    aside[data-collapsed="true"] .panel-content {
-      display: none;
-    }
-
-    aside[data-collapsed="true"] {
-      padding-bottom: clamp(0.5rem, 1.5vw, 0.9rem);
-    }
-
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-    }
-
-    #panel-toggle {
-      background: rgba(148, 163, 184, 0.22);
-      color: var(--text);
-      border-radius: 0.9rem;
-      padding: 0.35rem 0.85rem;
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    #panel-toggle:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    aside .panel-content {
-      display: flex;
-      flex-direction: column;
-      gap: 1.4rem;
-      overflow-y: auto;
-      max-height: min(62vh, 540px);
-      padding-right: 0.2rem;
-    }
-
-    aside .panel-content::-webkit-scrollbar {
-      width: 10px;
-    }
-
-    aside .panel-content::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.28);
-      border-radius: 999px;
-    }
-
-    aside .panel-content::-webkit-scrollbar-thumb:hover {
-      background: rgba(249, 115, 22, 0.45);
-    }
-
-    .panel-title {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.75rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
-
-    .status-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.3rem 0.85rem;
-      border-radius: 999px;
-      background: var(--chip-bg);
-      color: var(--chip-text);
-      font-size: 0.82rem;
-      width: fit-content;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .log {
-      font-size: 0.85rem;
-      color: var(--muted);
-      border-radius: 16px;
-      background: rgba(15, 23, 42, 0.45);
-      border: 1px solid rgba(148, 163, 184, 0.12);
-      padding: 0.75rem;
-      display: grid;
-      gap: 0.4rem;
-      max-height: 220px;
-      overflow-y: auto;
-    }
-
-    .log::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .log::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.26);
-      border-radius: 999px;
-    }
-
-    #graph-wrapper {
-      position: relative;
-      border-radius: 32px;
-      border: 1px solid rgba(56, 189, 248, 0.18);
-      background:
-        radial-gradient(circle at 28% 24%, rgba(56, 189, 248, 0.18), transparent 60%),
-        radial-gradient(circle at 70% 72%, rgba(249, 115, 22, 0.22), transparent 68%),
-        linear-gradient(155deg, rgba(12, 20, 38, 0.92), rgba(5, 10, 24, 0.78));
-      overflow: hidden;
-      box-shadow: 0 36px 80px rgba(8, 15, 35, 0.55);
-      isolation: isolate;
-    }
-
-    #graph-wrapper::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(circle at 25% 20%, rgba(14, 165, 233, 0.14), transparent 55%),
-        radial-gradient(circle at 75% 80%, rgba(236, 72, 153, 0.16), transparent 60%),
-        radial-gradient(circle at center, rgba(148, 163, 184, 0.08), transparent 70%);
-      pointer-events: none;
-      mix-blend-mode: screen;
+      grid-template-columns: minmax(260px, 320px) 1fr;
     }
 
     .map-tools {
-      position: absolute;
-      top: 1.5rem;
-      right: 1.5rem;
-      display: grid;
-      gap: 1rem;
-      min-width: 220px;
-      padding: 1rem 1.2rem;
-      background: var(--tool-bg);
-      border: 1px solid var(--tool-border);
-      border-radius: 22px;
-      box-shadow: 0 20px 45px rgba(8, 15, 35, 0.35);
-      backdrop-filter: blur(18px);
-      z-index: 2;
+      position: static;
+      margin: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+  }
+
+  @media (max-width: 860px) {
+    .app-shell {
+      padding: 1.8rem 1.2rem 2.5rem;
     }
 
-    .tool-block {
-      display: grid;
-      gap: 0.55rem;
+    main {
+      grid-template-columns: 1fr;
     }
 
-    .tool-title {
-      font-size: 0.72rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--muted);
+    aside {
+      order: 2;
+      max-height: none;
     }
 
-    .tool-value {
-      font-size: 0.82rem;
-      color: var(--text);
-      letter-spacing: 0.04em;
+    #graph-wrapper {
+      min-height: 420px;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .utility-row {
+      flex-direction: column;
+      align-items: stretch;
     }
 
-    .zoom-controls {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-
-    .zoom-controls input[type="range"],
-    .leaf-controls input[type="range"] {
-      flex: 1;
-      accent-color: var(--highlight);
-      background: transparent;
-    }
-
-    .leaf-controls {
-      display: grid;
-      gap: 0.35rem;
-    }
-
-    .leaf-controls input[type="range"] {
-      accent-color: var(--accent);
-    }
-
-    .map-tools .icon-button {
-      background: rgba(8, 15, 35, 0.65);
-    }
-
-    .map-tools .icon-button:hover {
-      background: rgba(56, 189, 248, 0.22);
-    }
-
-    #graph-canvas {
-      position: absolute;
-      inset: 0;
+    .quick-actions {
       width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    #loading-indicator {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-content: center;
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.62));
-      color: var(--muted);
-      font-size: 0.95rem;
-      letter-spacing: 0.04em;
-      transition: opacity 220ms ease;
-    }
-
-    #loading-indicator[data-hidden="true"] {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .node-meta {
-      display: grid;
-      gap: 0.6rem;
-      padding: 1rem 1.1rem;
-      border-radius: 18px;
-      background: rgba(15, 23, 42, 0.45);
-      border: 1px solid rgba(148, 163, 184, 0.1);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    }
-
-    .node-meta h2 {
-      margin: 0;
-      font-size: 1.12rem;
-      letter-spacing: 0.01em;
-    }
-
-    .node-meta dl {
-      margin: 0;
-      display: grid;
-      gap: 0.45rem;
-      font-size: 0.92rem;
-    }
-
-    .node-meta dt {
-      color: var(--muted);
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      font-size: 0.7rem;
-    }
-
-    .node-meta dd {
-      margin: 0;
-      color: var(--text);
-      font-size: 0.95rem;
-    }
-
-    .search-box {
-      display: grid;
-      gap: 0.55rem;
-    }
-
-    .search-box label {
-      font-size: 0.78rem;
-      color: var(--muted);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .search-results {
-      display: grid;
-      gap: 0.4rem;
-      font-size: 0.85rem;
-    }
-
-    .search-results button {
       justify-content: flex-start;
-      text-align: left;
-      border-radius: 0.85rem;
-      padding: 0.45rem 0.75rem;
-      background: rgba(15, 23, 42, 0.35);
-      border-color: rgba(148, 163, 184, 0.16);
-      color: inherit;
-      transition: transform 160ms ease, border-color 160ms ease, color 160ms ease;
     }
 
-    .search-results button:hover {
-      border-color: var(--border-strong);
-      color: var(--accent);
-      transform: translateX(4px);
+    .map-tools {
+      margin: 1rem 0;
     }
+  }
 
-    .favorites {
-      display: grid;
-      gap: 0.55rem;
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0ms !important;
+      animation-duration: 0ms !important;
     }
+  }
+</style>
 
-    .favorites header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-    }
 
-    .favorites h3 {
-      margin: 0;
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    #favorite-list {
-      display: grid;
-      gap: 0.35rem;
-    }
-
-    #favorite-list button {
-      justify-content: flex-start;
-      text-align: left;
-      padding: 0.4rem 0.7rem;
-      border-radius: 0.85rem;
-      background: rgba(15, 23, 42, 0.35);
-      border-color: rgba(148, 163, 184, 0.18);
-      color: inherit;
-    }
-
-    #favorite-list button:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    .accessibility {
-      display: grid;
-      gap: 0.4rem;
-    }
-
-    .accessibility label {
-      font-size: 0.78rem;
-      color: var(--muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .accessibility input[type="range"] {
-      width: 100%;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        transition-duration: 0ms !important;
-      }
-    }
-
-    @media (max-width: 960px) {
-      main {
-        grid-template-columns: 1fr;
-        grid-template-rows: minmax(260px, 45vh) 1fr;
-      }
-
-      aside {
-        order: 2;
-      }
-
-      #graph-wrapper {
-        min-height: 260px;
-      }
-
-      .map-tools {
-        top: auto;
-        bottom: 1rem;
-        right: 1rem;
-        left: 1rem;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 0.8rem;
-        padding: 0.9rem 1rem;
-      }
-    }
-
-    @media (max-width: 720px) {
-      main {
-        padding: 1.1rem;
-      }
-
-      header {
-        padding: 1.6rem 1.2rem 1rem;
-      }
-
-      .header-actions {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .header-actions .controls {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      .map-tools {
-        position: static;
-        margin: 1rem 0 0;
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <span class="brand-kicker">Cybersecurity Atlas</span>
-      <h1>Navigate the modern security universe</h1>
-      <p>Explore a living mind map that connects stakeholders, disciplines, safeguards, and emerging capabilities across the cybersecurity ecosystem.</p>
-      <ul class="brand-pills">
-        <li>Stakeholders</li>
-        <li>Best Practices</li>
-        <li>Challenges</li>
-        <li>Future Tech</li>
-      </ul>
-    </div>
-    <div class="header-actions">
-      <div class="controls">
-        <button id="reset-view" type="button">Center map</button>
-        <button id="theme-toggle" class="toggle" type="button" aria-pressed="true">🌗 Theme</button>
-      </div>
-      <div class="header-note">
-        <strong>How to explore</strong>
-        Drag to pan · Scroll or use the zoom dial · Tap leaves to reveal fresh branches
-      </div>
-    </div>
-  </header>
-  <main>
-    <aside data-collapsed="false">
-      <div class="panel-header">
-        <span class="status-chip" style="margin:0;">Navigator</span>
-        <button id="panel-toggle" type="button" aria-expanded="true">Collapse</button>
-      </div>
-      <div class="panel-content">
-      <section class="search-box">
-        <label for="search-input">Search topics</label>
-        <input id="search-input" type="search" placeholder="Start typing…" autocomplete="off" />
+  <div class="app-shell">
+    <header class="app-header">
+      <h1>Cybersecurity Atlas</h1>
+      <p>Navigate the modern security landscape with an interactive mind map of disciplines, stakeholders, and safeguards.</p>
+    </header>
+    <div class="utility-row">
+      <div class="search-stack">
+        <label class="visually-hidden" for="search-input">Search topics</label>
+        <div class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.02 14 5 11.98 5 9.5S7.02 5 9.5 5 14 7.02 14 9.5 11.98 14 9.5 14Z" />
+          </svg>
+          <input id="search-input" type="search" placeholder="Search (e.g., ATT&CK, KCI)" autocomplete="off" />
+        </div>
         <div id="search-results" class="search-results" role="listbox" aria-label="Matching topics"></div>
-      </section>
-      <section class="node-meta" aria-live="polite">
-        <h2 id="node-title">Loading…</h2>
-        <dl>
-          <div>
-            <dt>Hierarchy</dt>
-            <dd id="node-path">—</dd>
-          </div>
-          <div>
-            <dt>Children</dt>
-            <dd id="node-children">—</dd>
-          </div>
-        </dl>
-        <button id="favorite-toggle" type="button" aria-pressed="false" style="justify-self:start;">☆ Save to favourites</button>
-      </section>
-      <section class="favorites">
-        <header>
-          <h3>Favourites</h3>
-          <button id="clear-favorites" type="button" style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.6rem;">Clear</button>
-        </header>
-        <div id="favorite-list" role="listbox" aria-label="Favourite topics"></div>
-      </section>
-      <section class="accessibility">
-        <label for="font-scale">Label size</label>
-        <input id="font-scale" type="range" min="0.85" max="1.35" step="0.05" value="1" />
-      </section>
-      <section>
-        <h3 style="margin:0;font-size:0.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Activity</h3>
-        <div id="activity-log" class="log" aria-live="polite"></div>
-      </section>
       </div>
-    </aside>
-    <div id="graph-wrapper">
-      <div class="map-tools" role="group" aria-label="Mind map controls">
-        <div class="tool-block">
-          <span class="tool-title">Zoom</span>
-          <div class="zoom-controls">
-            <button id="zoom-out" type="button" class="icon-button" aria-label="Zoom out">&minus;</button>
-            <input id="zoom-slider" type="range" min="0.25" max="2.8" step="0.01" value="0.6" aria-label="Zoom level" />
-            <button id="zoom-in" type="button" class="icon-button" aria-label="Zoom in">+</button>
-          </div>
-          <span id="zoom-value" class="tool-value">60%</span>
-        </div>
-        <div class="tool-block">
-          <span class="tool-title">Leaf detail</span>
-          <div class="leaf-controls">
-            <input id="leaf-depth" type="range" min="1" max="5" step="1" value="5" aria-label="Leaf depth" />
-            <span id="leaf-depth-display" class="tool-value">All leaves</span>
-          </div>
-        </div>
+      <div class="quick-actions">
+        <button id="reset-view" class="ghost" type="button">Center</button>
+        <button id="filters-reset" class="ghost" type="button">Clear</button>
+        <button id="expand-all" class="ghost" type="button">Expand all</button>
+        <button id="theme-toggle" class="accent" type="button" aria-pressed="true">Light</button>
       </div>
-      <canvas id="graph-canvas" role="application" aria-label="Cybersecurity Atlas graph"></canvas>
-      <div id="loading-indicator">Preparing atlas…</div>
     </div>
-  </main>
+    <main>
+      <aside data-collapsed="false">
+        <div class="panel-header">
+          <h2>Navigator</h2>
+          <button id="panel-toggle" type="button" aria-expanded="true" class="ghost">Collapse</button>
+        </div>
+        <div class="panel-content">
+          <section class="filters-section">
+            <div class="section-heading">
+              <h3>Filters</h3>
+            </div>
+            <div id="branch-filter-list" class="filter-grid"></div>
+          </section>
+          <section class="macro-section">
+            <div class="section-heading">
+              <h3>Macro buckets</h3>
+            </div>
+            <ul id="macro-buckets"></ul>
+          </section>
+          <section class="selection-card" aria-live="polite">
+            <h2 id="node-title">Loading…</h2>
+            <dl>
+              <div>
+                <dt>Hierarchy</dt>
+                <dd id="node-path">—</dd>
+              </div>
+              <div>
+                <dt>Children</dt>
+                <dd id="node-children">—</dd>
+              </div>
+            </dl>
+            <button id="favorite-toggle" type="button" aria-pressed="false">☆ Save to favourites</button>
+          </section>
+          <section class="favorites">
+            <header>
+              <h3>Favourites</h3>
+              <button id="clear-favorites" type="button">Clear</button>
+            </header>
+            <div id="favorite-list" role="listbox" aria-label="Favourite topics"></div>
+          </section>
+          <section class="accessibility">
+            <label for="font-scale">Label size</label>
+            <input id="font-scale" type="range" min="0.85" max="1.35" step="0.05" value="1" />
+          </section>
+          <section class="activity">
+            <div class="section-heading">
+              <h3>Activity</h3>
+            </div>
+            <div id="activity-log" class="activity-log" aria-live="polite"></div>
+          </section>
+        </div>
+      </aside>
+      <section>
+        <div id="graph-wrapper">
+          <div class="map-tools" role="group" aria-label="Mind map controls">
+            <div class="tool-block">
+              <span class="tool-title">Zoom</span>
+              <div class="zoom-controls">
+                <button id="zoom-out" type="button" aria-label="Zoom out">−</button>
+                <input id="zoom-slider" type="range" min="0.25" max="2.8" step="0.01" value="0.6" aria-label="Zoom level" />
+                <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
+              </div>
+              <span id="zoom-value" class="tool-value">60%</span>
+            </div>
+            <div class="tool-block">
+              <span class="tool-title">Leaf detail</span>
+              <div class="leaf-controls">
+                <input id="leaf-depth" type="range" min="1" max="5" step="1" value="5" aria-label="Leaf depth" />
+                <span id="leaf-depth-display" class="tool-value">All leaves</span>
+              </div>
+            </div>
+          </div>
+          <canvas id="graph-canvas" role="application" aria-label="Cybersecurity Atlas graph"></canvas>
+          <div id="loading-indicator">Preparing atlas…</div>
+        </div>
+      </section>
+    </main>
+  </div>
   <script>
   (function() {
     const themeToggle = document.getElementById('theme-toggle');
@@ -755,7 +771,9 @@
     const clearFavorites = document.getElementById('clear-favorites');
     const fontScaleInput = document.getElementById('font-scale');
     const sidePanel = document.querySelector('aside');
-    favoriteToggle.disabled = true;
+    if (favoriteToggle) {
+      favoriteToggle.disabled = true;
+    }
     const loadingIndicator = document.getElementById('loading-indicator');
     const activityLog = document.getElementById('activity-log');
     const nodeTitle = document.getElementById('node-title');
@@ -769,6 +787,10 @@
     const zoomValue = document.getElementById('zoom-value');
     const leafDepthInput = document.getElementById('leaf-depth');
     const leafDepthDisplay = document.getElementById('leaf-depth-display');
+    const filtersResetBtn = document.getElementById('filters-reset');
+    const branchFilterList = document.getElementById('branch-filter-list');
+    const macroBucketList = document.getElementById('macro-buckets');
+    const expandAllBtn = document.getElementById('expand-all');
 
     class Graph {
       constructor() {
@@ -844,6 +866,10 @@
 
     const nodeMetrics = new Map();
     const favorites = new Set(JSON.parse(localStorage.getItem('infosec_favourites') || '[]'));
+    const BRANCH_FILTER_KEY = 'atlas-active-branches';
+    const activeBranches = new Set();
+    const branchColors = new Map();
+    let branchOrder = [];
     let labelScale = parseFloat(localStorage.getItem('atlas-label-scale') || '1');
     if (!Number.isFinite(labelScale)) {
       labelScale = 1;
@@ -864,6 +890,145 @@
         return 2.4;
       }
     };
+
+    function branchIdFor(attrs) {
+      if (!attrs) return null;
+      if (attrs.branchRoot !== undefined) {
+        return attrs.branchRoot;
+      }
+      return attrs.branchId || null;
+    }
+
+    function branchIsVisible(attrs) {
+      if (!branchFilterList) return true;
+      const branch = branchIdFor(attrs);
+      if (!branch) return true;
+      if (!activeBranches.size) return true;
+      return activeBranches.has(branch);
+    }
+
+    function persistBranchFilters() {
+      if (!branchFilterList) return;
+      localStorage.setItem(BRANCH_FILTER_KEY, JSON.stringify([...activeBranches]));
+    }
+
+    function ensureBranchActive(branchId) {
+      if (!branchFilterList || !branchId) return;
+      if (!activeBranches.has(branchId)) {
+        activeBranches.add(branchId);
+        persistBranchFilters();
+        syncBranchFilterUI();
+      }
+    }
+
+    function syncBranchFilterUI() {
+      if (branchFilterList) {
+        branchFilterList.querySelectorAll('.filter-chip').forEach(chip => {
+          const branch = chip.dataset.branch;
+          const active = activeBranches.has(branch);
+          chip.classList.toggle('is-active', active);
+          const input = chip.querySelector('input[type="checkbox"]');
+          if (input) {
+            input.checked = active;
+          }
+        });
+      }
+      if (macroBucketList) {
+        macroBucketList.querySelectorAll('button[data-branch]').forEach(btn => {
+          const active = activeBranches.has(btn.dataset.branch);
+          btn.classList.toggle('is-active', active);
+        });
+      }
+      if (selectedNode && graph.hasNode(selectedNode)) {
+        const attrs = graph.getNodeAttributes(selectedNode);
+        if (!branchIsVisible(attrs)) {
+          updateNodeDetails(rootId);
+        }
+      }
+      requestRender();
+      populateSearch();
+      updateFavoritesUI();
+    }
+
+    function buildBranchFilters(children) {
+      if (!branchFilterList) return;
+      branchFilterList.innerHTML = '';
+      children.forEach((child, index) => {
+        branchColors.set(child.id, palette[(index + 1) % palette.length]);
+        const label = document.createElement('label');
+        label.className = 'filter-chip';
+        label.dataset.branch = child.id;
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.value = child.id;
+        input.checked = activeBranches.has(child.id);
+        input.addEventListener('change', () => {
+          if (!input.checked && activeBranches.size <= 1 && activeBranches.has(child.id)) {
+            input.checked = true;
+            return;
+          }
+          if (input.checked) {
+            activeBranches.add(child.id);
+          } else {
+            activeBranches.delete(child.id);
+          }
+          persistBranchFilters();
+          syncBranchFilterUI();
+        });
+        const dot = document.createElement('span');
+        dot.className = 'color-dot';
+        dot.style.setProperty('--dot-color', branchColors.get(child.id));
+        const text = document.createElement('span');
+        text.className = 'label';
+        text.textContent = child.name;
+        label.append(input, dot, text);
+        branchFilterList.append(label);
+      });
+    }
+
+    function buildMacroBuckets(children) {
+      if (!macroBucketList) return;
+      macroBucketList.innerHTML = '';
+      children.forEach(child => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'macro-button';
+        btn.dataset.branch = child.id;
+        const color = branchColors.get(child.id) || palette[0];
+        btn.innerHTML = `<span class="color-dot" style="--dot-color:${color}"></span>${child.name}`;
+        btn.addEventListener('click', () => {
+          ensureBranchActive(child.id);
+          animateToNode(child.id, {duration: 420});
+          updateNodeDetails(child.id);
+          ensureBranchLoaded(child.id).then(() => populateSearch());
+        });
+        li.append(btn);
+        macroBucketList.append(li);
+      });
+    }
+
+    function initializeBranchFilters(children) {
+      if (!branchFilterList) return;
+      branchOrder = children.map(child => child.id);
+      activeBranches.clear();
+      const saved = JSON.parse(localStorage.getItem(BRANCH_FILTER_KEY) || 'null');
+      const valid = Array.isArray(saved) ? saved.filter(id => branchOrder.includes(id)) : [];
+      const fallback = valid.length ? valid : branchOrder;
+      fallback.forEach(id => activeBranches.add(id));
+      buildBranchFilters(children);
+      buildMacroBuckets(children);
+      persistBranchFilters();
+      syncBranchFilterUI();
+    }
+
+    function activateAllBranches() {
+      if (!branchFilterList) return;
+      activeBranches.clear();
+      branchOrder.forEach(id => activeBranches.add(id));
+      persistBranchFilters();
+      syncBranchFilterUI();
+    }
 
     const FONT_FAMILY = '"Inter", "Segoe UI", system-ui, sans-serif';
     const BOX_PADDING_X = 16;
@@ -5241,6 +5406,13 @@
         btn.type = 'button';
         btn.setAttribute('role', 'option');
         btn.textContent = item.display;
+        const attrs = graph.getNodeAttributes(item.id);
+        const hidden = attrs ? !branchIsVisible(attrs) : false;
+        if (hidden) {
+          btn.setAttribute('data-muted', 'true');
+        } else {
+          btn.removeAttribute('data-muted');
+        }
         btn.addEventListener('click', () => {
           animateToNode(item.id);
           updateNodeDetails(item.id);
@@ -5366,6 +5538,9 @@
       let minDepth = Infinity;
       graph.forEachNode((id, attrs) => {
         const depth = attrs.depth ?? 0;
+        if (!branchIsVisible(attrs)) {
+          return;
+        }
         if (depthLimit !== Infinity && depth > depthLimit) {
           return;
         }
@@ -5461,6 +5636,7 @@
         const from = graph.getNodeAttributes(source);
         const to = graph.getNodeAttributes(target);
         if (!from || !to) return;
+        if (!branchIsVisible(from) || !branchIsVisible(to)) return;
         if (activeDepthLimit !== Infinity) {
           const fromDepth = from.depth ?? 0;
           const toDepth = to.depth ?? 0;
@@ -5477,6 +5653,9 @@
       const textQueue = [];
       const now = performance.now();
       graph.forEachNode((id, attrs) => {
+        if (!branchIsVisible(attrs)) {
+          return;
+        }
         const nodeDepth = attrs.depth ?? 0;
         if (activeDepthLimit !== Infinity && nodeDepth > activeDepthLimit) {
           return;
@@ -5560,6 +5739,7 @@
         return;
       }
       const attrs = graph.getNodeAttributes(nodeKey);
+      ensureBranchActive(attrs.branchRoot || null);
       if (leafDepthInput && depthLimit !== Infinity) {
         const nodeDepth = attrs.depth ?? 0;
         if (nodeDepth > depthLimit) {
@@ -5613,6 +5793,10 @@
     function applyTheme(theme) {
       document.documentElement.dataset.theme = theme;
       themeToggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      const nextTheme = theme === 'dark' ? 'light' : 'dark';
+      const label = nextTheme.charAt(0).toUpperCase() + nextTheme.slice(1);
+      themeToggle.textContent = label;
+      themeToggle.setAttribute('aria-label', `Switch to ${nextTheme} theme`);
       localStorage.setItem('atlas-theme', theme);
       requestRender();
     }
@@ -5671,6 +5855,27 @@
       });
     } else {
       depthLimit = Infinity;
+    }
+
+    if (filtersResetBtn) {
+      filtersResetBtn.addEventListener('click', () => {
+        activateAllBranches();
+        if (searchInput) {
+          searchInput.value = '';
+        }
+        if (searchResults) {
+          searchResults.innerHTML = '';
+        }
+        searchMatches = new Set();
+        requestRender();
+      });
+    }
+
+    if (expandAllBtn) {
+      expandAllBtn.addEventListener('click', () => {
+        applyLeafDepth(MAX_LEAF_STEP);
+        requestRender();
+      });
     }
 
     if (zoomSlider) {
@@ -5790,8 +5995,12 @@
       }
       const matches = [];
       for (const [key, value] of searchIndex.entries()) {
-        if (value.label.toLowerCase().includes(query)) {
-          matches.push({key, label: value.label});
+        const label = value.label || '';
+        if (branchFilterList && activeBranches.size && value.branch && !activeBranches.has(value.branch)) {
+          continue;
+        }
+        if (label.toLowerCase().includes(query)) {
+          matches.push({key, label});
         }
       }
       searchMatches = new Set(matches.map(match => match.key));
@@ -5931,14 +6140,15 @@
           path: `${parentPath} › ${node.name}`,
           color: palette[colorIndex],
           hasChildren: node.hasChildren,
-          branchId: branchRef
+          branchId: branchRef,
+          branchRoot: branchId
         };
         if (graph.hasNode(node.id)) {
           graph.setNodeAttributes(node.id, attrsToSet);
         } else {
           graph.addNode(node.id, attrsToSet);
         }
-        searchIndex.set(node.id, {label: node.name});
+        searchIndex.set(node.id, {label: node.name, branch: branchId});
       });
 
       payload.edges.forEach(edge => {
@@ -5965,11 +6175,13 @@
         label: rootPayload.root.name,
         path: rootPayload.root.name,
         color: palette[0],
-        hasChildren: true
+        hasChildren: true,
+        branchRoot: null
       });
-      searchIndex.set(rootPayload.root.id, {label: rootPayload.root.name});
+      searchIndex.set(rootPayload.root.id, {label: rootPayload.root.name, branch: null});
       rootPayload.children.forEach((child, index) => {
         const branchRef = atlasBranches.has(child.id) ? child.id : null;
+        const branchRoot = child.id;
         graph.addNode(child.id, {
           x: child.x,
           y: child.y,
@@ -5978,11 +6190,13 @@
           path: `${rootPayload.root.name} › ${child.name}`,
           color: palette[(index + 1) % palette.length],
           hasChildren: child.hasChildren,
-          branchId: branchRef
+          branchId: branchRef,
+          branchRoot
         });
         graph.addEdge(rootPayload.root.id, child.id);
-        searchIndex.set(child.id, {label: child.name});
+        searchIndex.set(child.id, {label: child.name, branch: branchRoot});
       });
+      initializeBranchFilters(rootPayload.children);
       resizeCanvas();
       updateNodeDetails(rootPayload.root.id);
       updateFavoritesUI();
