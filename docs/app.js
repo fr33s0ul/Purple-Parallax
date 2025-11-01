@@ -335,6 +335,8 @@ if (!canvas){
   return;
 }
 const ctx = canvas.getContext('2d');
+const exportCanvas = document.createElement('canvas');
+const exportCtx = exportCanvas.getContext('2d');
 const storedTheme = (typeof localStorage !== 'undefined') ? localStorage.getItem('atlas_theme') : null;
 if (storedTheme){
   document.documentElement.setAttribute('data-theme', storedTheme);
@@ -506,22 +508,22 @@ function focusFirstChild(){
   }
 }
 
-function textLinesFor(n, maxWidth, isChip){
+function textLinesFor(n, maxWidth, isChip, measureCtx = ctx){
   // wrap by measuring.  We support two modes: simple space‑based wrapping
   // for normal labels, and bullet‑based splitting for labels containing
   // the "\u2022" (•) character.  Bullet splitting helps break up long
   // lists of items into separate lines, improving readability of
   // overview nodes and other leaves with many comma/semicolon separated
   // entries.
-  ctx.save();
-  ctx.font = (isChip? 14: 14) + "px Segoe UI, Arial, sans-serif";
+  measureCtx.save();
+  measureCtx.font = (isChip? 14: 14) + "px Segoe UI, Arial, sans-serif";
   const lines = [];
   // Helper to push a word array into lines, wrapping at maxWidth
   function wrapWords(wordsArray){
     let cur="";
     for (const w of wordsArray){
       const t = cur ? cur + " " + w : w;
-      if (ctx.measureText(t).width <= maxWidth || cur === ""){
+      if (measureCtx.measureText(t).width <= maxWidth || cur === ""){
         cur = t;
       } else {
         lines.push(cur);
@@ -578,10 +580,10 @@ function textLinesFor(n, maxWidth, isChip){
     // Simple wrap on whitespace
     wrapWords(name.split(/\s+/));
   }
-  ctx.restore();
+  measureCtx.restore();
   return lines.slice(0, Math.max(1, lines.length));
 }
-function measureNode(n){
+function measureNode(n, measureCtx = ctx){
   const isChip = n.depth===1;
   // Reduce the maximum line width for normal nodes to encourage
   // additional wrapping.  Narrower boxes make dense leaf lists easier
@@ -590,10 +592,12 @@ function measureNode(n){
   const padX = isChip? 14 : 12;
   const padY = isChip? 8 : 10;
   const togglePadding = (!isChip && n.children && n.children.length) ? 28 : 0;
-  const lines = textLinesFor(n, isChip ? maxW : Math.max(120, maxW - togglePadding), isChip);
+  const lines = textLinesFor(n, isChip ? maxW : Math.max(120, maxW - togglePadding), isChip, measureCtx);
   const w = (function(){
-    ctx.font = (isChip? 14: 14) + "px Segoe UI, Arial, sans-serif";
-    const lw = Math.max(...lines.map(l=>ctx.measureText(l).width));
+    measureCtx.save();
+    measureCtx.font = (isChip? 14: 14) + "px Segoe UI, Arial, sans-serif";
+    const lw = Math.max(...lines.map(l=>measureCtx.measureText(l).width));
+    measureCtx.restore();
     // For normal nodes, restrict the width to a range to avoid overly
     // long boxes.  The minimum width is 140 and maximum is 320.  This
     // interacts with maxW above to produce comfortably sized labels.
@@ -784,10 +788,13 @@ function tick(dt){
 function nodeCategoryIndex(n){
   let cur=n; while(cur.parent && cur.parent!==root) cur=cur.parent; return cur.parent? cur.ringIndex : 0;
 }
-function draw(){
-  ctx.save();
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.lineCap="round"; ctx.lineJoin="round";
+function renderScene(targetCtx, width, height, cameraState, options = {}){
+  const { scale: renderScale, offsetX: renderOffsetX, offsetY: renderOffsetY } = cameraState;
+  const worldToScreenLocal = (wx, wy) => [(wx + renderOffsetX) * renderScale, (wy + renderOffsetY) * renderScale];
+  const shouldUpdateHitboxes = options.updateHitboxes !== false;
+  targetCtx.save();
+  targetCtx.clearRect(0,0,width,height);
+  targetCtx.lineCap="round"; targetCtx.lineJoin="round";
   const vis = collectVisible();
   const links = collectLinks();
   const themeStyles = getComputedStyle(document.documentElement);
@@ -804,32 +811,32 @@ function draw(){
   const lensStrength = 0.35;
   const now = performance.now();
   for (const [a,b] of links){
-    const [x1,y1] = worldToScreen(a.x,a.y);
-    const [x2,y2] = worldToScreen(b.x,b.y);
-    ctx.save();
+    const [x1,y1] = worldToScreenLocal(a.x,a.y);
+    const [x2,y2] = worldToScreenLocal(b.x,b.y);
+    targetCtx.save();
     const bothDimmed = activeTags.size>0 && a.dimmed && b.dimmed;
     const linkKey = `${a.id}-${b.id}`;
     const isActiveLink = activePathLinks.has(linkKey);
-    ctx.setLineDash([]);
+    targetCtx.setLineDash([]);
     if (isActiveLink){
-      ctx.strokeStyle = accentColour;
-      ctx.globalAlpha = 0.9;
-      ctx.lineWidth = 2.4;
-      ctx.setLineDash([6,4]);
+      targetCtx.strokeStyle = accentColour;
+      targetCtx.globalAlpha = 0.9;
+      targetCtx.lineWidth = 2.4;
+      targetCtx.setLineDash([6,4]);
     } else {
-      ctx.strokeStyle = bothDimmed ? 'rgba(224,224,255,0.08)' : edgeColour;
-      ctx.globalAlpha = bothDimmed ? 0.25 : 0.65;
-      ctx.lineWidth = 1.2;
+      targetCtx.strokeStyle = bothDimmed ? 'rgba(224,224,255,0.08)' : edgeColour;
+      targetCtx.globalAlpha = bothDimmed ? 0.25 : 0.65;
+      targetCtx.lineWidth = 1.2;
     }
     if (flashStates.has(a.id) || flashStates.has(b.id)){
-      ctx.strokeStyle = accentColour;
-      ctx.globalAlpha = 0.7;
+      targetCtx.strokeStyle = accentColour;
+      targetCtx.globalAlpha = 0.7;
     }
     const linkLength = Math.hypot(x2 - x1, y2 - y1);
     if (linkLength > 420){
-      ctx.globalAlpha *= scale < 0.8 ? 0.55 : 0.75;
-      if (!isActiveLink && scale < 0.6){
-        ctx.strokeStyle = 'rgba(224,224,255,0.08)';
+      targetCtx.globalAlpha *= renderScale < 0.8 ? 0.55 : 0.75;
+      if (!isActiveLink && renderScale < 0.6){
+        targetCtx.strokeStyle = 'rgba(224,224,255,0.08)';
       }
     }
     if (fisheyeEnabled && focusRef){
@@ -837,15 +844,15 @@ function draw(){
       const distB = Math.hypot(b.x - focusRef.x, b.y - focusRef.y);
       const nearDist = Math.min(distA, distB);
       if (nearDist > lensRadius){
-        ctx.globalAlpha *= 0.7;
+        targetCtx.globalAlpha *= 0.7;
       }
     }
-    ctx.beginPath();
-    ctx.moveTo(x1,y1);
+    targetCtx.beginPath();
+    targetCtx.moveTo(x1,y1);
     const mx = (x1+x2)/2;
-    ctx.bezierCurveTo(mx,y1,mx,y2,x2,y2);
-    ctx.stroke();
-    ctx.restore();
+    targetCtx.bezierCurveTo(mx,y1,mx,y2,x2,y2);
+    targetCtx.stroke();
+    targetCtx.restore();
   }
   // Increment pulsing counter for hover animation.  This creates a subtle
   // breathing effect on the hovered node when drawing frames.
@@ -857,8 +864,8 @@ function draw(){
       flashStates.delete(n.id);
     }
     const flashActive = flashExpiry && flashExpiry > now;
-    const {w,h,lines,isChip} = measureNode(n);
-    const [sx,sy] = worldToScreen(n.x,n.y);
+    const {w,h,lines,isChip} = measureNode(n, targetCtx);
+    const [sx,sy] = worldToScreenLocal(n.x,n.y);
     const cat = nodeCategoryIndex(n);
     let fill, stroke, text;
     const themeDark = document.documentElement.getAttribute('data-theme')!=='light';
@@ -913,126 +920,133 @@ function draw(){
       pulseScale = Math.max(pulseScale, 1.03 + lensStrength * 0.3);
     }
     pulseScale *= lensBoost;
-    ctx.save();
+    targetCtx.save();
     const shouldDim = activeTags.size>0 && n.dimmed && !isActivePath;
-    ctx.globalAlpha = shouldDim ? 0.35 : 1;
+    targetCtx.globalAlpha = shouldDim ? 0.35 : 1;
     if (!isActivePath && !n.match){
-      ctx.globalAlpha *= 0.85;
+      targetCtx.globalAlpha *= 0.85;
     }
     if (fisheyeEnabled && focusRef){
       const dist = Math.hypot(n.x - focusRef.x, n.y - focusRef.y);
       if (dist > lensRadius && !isActivePath){
-        ctx.globalAlpha *= 0.6;
+        targetCtx.globalAlpha *= 0.6;
       }
     }
     if (flashActive){
-      ctx.shadowColor = accentColour;
-      ctx.shadowBlur = 36*scale;
+      targetCtx.shadowColor = accentColour;
+      targetCtx.shadowBlur = 36*renderScale;
       stroke = accentColour || stroke;
       pulseScale = Math.max(pulseScale, 1.05);
     } else if (n.match){
-      ctx.shadowColor = "rgba(234,179,8,0.6)";
-      ctx.shadowBlur = 24*scale;
+      targetCtx.shadowColor = "rgba(234,179,8,0.6)";
+      targetCtx.shadowBlur = 24*renderScale;
     } else if (isActivePath){
-      ctx.shadowColor = 'rgba(255,155,106,0.35)';
-      ctx.shadowBlur = 28*scale;
+      targetCtx.shadowColor = 'rgba(255,155,106,0.35)';
+      targetCtx.shadowBlur = 28*renderScale;
     } else {
-      ctx.shadowColor = "transparent";
-      ctx.shadowBlur = 0;
+      targetCtx.shadowColor = "transparent";
+      targetCtx.shadowBlur = 0;
     }
     // Compute scaled width and height for pulsing effect
-    const ww = w * scale * pulseScale;
-    const hh = h * scale * pulseScale;
-    const rx = (isChip? 18*scale : 12*scale) * pulseScale;
+    const ww = w * renderScale * pulseScale;
+    const hh = h * renderScale * pulseScale;
+    const rx = (isChip? 18*renderScale : 12*renderScale) * pulseScale;
     const x = sx - ww/2;
     const y = sy - hh/2;
-    ctx.fillStyle = fill;
-    ctx.strokeStyle = stroke;
-    const baseLine = (n===root? 2.2: 1.4) * scale;
+    targetCtx.fillStyle = fill;
+    targetCtx.strokeStyle = stroke;
+    const baseLine = (n===root? 2.2: 1.4) * renderScale;
     const lineMultiplier = isFocused ? 1.7 : (isActivePath ? 1.3 : 1);
-    ctx.lineWidth = baseLine * lineMultiplier;
-    roundRect(ctx,x,y,ww,hh,rx);
-    ctx.fill(); ctx.stroke();
-    ctx.shadowBlur=0;
-    ctx.fillStyle = text;
+    targetCtx.lineWidth = baseLine * lineMultiplier;
+    roundRect(targetCtx,x,y,ww,hh,rx);
+    targetCtx.fill(); targetCtx.stroke();
+    targetCtx.shadowBlur=0;
+    targetCtx.fillStyle = text;
     const fontWeight = isFocused ? '600 ' : (isActivePath ? '500 ' : '400 ');
-    const baseFontSize = (isChip ? 14 : 14) * scale * pulseScale;
-    ctx.font = fontWeight + baseFontSize + "px Segoe UI, Arial, sans-serif";
-    ctx.textBaseline = 'middle';
+    const baseFontSize = (isChip ? 14 : 14) * renderScale * pulseScale;
+    targetCtx.font = fontWeight + baseFontSize + "px Segoe UI, Arial, sans-serif";
+    targetCtx.textBaseline = 'middle';
     let renderText = true;
-    if (!isChip && scale < 0.6 && lines.some(line => line.length > 20) && n !== hoverNode && !isFocused){
+    if (!isChip && renderScale < 0.6 && lines.some(line => line.length > 20) && n !== hoverNode && !isFocused){
       renderText = false;
     }
     if (isChip){
-      ctx.textAlign = 'center';
-      ctx.fillText(n.name, sx, sy);
+      targetCtx.textAlign = 'center';
+      targetCtx.fillText(n.name, sx, sy);
     } else if (renderText){
-      ctx.textAlign = 'left';
-      let ty = y + 10*scale*pulseScale + 9;
+      targetCtx.textAlign = 'left';
+      let ty = y + 10*renderScale*pulseScale + 9;
       for (const L of lines){
-        ctx.fillText(L, x + 12*scale*pulseScale, ty);
-        ty += 18*scale*pulseScale;
+        targetCtx.fillText(L, x + 12*renderScale*pulseScale, ty);
+        ty += 18*renderScale*pulseScale;
       }
     } else {
-      ctx.textAlign = 'center';
+      targetCtx.textAlign = 'center';
       const label = fallbackText(n, 'name');
       const shortLabel = label.length > 18 ? label.slice(0, 17) + '…' : label;
-      ctx.fillText(shortLabel, sx, sy);
+      targetCtx.fillText(shortLabel, sx, sy);
     }
-    if (n.children && n.children.length > 0 && scale > 0.75){
-      ctx.save();
-      const badgeRadius = Math.max(10, 8 * scale * pulseScale);
-      const badgeX = x + ww - badgeRadius - 6 * scale;
-      const badgeY = y + hh - badgeRadius - 6 * scale;
-      ctx.fillStyle = accentColour;
-      ctx.globalAlpha = 0.85;
-      ctx.beginPath();
-      ctx.arc(badgeX, badgeY, badgeRadius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = themeDark ? '#111827' : '#ffffff';
-      ctx.font = '600 ' + Math.max(10, 9 * scale) + 'px Segoe UI, Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(n.children.length), badgeX, badgeY + 0.5);
-      ctx.restore();
+    if (n.children && n.children.length > 0 && renderScale > 0.75){
+      targetCtx.save();
+      const badgeRadius = Math.max(10, 8 * renderScale * pulseScale);
+      const badgeX = x + ww - badgeRadius - 6 * renderScale;
+      const badgeY = y + hh - badgeRadius - 6 * renderScale;
+      targetCtx.fillStyle = accentColour;
+      targetCtx.globalAlpha = 0.85;
+      targetCtx.beginPath();
+      targetCtx.arc(badgeX, badgeY, badgeRadius, 0, Math.PI * 2);
+      targetCtx.fill();
+      targetCtx.fillStyle = themeDark ? '#111827' : '#ffffff';
+      targetCtx.font = '600 ' + Math.max(10, 9 * renderScale) + 'px Segoe UI, Arial, sans-serif';
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(String(n.children.length), badgeX, badgeY + 0.5);
+      targetCtx.restore();
     }
-    // Update hit box to reflect the scaled rectangle for accurate interaction
-    n._hit = {x,y,w:ww,h:hh, sx,sy};
+    // Update hit boxes to reflect the scaled rectangle for accurate interaction
+    if (shouldUpdateHitboxes){
+      n._hit = {x,y,w:ww,h:hh, sx,sy};
+    }
     if (n.children && n.children.length>0){
-      const toggleRadius = Math.max(9, 7 * scale * pulseScale);
-      const toggleCx = isChip ? sx + (ww/2) - toggleRadius - 6*scale : x + ww - toggleRadius - 8*scale;
-      const toggleCy = isChip ? sy : y + toggleRadius + 8*scale;
-      ctx.save();
-      ctx.fillStyle = panelColour;
-      ctx.strokeStyle = isActivePath ? accentColour : (themeDark ? 'rgba(224,224,255,0.25)' : '#c5c9ff');
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.arc(toggleCx, toggleCy, toggleRadius, 0, Math.PI*2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.strokeStyle = accentColour;
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(toggleCx - toggleRadius/2, toggleCy);
-      ctx.lineTo(toggleCx + toggleRadius/2, toggleCy);
+      const toggleRadius = Math.max(9, 7 * renderScale * pulseScale);
+      const toggleCx = isChip ? sx + (ww/2) - toggleRadius - 6*renderScale : x + ww - toggleRadius - 8*renderScale;
+      const toggleCy = isChip ? sy : y + toggleRadius + 8*renderScale;
+      targetCtx.save();
+      targetCtx.fillStyle = panelColour;
+      targetCtx.strokeStyle = isActivePath ? accentColour : (themeDark ? 'rgba(224,224,255,0.25)' : '#c5c9ff');
+      targetCtx.lineWidth = 1.2;
+      targetCtx.beginPath();
+      targetCtx.arc(toggleCx, toggleCy, toggleRadius, 0, Math.PI*2);
+      targetCtx.fill();
+      targetCtx.stroke();
+      targetCtx.strokeStyle = accentColour;
+      targetCtx.lineWidth = 1.8;
+      targetCtx.beginPath();
+      targetCtx.moveTo(toggleCx - toggleRadius/2, toggleCy);
+      targetCtx.lineTo(toggleCx + toggleRadius/2, toggleCy);
       if (!n.open){
-        ctx.moveTo(toggleCx, toggleCy - toggleRadius/2);
-        ctx.lineTo(toggleCx, toggleCy + toggleRadius/2);
+        targetCtx.moveTo(toggleCx, toggleCy - toggleRadius/2);
+        targetCtx.lineTo(toggleCx, toggleCy + toggleRadius/2);
       }
-      ctx.stroke();
-      ctx.restore();
-      n._toggle = {cx: toggleCx, cy: toggleCy, r: toggleRadius + 4};
-    } else {
+      targetCtx.stroke();
+      targetCtx.restore();
+      if (shouldUpdateHitboxes){
+        n._toggle = {cx: toggleCx, cy: toggleCy, r: toggleRadius + 4};
+      }
+    } else if (shouldUpdateHitboxes){
       n._toggle = null;
     }
-    ctx.restore();
+    targetCtx.restore();
   }
-  ctx.restore();
+  targetCtx.restore();
 
-  // Update the overview minimap after drawing
-  if (typeof updateMinimap === 'function') {
+  if (!options.skipMinimap && typeof updateMinimap === 'function') {
     updateMinimap();
   }
+}
+
+function draw(){
+  renderScene(ctx, canvas.width, canvas.height, { scale, offsetX, offsetY });
 }
 function roundRect(ctx,x,y,w,h,r){
   const rr = Math.min(r, w/2, h/2);
@@ -1936,23 +1950,13 @@ if (bucketTagsElem){
   });
 }
 function exportPNG(mult){
-  const w=canvas.width*mult, h=canvas.height*mult;
-  const off = document.createElement('canvas'); off.width=w; off.height=h;
-  const octx = off.getContext('2d');
-  const old = {scale, offsetX, offsetY};
-  const targetScale = scale*mult;
-  octx.save();
-  const saveCtx=ctx, saveCanvas=canvas;
-  (function swap(){
-    canvas.width=w; canvas.height=h;
-    scale = targetScale;
-    draw();
-    octx.drawImage(canvas, 0, 0);
-    canvas.width = saveCanvas.clientWidth; canvas.height = saveCanvas.clientHeight;
-    scale = old.scale;
-    draw();
-  })();
-  const a=document.createElement('a'); a.href=off.toDataURL('image/png'); a.download='infosec_universe_'+mult+'x.png'; a.click();
+  const width = canvas.width * mult;
+  const height = canvas.height * mult;
+  exportCanvas.width = width;
+  exportCanvas.height = height;
+  const cameraState = { scale: scale * mult, offsetX, offsetY };
+  renderScene(exportCtx, width, height, cameraState, { skipMinimap: true, updateHitboxes: false });
+  const a=document.createElement('a'); a.href=exportCanvas.toDataURL('image/png'); a.download='infosec_universe_'+mult+'x.png'; a.click();
 }
 const png1Btn = document.getElementById('png1');
 if (png1Btn){ png1Btn.onclick = () => exportPNG(1); }
