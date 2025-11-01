@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<base href="/Purple-Parallax/"/>
 <title>Cybersecurity Atlas</title>
 <style>
   :root{
@@ -859,6 +860,12 @@ function screenToWorld(sx,sy){ return [sx/scale - offsetX, sy/scale - offsetY]; 
 // ----------------------------------------------------------------------------
 function walk(n,fn){ fn(n); n.children.forEach(c=>walk(c,fn)); }
 function walkFrom(n, fn){ fn(n); (n.children || []).forEach(child => walkFrom(child, fn)); }
+
+walk(root, node => {
+  if (node && typeof node.id !== 'undefined'){
+    nodeById.set(node.id, node);
+  }
+});
 function visible(n){
   // A node is visible if all its ancestors are expanded, and its top-level macro bucket is not filtered out.
   if (!n.parent) return true;
@@ -2527,33 +2534,119 @@ setTimeout(()=>{
 // Finds a node by its id. We'll use this when rendering favourites from stored IDs.
 function findNodeById(id){ return nodeById.get(id) || null; }
 
+function safeParseStateFromHash(){
+  const rawHash = typeof window.location.hash === 'string' ? window.location.hash : '';
+  const paramString = rawHash.startsWith('#') ? rawHash.slice(1) : rawHash;
+  const params = new URLSearchParams(paramString);
+  const coerceNumber = (value, fallback) => {
+    if (value === null || value === '') return fallback;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+  const clampNumber = (value, min, max, fallback) => {
+    const parsed = coerceNumber(value, fallback);
+    if (!Number.isFinite(parsed)) return fallback;
+    if (typeof min === 'number' && parsed < min) return min;
+    if (typeof max === 'number' && parsed > max) return max;
+    return parsed;
+  };
+  const tagsParam = params.get('tags');
+  const openChains = [];
+  const openParam = params.get('open');
+  if (openParam){
+    openParam.split(',').slice(0, 80).forEach(chain => {
+      const ids = chain.split('.')
+        .map(part => Number(part))
+        .filter(id => Number.isInteger(id));
+      if (ids.length){
+        openChains.push(ids);
+      }
+    });
+  }
+  const nodeParam = params.get('node');
+  const nodeId = nodeParam !== null ? Number(nodeParam) : null;
+  return {
+    nodeId: Number.isInteger(nodeId) ? nodeId : null,
+    openChains,
+    x: coerceNumber(params.get('x'), offsetX),
+    y: coerceNumber(params.get('y'), offsetY),
+    z: clampNumber(params.get('z'), MIN_ZOOM, MAX_ZOOM, scale),
+    theme: params.get('theme'),
+    lens: params.get('lens') === '1',
+    subtree: params.get('subtree') === '1',
+    tagsearch: params.get('tagsearch') === '1',
+    tags: tagsParam === null ? null : tagsParam.split(',').map(t => t.trim()).filter(Boolean).slice(0, 50)
+  };
+}
+
+function applyOpenChains(chains){
+  walk(root, node => { if (node !== root) node.open = false; });
+  if (!Array.isArray(chains) || !chains.length) return;
+  for (const chain of chains){
+    if (!Array.isArray(chain) || !chain.length) continue;
+    let current = root;
+    let startIndex = chain[0] === root.id ? 1 : 0;
+    for (let i = startIndex; i < chain.length; i++){
+      const children = current && current.children;
+      if (!Array.isArray(children) || !children.length){
+        current = null;
+        break;
+      }
+      const nextId = chain[i];
+      const next = children.find(ch => ch.id === nextId);
+      if (!next){
+        current = null;
+        break;
+      }
+      current.open = true;
+      current = next;
+    }
+    if (current){
+      current.open = true;
+    }
+  }
+}
+
 function updateUrlFromState(){
   if (applyingUrlState) return;
   const params = new URLSearchParams();
   const focus = lastFocusedNode || currentFocusNode || root;
-  if (focus){
+  if (focus && Number.isFinite(focus.id)){
     params.set('node', String(focus.id));
   }
   const openList = [];
   walk(root, node => {
-    if (node !== root && node.open){
-      const ids = pathTo(node).map(n => n.id).join('.');
-      openList.push(ids);
+    if (!node || node === root || !node.open || !node.parent) return;
+    if (openList.length >= 50) return;
+    const ids = [];
+    let current = node;
+    while (current){
+      if (typeof current.id === 'undefined'){ break; }
+      ids.push(current.id);
+      current = current.parent || null;
+    }
+    if (ids.length){
+      openList.push(ids.reverse().join('.'));
     }
   });
   if (openList.length){
     params.set('open', openList.join(','));
   }
-  params.set('x', offsetX.toFixed(2));
-  params.set('y', offsetY.toFixed(2));
-  params.set('z', scale.toFixed(3));
+  if (Number.isFinite(offsetX)){
+    params.set('x', offsetX.toFixed(2));
+  }
+  if (Number.isFinite(offsetY)){
+    params.set('y', offsetY.toFixed(2));
+  }
+  const safeScale = Number.isFinite(scale) ? clamp(scale, MIN_ZOOM, MAX_ZOOM) : clamp(1, MIN_ZOOM, MAX_ZOOM);
+  params.set('z', safeScale.toFixed(3));
   const theme = document.documentElement.getAttribute('data-theme') || 'dark';
   params.set('theme', theme);
   if (fisheyeEnabled){
     params.set('lens', '1');
   }
   if (activeTags.size){
-    params.set('tags', Array.from(activeTags).join(','));
+    params.set('tags', Array.from(activeTags).slice(0, 50).join(','));
   }
   if (searchInSubtree){
     params.set('subtree', '1');
@@ -2561,11 +2654,13 @@ function updateUrlFromState(){
   if (searchIncludeTags){
     params.set('tagsearch', '1');
   }
-  const hash = '#' + params.toString();
+  const serialized = params.toString();
+  const nextHash = serialized ? `#${serialized}` : '#';
+  if (window.location.hash === nextHash) return;
   try {
-    history.replaceState(null, '', hash);
+    history.replaceState(null, '', nextHash);
   } catch(e) {
-    window.location.hash = hash;
+    window.location.hash = nextHash;
   }
 }
 
@@ -2574,68 +2669,54 @@ function restoreStateFromUrl(){
     updateBreadcrumb(root);
     return;
   }
-  const paramString = window.location.hash.slice(1);
-  const params = new URLSearchParams(paramString);
   applyingUrlState = true;
-  const themeParam = params.get('theme');
-  if (themeParam){
-    document.documentElement.setAttribute('data-theme', themeParam);
-    try { localStorage.setItem('atlas_theme', themeParam); } catch(e) {}
-    syncThemeControl();
-  }
-  const lensParam = params.get('lens');
-  fisheyeEnabled = lensParam === '1';
-  if (fisheyeToggleBtn){
-    fisheyeToggleBtn.classList.toggle('active', fisheyeEnabled);
-  }
-  searchInSubtree = params.get('subtree') === '1';
-  searchIncludeTags = params.get('tagsearch') === '1';
-  if (searchSubtreeElem){
-    searchSubtreeElem.checked = searchInSubtree;
-  }
-  if (searchTagsElem){
-    searchTagsElem.checked = searchIncludeTags;
-  }
-  const xParam = params.get('x');
-  const yParam = params.get('y');
-  const zParam = params.get('z');
-  if (xParam) offsetX = parseFloat(xParam) || offsetX;
-  if (yParam) offsetY = parseFloat(yParam) || offsetY;
-  if (zParam) scale = clamp(parseFloat(zParam) || scale, MIN_ZOOM, MAX_ZOOM);
-  const tagsParam = params.get('tags');
-  if (tagsParam){
-    activeTags.clear();
-    tagsParam.split(',').filter(Boolean).forEach(t => activeTags.add(t));
-    updateTagFiltersUI();
-    applyTagFilters();
-  }
-  walk(root, node => { if (node !== root) node.open = false; });
-  const openParam = params.get('open');
-  if (openParam){
-    openParam.split(',').forEach(chain => {
-      const ids = chain.split('.').map(id => Number(id));
-      if (!ids.length) return;
-      let current = root;
-      for (let i = 1; i < ids.length; i++){
-        const next = current.children.find(ch => ch.id === ids[i]);
-        if (!next) return;
-        current.open = true;
-        current = next;
-      }
-      current.open = true;
-    });
-  }
-  walk(root, node => {
-    if (node.open && node.children && node.children.length > 0){
-      assignAngles(node);
-      layoutChildren(node);
+  let focusTarget = root;
+  try {
+    const state = safeParseStateFromHash();
+    if (state.theme){
+      document.documentElement.setAttribute('data-theme', state.theme);
+      try { localStorage.setItem('atlas_theme', state.theme); } catch(e) {}
+      syncThemeControl();
     }
-  });
-  const nodeParam = Number(params.get('node'));
-  const target = nodeParam ? findNodeById(nodeParam) : root;
-  updateOutlineTree(target ? target.id : root.id);
-  applyingUrlState = false;
-  focusNode(target || root, { animate: false, ensureVisible: true });
+    fisheyeEnabled = state.lens;
+    if (fisheyeToggleBtn){
+      fisheyeToggleBtn.classList.toggle('active', fisheyeEnabled);
+    }
+    searchInSubtree = state.subtree;
+    searchIncludeTags = state.tagsearch;
+    if (searchSubtreeElem){
+      searchSubtreeElem.checked = searchInSubtree;
+    }
+    if (searchTagsElem){
+      searchTagsElem.checked = searchIncludeTags;
+    }
+    if (Number.isFinite(state.x)) offsetX = state.x;
+    if (Number.isFinite(state.y)) offsetY = state.y;
+    if (Number.isFinite(state.z)) scale = clamp(state.z, MIN_ZOOM, MAX_ZOOM);
+    if (state.tags !== null){
+      activeTags.clear();
+      state.tags.forEach(t => activeTags.add(t));
+      updateTagFiltersUI();
+      applyTagFilters();
+    }
+    applyOpenChains(state.openChains);
+    walk(root, node => {
+      if (node.open && node.children && node.children.length > 0){
+        assignAngles(node);
+        layoutChildren(node);
+      }
+    });
+    const target = state.nodeId !== null ? findNodeById(state.nodeId) : root;
+    focusTarget = target || root;
+    updateOutlineTree(focusTarget.id);
+  } catch(error) {
+    console.error('Failed to restore state from URL', error);
+    updateOutlineTree(root.id);
+    focusTarget = root;
+  } finally {
+    applyingUrlState = false;
+    focusNode(focusTarget, { animate: false, ensureVisible: true });
+  }
 }
 
 // Update breadcrumb trail based on a node's path
