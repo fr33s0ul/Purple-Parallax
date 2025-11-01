@@ -322,6 +322,10 @@ let miniMapBounds = null;
 // Canvas & UI
 // ----------------------------------------------------------------------------
 const canvas = document.getElementById('c');
+if (!canvas){
+  showFatalError(new Error('Canvas element not found'));
+  return;
+}
 const ctx = canvas.getContext('2d');
 const storedTheme = (typeof localStorage !== 'undefined') ? localStorage.getItem('atlas_theme') : null;
 if (storedTheme){
@@ -1808,11 +1812,18 @@ function jumpToMatch(n){
   focusNode(n, { animate: true, ensureVisible: true, exclusive: true, frameChildren: true });
   triggerNodeFlash(n);
 }
-document.getElementById('backBtn').onclick=()=>{
-  const v=viewStack.pop(); if (!v) return;
-  restoreView(v);
-};
-document.getElementById('centerBtn').onclick=()=>centerOnRoot(true);
+const backBtn = document.getElementById('backBtn');
+if (backBtn){
+  backBtn.onclick = () => {
+    const v = viewStack.pop();
+    if (!v) return;
+    restoreView(v);
+  };
+}
+const centerBtn = document.getElementById('centerBtn');
+if (centerBtn){
+  centerBtn.onclick = () => centerOnRoot(true);
+}
 const resetViewBtn = document.getElementById('resetViewBtn');
 if (resetViewBtn){
   resetViewBtn.addEventListener('click', () => {
@@ -1829,27 +1840,33 @@ if (fisheyeToggleBtn){
     }
   });
 }
-document.getElementById('expandBtn').onclick=()=>{
-  // Expand every node in the tree
-  walk(root, n => { n.open = true; });
-  root.children.forEach(macro => assignAngles(macro));
-  walk(root,n=>{
-    if (n.open && n.children && n.children.length>0) layoutChildren(n);
-  });
-  updateOutlineTree(root.id);
-  if (!applyingUrlState){ updateUrlFromState(); }
-  kickPhysics(1500);
-};
+const expandBtn = document.getElementById('expandBtn');
+if (expandBtn){
+  expandBtn.onclick = () => {
+    // Expand every node in the tree
+    walk(root, n => { n.open = true; });
+    root.children.forEach(macro => assignAngles(macro));
+    walk(root,n=>{
+      if (n.open && n.children && n.children.length>0) layoutChildren(n);
+    });
+    updateOutlineTree(root.id);
+    if (!applyingUrlState){ updateUrlFromState(); }
+    kickPhysics(1500);
+  };
+}
 // Collapse All handled below with layout and physics adjustments
 // Freeze the layout after collapsing to keep macros stable
-document.getElementById('collapseBtn').onclick=()=>{
-  walk(root,n=>{ if(n!==root) n.open=false; });
-  root.children.forEach(macro => assignAngles(macro));
-  root.children.forEach(macro => layoutChildren(macro));
-  updateOutlineTree(root.id);
-  kickPhysics();
-  updateBreadcrumb(root);
-};
+const collapseBtn = document.getElementById('collapseBtn');
+if (collapseBtn){
+  collapseBtn.onclick = () => {
+    walk(root,n=>{ if(n!==root) n.open=false; });
+    root.children.forEach(macro => assignAngles(macro));
+    root.children.forEach(macro => layoutChildren(macro));
+    updateOutlineTree(root.id);
+    kickPhysics();
+    updateBreadcrumb(root);
+  };
+}
 const themeBtnElem = document.getElementById('themeBtn');
 function syncThemeControl(){
   if (!themeBtnElem) return;
@@ -1902,12 +1919,14 @@ if (collapseOutlineBtn && outlinePaneElem){
 }
 
 const bucketTagsElem = document.getElementById('bucketTags');
-root.children.forEach((n,i)=>{
-  const s=document.createElement('span'); s.className='pill'; s.textContent=n.name;
-  s.style.borderColor = ringColour(i);
-  s.onclick=()=>focusNode(n, { animate: true, ensureVisible: true, targetScale: 1.05 });
-  bucketTagsElem.appendChild(s);
-});
+if (bucketTagsElem){
+  root.children.forEach((n,i)=>{
+    const s=document.createElement('span'); s.className='pill'; s.textContent=n.name;
+    s.style.borderColor = ringColour(i);
+    s.onclick=()=>focusNode(n, { animate: true, ensureVisible: true, targetScale: 1.05 });
+    bucketTagsElem.appendChild(s);
+  });
+}
 function exportPNG(mult){
   const w=canvas.width*mult, h=canvas.height*mult;
   const off = document.createElement('canvas'); off.width=w; off.height=h;
@@ -1927,9 +1946,12 @@ function exportPNG(mult){
   })();
   const a=document.createElement('a'); a.href=off.toDataURL('image/png'); a.download='infosec_universe_'+mult+'x.png'; a.click();
 }
-document.getElementById('png1').onclick=()=>exportPNG(1);
-document.getElementById('png2').onclick=()=>exportPNG(2);
-document.getElementById('png4').onclick=()=>exportPNG(4);
+const png1Btn = document.getElementById('png1');
+if (png1Btn){ png1Btn.onclick = () => exportPNG(1); }
+const png2Btn = document.getElementById('png2');
+if (png2Btn){ png2Btn.onclick = () => exportPNG(2); }
+const png4Btn = document.getElementById('png4');
+if (png4Btn){ png4Btn.onclick = () => exportPNG(4); }
 window.addEventListener('keydown', e=>{
   const active = document.activeElement;
   const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
@@ -2773,17 +2795,21 @@ function updateMinimap(){
 
 // Mini‑map interaction: drag on minimap to recenter main view
 let draggingMini = false;
-document.getElementById('minimap').addEventListener('mousedown', (e) => {
-  draggingMini = true;
-  handleMiniDrag(e);
-});
-document.getElementById('minimap').addEventListener('mousemove', (e) => {
-  if (draggingMini) handleMiniDrag(e);
-});
+const minimapCanvas = document.getElementById('minimap');
+if (minimapCanvas){
+  minimapCanvas.addEventListener('mousedown', (e) => {
+    draggingMini = true;
+    handleMiniDrag(e);
+  });
+  minimapCanvas.addEventListener('mousemove', (e) => {
+    if (draggingMini) handleMiniDrag(e);
+  });
+}
 window.addEventListener('mouseup', () => { draggingMini = false; });
 function handleMiniDrag(e){
   if (!miniMapBounds) return;
-  const rect = document.getElementById('minimap').getBoundingClientRect();
+  if (!minimapCanvas) return;
+  const rect = minimapCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
   // convert mini coords back to world coordinate in centre
@@ -2795,24 +2821,26 @@ function handleMiniDrag(e){
 }
 
 // Sidebar collapse toggle
-document.getElementById('toggleSidebarBtn').onclick = () => {
-  const appElem = document.querySelector('.app');
-  const collapsed = appElem.classList.toggle('collapsed');
-  appElem.classList.remove('show-sidebar');
-  const btn = document.getElementById('toggleSidebarBtn');
-  const reopenBtn = document.getElementById('sidebarReopenBtn');
-  if (reopenBtn) {
-    reopenBtn.style.display = collapsed ? 'block' : 'none';
-  }
-  if (btn){
-    btn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
-  }
-};
+const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+if (toggleSidebarBtn){
+  toggleSidebarBtn.onclick = () => {
+    const appElem = document.querySelector('.app');
+    if (!appElem) return;
+    const collapsed = appElem.classList.toggle('collapsed');
+    appElem.classList.remove('show-sidebar');
+    const reopenBtn = document.getElementById('sidebarReopenBtn');
+    if (reopenBtn) {
+      reopenBtn.style.display = collapsed ? 'block' : 'none';
+    }
+    toggleSidebarBtn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+  };
+}
 
 const hamburgerBtn = document.getElementById('hamburgerBtn');
 if (hamburgerBtn){
   hamburgerBtn.addEventListener('click', () => {
     const appElem = document.querySelector('.app');
+    if (!appElem) return;
     const open = appElem.classList.toggle('show-sidebar');
     if (open){
       appElem.classList.remove('collapsed');
@@ -2825,7 +2853,7 @@ if (hamburgerBtn){
 
 document.addEventListener('click', (event) => {
   const appElem = document.querySelector('.app');
-  if (appElem.classList.contains('show-sidebar')){
+  if (appElem && appElem.classList.contains('show-sidebar')){
     const aside = document.querySelector('aside.primary');
     if (aside && !aside.contains(event.target) && event.target !== hamburgerBtn){
       appElem.classList.remove('show-sidebar');
@@ -2836,6 +2864,7 @@ document.addEventListener('click', (event) => {
 
 window.addEventListener('resize', () => {
   const appElem = document.querySelector('.app');
+  if (!appElem) return;
   if (window.innerWidth > 1100){
     appElem.classList.remove('show-sidebar');
     if (hamburgerBtn) hamburgerBtn.setAttribute('aria-expanded', 'false');
@@ -2843,13 +2872,20 @@ window.addEventListener('resize', () => {
 });
 
 // Help modal toggling
-document.getElementById('helpBtn').onclick = () => {
-  const modal = document.getElementById('helpModal');
-  modal.style.display = 'flex';
-};
-document.getElementById('helpCloseBtn').onclick = () => {
-  document.getElementById('helpModal').style.display = 'none';
-};
+const helpBtn = document.getElementById('helpBtn');
+if (helpBtn){
+  helpBtn.onclick = () => {
+    const modal = document.getElementById('helpModal');
+    if (modal){ modal.style.display = 'flex'; }
+  };
+}
+const helpCloseBtn = document.getElementById('helpCloseBtn');
+if (helpCloseBtn){
+  helpCloseBtn.onclick = () => {
+    const modal = document.getElementById('helpModal');
+    if (modal){ modal.style.display = 'none'; }
+  };
+}
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape'){
     closeContextMenu();
@@ -2858,6 +2894,7 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keydown', (e) => {
   if (e.key === '?'){
     const modal = document.getElementById('helpModal');
+    if (!modal) return;
     modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
   }
 });
