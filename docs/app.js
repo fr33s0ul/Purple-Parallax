@@ -1515,7 +1515,7 @@ function buildSearchMatches(rawTerm){
 }
 
 function escapeRegExp(str){
-  return str.replace(/[.*+?^${}()|[\]\]/g, '\$&');
+  return str.replace(/[\\^$.*+?()[\]{}|]/g, '\$&');
 }
 
 function highlightText(text, tokens){
