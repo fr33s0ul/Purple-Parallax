@@ -13,24 +13,25 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg: #05040a;
-        --bg-alt: radial-gradient(circle at 10% 10%, rgba(137, 90, 255, 0.38), transparent 55%),
-          radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.3), transparent 60%),
-          radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.2), transparent 65%),
-          linear-gradient(160deg, #05040a 0%, #09071a 55%, #05040a 100%);
-        --surface: rgba(15, 16, 32, 0.72);
-        --surface-strong: rgba(20, 24, 46, 0.85);
-        --surface-soft: rgba(27, 30, 55, 0.45);
-        --border: rgba(108, 115, 148, 0.35);
+        --page-width: min(1100px, 92vw);
+        --bg-color: #05040a;
+        --bg-overlay: radial-gradient(circle at 10% 10%, rgba(161, 117, 255, 0.4), transparent 52%),
+          radial-gradient(circle at 75% 15%, rgba(46, 206, 255, 0.32), transparent 58%),
+          radial-gradient(circle at 30% 80%, rgba(236, 72, 153, 0.28), transparent 64%),
+          linear-gradient(150deg, #05040a 0%, #0b0a1e 55%, #05040a 100%);
+        --surface-color: rgba(16, 18, 36, 0.74);
+        --surface-strong: rgba(24, 26, 52, 0.78);
+        --surface-soft: rgba(33, 35, 70, 0.34);
+        --border-color: rgba(130, 146, 204, 0.35);
         --border-strong: rgba(148, 163, 184, 0.55);
-        --text: #f8f9ff;
-        --muted: rgba(214, 219, 238, 0.72);
-        --accent: #8f62ff;
-        --accent-soft: rgba(143, 98, 255, 0.24);
-        --accent-strong: #9775fa;
-        --chip: rgba(56, 189, 248, 0.22);
+        --text-color: #f8f9ff;
+        --muted-color: rgba(214, 219, 238, 0.74);
+        --accent-color: #8f62ff;
+        --accent-soft: rgba(143, 98, 255, 0.2);
+        --accent-strong: #9d7fff;
+        --chip-color: rgba(56, 189, 248, 0.18);
         --chip-text: #38bdf8;
-        --shadow: 0 25px 60px rgba(8, 9, 20, 0.65);
+        --shadow: 0 30px 80px rgba(8, 9, 20, 0.65);
       }
 
       * {
@@ -40,10 +41,9 @@
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: "Inter", "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        background: var(--bg);
-        color: var(--text);
+        font-family: "Inter", "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg-color);
+        color: var(--text-color);
         position: relative;
         display: flex;
         flex-direction: column;
@@ -55,7 +55,7 @@
         content: "";
         position: fixed;
         inset: 0;
-        background: var(--bg-alt);
+        background: var(--bg-overlay);
         z-index: -2;
       }
 
@@ -63,10 +63,10 @@
         content: "";
         position: fixed;
         inset: 0;
-        background: linear-gradient(130deg, rgba(143, 98, 255, 0.15), transparent 60%, rgba(56, 189, 248, 0.15));
+        background: linear-gradient(125deg, rgba(143, 98, 255, 0.16), transparent 55%, rgba(56, 189, 248, 0.18));
         pointer-events: none;
         mix-blend-mode: screen;
-        opacity: 0.75;
+        opacity: 0.7;
         z-index: -1;
       }
 
@@ -75,12 +75,10 @@
         text-decoration: none;
       }
 
-      .page-shell {
-        width: min(1160px, 92vw);
-        padding: clamp(1.6rem, 4vw, 3rem) 0 clamp(4rem, 5vw, 5rem);
-        display: flex;
-        flex-direction: column;
-        gap: clamp(2.8rem, 5vw, 4rem);
+      header,
+      main,
+      footer {
+        width: var(--page-width);
       }
 
       header {
@@ -88,6 +86,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 2.4rem;
+        padding: clamp(1.5rem, 4vw, 2.4rem) 0 0;
       }
 
       .brand {
@@ -105,7 +104,7 @@
 
       .brand small {
         font-size: 0.95rem;
-        color: var(--muted);
+        color: var(--muted-color);
         letter-spacing: 0.02em;
       }
 
@@ -113,6 +112,8 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
       }
 
       .nav-link {
@@ -121,8 +122,8 @@
         gap: 0.4rem;
         padding: 0.45rem 0.9rem;
         border-radius: 999px;
-        border: 1px solid transparent;
-        color: var(--muted);
+        border: 1px solid rgba(143, 98, 255, 0.3);
+        color: var(--muted-color);
         font-weight: 500;
         transition: all 0.25s ease;
         background: rgba(143, 98, 255, 0.08);
@@ -130,14 +131,20 @@
 
       .nav-link:hover,
       .nav-link:focus-visible {
-        color: var(--text);
-        border-color: rgba(143, 98, 255, 0.45);
-        background: rgba(143, 98, 255, 0.18);
+        color: var(--text-color);
+        border-color: rgba(143, 98, 255, 0.55);
+        background: rgba(143, 98, 255, 0.16);
+      }
+
+      main {
+        display: grid;
+        gap: clamp(3rem, 6vw, 4.2rem);
+        padding: clamp(1.6rem, 5vw, 3rem) 0 clamp(4.6rem, 7vw, 5.6rem);
       }
 
       .hero {
         display: grid;
-        gap: clamp(2rem, 5vw, 3rem);
+        gap: clamp(2.4rem, 5vw, 3.5rem);
       }
 
       .hero-heading {
@@ -151,106 +158,148 @@
         gap: 0.4rem;
         border-radius: 999px;
         padding: 0.35rem 0.85rem;
-        border: 1px solid rgba(143, 98, 255, 0.45);
-        background: rgba(143, 98, 255, 0.14);
+        border: 1px solid rgba(143, 98, 255, 0.5);
+        background: rgba(143, 98, 255, 0.15);
         color: var(--accent-strong);
         font-size: 0.82rem;
         font-weight: 600;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
       }
 
       h1 {
         margin: 0;
         font-family: "Space Grotesk", "Inter", sans-serif;
-        font-size: clamp(3.2rem, 8vw, 5.2rem);
-        font-weight: 700;
-        letter-spacing: -0.03em;
-        line-height: 1.05;
-        text-transform: lowercase;
+        font-size: clamp(2.8rem, 5.5vw, 4.6rem);
+        letter-spacing: -0.02em;
       }
 
-      .hero p {
-        margin: 0;
-        max-width: 560px;
-        color: var(--muted);
-        font-size: 1.05rem;
+      .hero-copy {
+        color: var(--muted-color);
+        font-size: clamp(1.05rem, 2vw, 1.25rem);
         line-height: 1.7;
+        max-width: 48ch;
       }
 
       .hero-actions {
         display: flex;
+        align-items: center;
+        gap: 1rem;
         flex-wrap: wrap;
-        gap: 0.85rem;
       }
 
-      .hero-actions a {
-        padding: 0.65rem 1.15rem;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        background: var(--surface);
-        color: var(--text);
+      .primary-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.75rem 1.4rem;
+        border-radius: 999px;
+        border: 1px solid rgba(143, 98, 255, 0.6);
+        background: linear-gradient(120deg, rgba(143, 98, 255, 0.25), rgba(56, 189, 248, 0.22));
+        color: var(--text-color);
         font-weight: 600;
-        letter-spacing: 0.01em;
-        transition: transform 0.25s ease, box-shadow 0.25s ease, border 0.25s ease;
-      }
-
-      .hero-actions a:hover,
-      .hero-actions a:focus-visible {
-        transform: translateY(-2px);
-        border-color: var(--accent);
-        box-shadow: 0 15px 30px rgba(143, 98, 255, 0.25);
-      }
-
-      .hero-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.4rem;
-      }
-
-      .hero-card {
-        position: relative;
-        display: grid;
-        gap: 0.75rem;
-        padding: 1.4rem;
-        border-radius: 18px;
-        border: 1px solid var(--border);
-        background: var(--surface);
+        letter-spacing: 0.02em;
         box-shadow: var(--shadow);
+      }
+
+      .secondary-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.75rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(15, 16, 32, 0.6);
+        color: var(--muted-color);
+        font-weight: 500;
+      }
+
+      .hero-panel {
+        display: grid;
+        gap: 1.1rem;
+        padding: clamp(1.8rem, 4vw, 2.8rem);
+        border-radius: 24px;
+        background: linear-gradient(160deg, rgba(15, 18, 42, 0.72), rgba(18, 22, 54, 0.65));
+        border: 1px solid rgba(143, 98, 255, 0.26);
+        box-shadow: var(--shadow);
+        position: relative;
         overflow: hidden;
       }
 
-      .hero-card::before {
+      .hero-panel::after {
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(circle at top left, rgba(143, 98, 255, 0.4), transparent 55%);
-        opacity: 0.75;
+        background: radial-gradient(circle at 10% 10%, rgba(143, 98, 255, 0.25), transparent 55%),
+          radial-gradient(circle at 75% 85%, rgba(56, 189, 248, 0.32), transparent 55%);
+        opacity: 0.8;
+        mix-blend-mode: screen;
         pointer-events: none;
       }
 
-      .hero-card strong {
+      .panel-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
         font-family: "Space Grotesk", "Inter", sans-serif;
-        font-size: 1.35rem;
-        letter-spacing: -0.01em;
+        font-size: 1.15rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
       }
 
-      .hero-card p {
+      .panel-title span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        background: rgba(143, 98, 255, 0.2);
+        border: 1px solid rgba(143, 98, 255, 0.4);
+        font-size: 0.9rem;
+      }
+
+      .panel-description {
         margin: 0;
-        color: var(--muted);
-        font-size: 0.95rem;
-        line-height: 1.6;
+        color: var(--muted-color);
+        font-size: 0.98rem;
+        line-height: 1.65;
       }
 
-      section {
+      .panel-stats {
         display: grid;
-        gap: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+      }
+
+      .stat {
+        padding: 1rem;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(16, 18, 36, 0.55);
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      .stat strong {
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+
+      .stat span {
+        font-size: 0.85rem;
+        color: var(--muted-color);
+        letter-spacing: 0.02em;
       }
 
       .section-heading {
         display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 2rem;
+        flex-wrap: wrap;
       }
 
       .section-heading h2 {
@@ -261,446 +310,445 @@
       }
 
       .section-heading p {
-        margin: 0;
-        max-width: 560px;
-        color: var(--muted);
-        line-height: 1.7;
-      }
-
-      .grid-3 {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 1.6rem;
-      }
-
-      .panel {
-        position: relative;
-        display: grid;
-        gap: 0.85rem;
-        padding: 1.6rem;
-        border-radius: 20px;
-        border: 1px solid var(--border);
-        background: var(--surface-strong);
-        box-shadow: var(--shadow);
-        overflow: hidden;
-      }
-
-      .panel::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(135deg, rgba(143, 98, 255, 0.2), transparent 50%, rgba(56, 189, 248, 0.18));
-        opacity: 0.7;
-        pointer-events: none;
-      }
-
-      .panel h3 {
-        margin: 0;
-        font-family: "Space Grotesk", "Inter", sans-serif;
-        font-size: 1.35rem;
-        letter-spacing: -0.01em;
-      }
-
-      .panel p {
-        margin: 0;
-        color: var(--muted);
+        max-width: 42ch;
+        color: var(--muted-color);
         line-height: 1.6;
+        font-size: 1rem;
       }
 
-      .panel ul {
-        margin: 0;
-        padding-left: 1.1rem;
-        color: var(--muted);
-        display: grid;
-        gap: 0.45rem;
-        line-height: 1.55;
-      }
-
-      .panel .chip-row {
+      .chip-row {
         display: flex;
+        gap: 0.75rem;
         flex-wrap: wrap;
-        gap: 0.6rem;
       }
 
       .chip {
         display: inline-flex;
         align-items: center;
-        padding: 0.25rem 0.75rem;
+        gap: 0.4rem;
+        padding: 0.35rem 0.9rem;
         border-radius: 999px;
-        background: var(--chip);
+        background: var(--chip-color);
+        border: 1px solid rgba(56, 189, 248, 0.4);
         color: var(--chip-text);
         font-size: 0.78rem;
-        font-weight: 600;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.18em;
         text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .work-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .work-card {
+        position: relative;
+        display: grid;
+        gap: 1rem;
+        padding: 1.8rem;
+        border-radius: 22px;
+        background: var(--surface-color);
+        border: 1px solid rgba(143, 98, 255, 0.24);
+        overflow: hidden;
+      }
+
+      .work-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 20% 20%, rgba(143, 98, 255, 0.16), transparent 60%),
+          radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.18), transparent 60%);
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      .work-card h3 {
+        margin: 0;
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: 1.45rem;
+      }
+
+      .work-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        color: var(--muted-color);
+        font-size: 0.86rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .work-description {
+        margin: 0;
+        color: var(--muted-color);
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+
+      .method-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.4rem;
+      }
+
+      .method-card {
+        padding: 1.6rem;
+        border-radius: 20px;
+        background: var(--surface-strong);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        display: grid;
+        gap: 0.8rem;
+      }
+
+      .method-card span {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: rgba(143, 98, 255, 0.75);
+      }
+
+      .method-card h3 {
+        margin: 0;
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: 1.35rem;
+      }
+
+      .method-card p {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--muted-color);
+        line-height: 1.6;
       }
 
       .timeline {
         display: grid;
-        gap: 1.6rem;
+        gap: 1rem;
+        position: relative;
+        padding-left: 1.5rem;
+      }
+
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 0.6rem;
+        top: 0.5rem;
+        bottom: 0.5rem;
+        width: 2px;
+        background: linear-gradient(180deg, rgba(143, 98, 255, 0.45), rgba(56, 189, 248, 0.35));
       }
 
       .timeline-item {
         position: relative;
-        padding-left: 2.2rem;
+        padding: 1.2rem 1.5rem;
+        border-radius: 18px;
+        background: rgba(16, 18, 36, 0.6);
+        border: 1px solid rgba(143, 98, 255, 0.22);
+        display: grid;
+        gap: 0.45rem;
       }
 
       .timeline-item::before {
         content: "";
         position: absolute;
-        left: 0.75rem;
-        top: 0.2rem;
-        bottom: 0;
-        border-left: 1px dashed rgba(143, 98, 255, 0.4);
-      }
-
-      .timeline-item::after {
-        content: "";
-        position: absolute;
-        top: 0.15rem;
-        left: 0.4rem;
-        width: 0.65rem;
-        height: 0.65rem;
-        border-radius: 50%;
-        background: var(--accent);
-        box-shadow: 0 0 0 6px rgba(143, 98, 255, 0.15);
-      }
-
-      .timeline-item strong {
-        font-family: "Space Grotesk", "Inter", sans-serif;
-        font-size: 1.05rem;
+        left: -0.95rem;
+        top: 1.4rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(143, 98, 255, 0.85);
+        border: 2px solid #08091c;
+        box-shadow: 0 0 0 4px rgba(143, 98, 255, 0.25);
       }
 
       .timeline-item span {
-        display: block;
-        margin-top: 0.35rem;
-        color: var(--muted);
-        line-height: 1.6;
-        max-width: 620px;
+        font-size: 0.78rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(143, 98, 255, 0.75);
       }
 
-      .cta-card {
-        display: grid;
-        gap: 1rem;
-        padding: clamp(1.8rem, 5vw, 2.6rem);
-        border-radius: 22px;
-        border: 1px solid rgba(56, 189, 248, 0.35);
-        background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), transparent 55%, rgba(236, 72, 153, 0.24));
-        box-shadow: var(--shadow);
-      }
-
-      .cta-card h3 {
+      .timeline-item h3 {
         margin: 0;
         font-family: "Space Grotesk", "Inter", sans-serif;
-        font-size: clamp(1.6rem, 4vw, 2.3rem);
+        font-size: 1.2rem;
       }
 
-      .cta-card p {
+      .timeline-item p {
         margin: 0;
-        color: var(--muted);
-        line-height: 1.7;
-        max-width: 640px;
+        color: var(--muted-color);
+        font-size: 0.92rem;
+        line-height: 1.6;
       }
 
-      .cta-card a {
-        justify-self: start;
-        padding: 0.75rem 1.2rem;
-        border-radius: 999px;
-        border: 1px solid rgba(56, 189, 248, 0.5);
-        background: rgba(5, 4, 10, 0.45);
-        color: #7dd3fc;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        transition: all 0.25s ease;
+      .cta {
+        border-radius: 24px;
+        border: 1px solid rgba(143, 98, 255, 0.3);
+        background: linear-gradient(140deg, rgba(16, 18, 36, 0.75), rgba(24, 26, 52, 0.72));
+        padding: clamp(2rem, 5vw, 2.8rem);
+        display: grid;
+        gap: 1rem;
+        text-align: center;
       }
 
-      .cta-card a:hover,
-      .cta-card a:focus-visible {
-        background: rgba(56, 189, 248, 0.15);
-        border-color: rgba(56, 189, 248, 0.75);
+      .cta h2 {
+        margin: 0;
+        font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: clamp(1.9rem, 4vw, 2.6rem);
+      }
+
+      .cta p {
+        margin: 0 auto;
+        max-width: 48ch;
+        font-size: 1rem;
+        color: var(--muted-color);
+        line-height: 1.6;
+      }
+
+      .cta a {
+        justify-self: center;
       }
 
       footer {
+        padding: clamp(2.4rem, 6vw, 3.2rem) 0 clamp(1.8rem, 4vw, 2.6rem);
         display: grid;
-        gap: 1rem;
-        padding: 3rem 0 1.6rem;
-        text-align: center;
-        color: var(--muted);
-        font-size: 0.9rem;
+        gap: 1.2rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.22);
+        margin-top: auto;
       }
 
-      .footer-links {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 0.8rem;
+      footer span {
+        font-size: 0.85rem;
+        color: var(--muted-color);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
       }
 
-      .footer-links a {
-        padding: 0.3rem 0.65rem;
-        border-radius: 999px;
-        border: 1px solid transparent;
-        background: rgba(143, 98, 255, 0.08);
-        color: var(--muted);
-        font-weight: 500;
-        transition: all 0.2s ease;
+      footer a {
+        justify-self: end;
+        font-size: 0.95rem;
+        letter-spacing: 0.05em;
+        color: var(--chip-text);
       }
 
-      .footer-links a:hover,
-      .footer-links a:focus-visible {
-        color: var(--text);
-        border-color: rgba(143, 98, 255, 0.45);
-        background: rgba(143, 98, 255, 0.18);
+      @media (min-width: 960px) {
+        .hero {
+          grid-template-columns: 1.2fr 0.9fr;
+          align-items: center;
+        }
       }
 
-      @media (max-width: 820px) {
+      @media (max-width: 720px) {
         header {
           flex-direction: column;
           align-items: flex-start;
         }
 
-        nav {
-          flex-wrap: wrap;
+        footer {
+          text-align: left;
         }
 
-        .hero-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      @media (max-width: 620px) {
-        h1 {
-          font-size: clamp(2.6rem, 10vw, 3rem);
-        }
-
-        .page-shell {
-          gap: 2.5rem;
-        }
-
-        .hero-actions a {
-          width: 100%;
-          justify-content: center;
-        }
-
-        .panel,
-        .hero-card {
-          padding: 1.25rem;
+        footer a {
+          justify-self: start;
         }
       }
     </style>
   </head>
   <body>
-    <main class="page-shell">
-      <header>
-        <div class="brand">
-          <span>miniature funicular</span>
-          <small>high-fidelity strategy, systems &amp; storytelling</small>
-        </div>
-        <nav>
-          <a class="nav-link" href="#atlas">atlas</a>
-          <a class="nav-link" href="#work">work</a>
-          <a class="nav-link" href="#process">process</a>
-          <a class="nav-link" href="#connect">connect</a>
-        </nav>
-      </header>
-
-      <section class="hero" id="atlas">
+    <header>
+      <div class="brand">
+        <span>miniature funicular</span>
+        <small>cinematic strategy studio</small>
+      </div>
+      <nav>
+        <a class="nav-link" href="#work">selected work</a>
+        <a class="nav-link" href="#method">operating method</a>
+        <a class="nav-link" href="#signals">signal log</a>
+        <a class="nav-link" href="#contact">contact</a>
+      </nav>
+    </header>
+    <main>
+      <section class="hero" id="top">
         <div class="hero-heading">
-          <span class="tag">integrated studio</span>
-          <h1>precision-crafted journeys for people, product &amp; purpose.</h1>
-          <p>
-            We choreograph strategic intelligence, cross-functional operations, and evocative experience
-            design into a single cinematic thread. From zero-to-one to scale, miniature funicular brings
-            cohesion to the entire customer cosmos.
+          <span class="tag">Cinematic strategy</span>
+          <h1>Immersive brand systems, orchestrated for velocity</h1>
+          <p class="hero-copy">
+            miniature funicular is a cinematic strategy studio engineering story worlds for ambitious teams.
+            We orchestrate narrative, design, and experience so companies can move with confidence through
+            pivotal moments.
           </p>
           <div class="hero-actions">
-            <a href="#work">view recent chapters</a>
-            <a href="#process">explore the playbook</a>
-            <a href="#connect">start a project</a>
+            <a class="primary-action" href="#contact">Partner with miniature funicular</a>
+            <a class="secondary-action" href="#signals">Latest signal log</a>
           </div>
         </div>
-        <div class="hero-grid">
-          <article class="hero-card">
-            <strong>dynamic telemetry.</strong>
-            <p>
-              Real-time orchestration of research, product intelligence, and strategic telemetry to map
-              trajectories with absolute clarity.
-            </p>
-          </article>
-          <article class="hero-card">
-            <strong>systems choreography.</strong>
-            <p>
-              We harmonize product, marketing, and revenue engines, aligning teams on shared timelines,
-              language, and velocity.
-            </p>
-          </article>
-          <article class="hero-card">
-            <strong>immersive narratives.</strong>
-            <p>
-              Cinematic storytelling that translates complex architectures into human momentum across the
-              entire customer atlas.
-            </p>
-          </article>
-        </div>
+        <aside class="hero-panel">
+          <div class="panel-title"><span>mf</span>Active playbooks</div>
+          <p class="panel-description">
+            Each engagement merges narrative architecture, spatial design, and operational choreography.
+            Velocity, clarity, and emotion interlock to move audiences from sensing to action.
+          </p>
+          <div class="panel-stats">
+            <div class="stat">
+              <strong>Atlas orchestration</strong>
+              <span>Realtime insight surface woven into your ecosystems</span>
+            </div>
+            <div class="stat">
+              <strong>Immersive storytelling</strong>
+              <span>Design systems engineered as cinematic universes</span>
+            </div>
+            <div class="stat">
+              <strong>Operational lift</strong>
+              <span>Integrated rituals &amp; automation to sustain momentum</span>
+            </div>
+          </div>
+        </aside>
       </section>
 
       <section id="work">
         <div class="section-heading">
-          <span class="tag">selected work</span>
-          <h2>curated programs that bend reality toward resonance.</h2>
+          <h2>Selected work</h2>
           <p>
-            From emergent ventures to enterprise transformations, these engagements demonstrate how
-            miniature funicular merges intelligence, design craft, and operational excellence into singular
-            experiences.
+            A few moments where miniature funicular pulled teams through massive shifts. Each timeline merges
+            orchestrated intelligence, multi-sensory experience, and decisive operations.
           </p>
         </div>
-        <div class="grid-3">
-          <article class="panel">
-            <h3>atlas of sentinels</h3>
-            <p>
-              Orchestrated a multi-layer threat intelligence platform combining telemetry visualizations,
-              adaptive playbooks, and executive readiness narratives.
-            </p>
-            <div class="chip-row">
-              <span class="chip">cyber</span>
-              <span class="chip">strategy</span>
-              <span class="chip">design systems</span>
+        <div class="chip-row">
+          <span class="chip">Product launches</span>
+          <span class="chip">Narrative architecture</span>
+          <span class="chip">Immersive experiences</span>
+          <span class="chip">Growth rituals</span>
+        </div>
+        <div class="work-grid">
+          <article class="work-card">
+            <div class="work-meta">
+              <span>2024</span>
+              <span>stealth ai platform</span>
             </div>
+            <h3>Realtime cyber theatre</h3>
+            <p class="work-description">
+              Built a live operations atlas with adaptive threat storytelling for executive, operations, and GTM teams.
+              Unified telemetry, training, and high-signal incident reporting into a single cinematic surface.
+            </p>
           </article>
-          <article class="panel">
-            <h3>celestial runway</h3>
-            <p>
-              Built a growth cockpit aligning product, marketing, and revenue teams with dynamic roadmaps,
-              KPI orchestrations, and cross-functional rituals.
-            </p>
-            <div class="chip-row">
-              <span class="chip">ops</span>
-              <span class="chip">product</span>
-              <span class="chip">enablement</span>
+          <article class="work-card">
+            <div class="work-meta">
+              <span>2023</span>
+              <span>global fintech</span>
             </div>
+            <h3>Flowstate activation</h3>
+            <p class="work-description">
+              Architected an experiential product world for a flagship launch. Integrated interactive narrative,
+              multi-format content, and rituals that moved audiences from inspiration to adoption within weeks.
+            </p>
           </article>
-          <article class="panel">
-            <h3>parallel observatory</h3>
-            <p>
-              Crafted an immersive executive briefing center blending spatial computing prototypes with
-              narrative arcs that accelerate enterprise adoption.
-            </p>
-            <div class="chip-row">
-              <span class="chip">experience</span>
-              <span class="chip">storytelling</span>
-              <span class="chip">labs</span>
+          <article class="work-card">
+            <div class="work-meta">
+              <span>2023</span>
+              <span>advanced research lab</span>
             </div>
+            <h3>Synthesis observatory</h3>
+            <p class="work-description">
+              Delivered a cinematic knowledge environment merging research insights, partner telemetry, and immersive
+              story worlds that align scientists, operators, and investors across long horizons.
+            </p>
           </article>
         </div>
       </section>
 
-      <section id="process">
+      <section id="method">
         <div class="section-heading">
-          <span class="tag">method</span>
-          <h2>a calibrated operating system spanning insight to impact.</h2>
+          <h2>Operating method</h2>
           <p>
-            Every engagement follows a deliberate cadence that syncs intelligence gathering, systems
-            architecture, and narrative activation.
+            We choreograph systems in layers—clarity first, velocity always. Each phase stacks to create a universe
+            your teams can live inside while pushing the frontier forward.
           </p>
         </div>
-        <div class="grid-3">
-          <article class="panel">
-            <h3>sense</h3>
+        <div class="method-grid">
+          <article class="method-card">
+            <span>01</span>
+            <h3>Sensing</h3>
             <p>
-              Deep reconnaissance to identify drivers, constraints, and latent opportunities. We weave
-              product analytics, human research, and market telemetry into an actionable source of truth.
+              Signals, telemetry, and institutional memory are ingested to map the terrain and surface the high-leverage
+              storylines ready for acceleration.
             </p>
-            <ul>
-              <li>multi-signal research and modeling</li>
-              <li>decision intelligence frameworks</li>
-              <li>executive briefings and alignment</li>
-            </ul>
           </article>
-          <article class="panel">
-            <h3>shape</h3>
+          <article class="method-card">
+            <span>02</span>
+            <h3>Architecture</h3>
             <p>
-              Rapid synthesis into operating narratives, orchestrated roadmaps, and systems blueprints that
-              guide teams with clarity and momentum.
+              Strategic frames, brand systems, and narrative blueprints interlock. We configure orchestration rituals and
+              choose modalities that move the right audiences.
             </p>
-            <ul>
-              <li>experience choreography &amp; interaction design</li>
-              <li>service + system architecture</li>
-              <li>ritual design for cross-functional teams</li>
-            </ul>
           </article>
-          <article class="panel">
-            <h3>signal</h3>
+          <article class="method-card">
+            <span>03</span>
+            <h3>Activation</h3>
             <p>
-              Launch, iterate, and signal progress with cinematic storytelling and measurable outcomes that
-              cement long-term value.
+              Experience design, cinematic storytelling, and operational rollout merge. We deploy the atlas, craft
+              hero moments, and embed automation.
             </p>
-            <ul>
-              <li>executive communications &amp; enablement</li>
-              <li>operational telemetry dashboards</li>
-              <li>evergreen narrative systems</li>
-            </ul>
+          </article>
+          <article class="method-card">
+            <span>04</span>
+            <h3>Amplification</h3>
+            <p>
+              Live telemetry monitors resonance and adoption. We iterate, extend, and scale the universe so your teams
+              sustain momentum and deliver outsized impact.
+            </p>
           </article>
         </div>
       </section>
 
-      <section>
+      <section id="signals">
         <div class="section-heading">
-          <span class="tag">changelog</span>
-          <h2>recent movements across the studio.</h2>
+          <h2>Signal log</h2>
           <p>
-            Velocity matters. Here are a few signals from the miniature funicular workstream that highlight
-            ongoing collaborations and explorations.
+            Glimpses into current experiments, launches, and research cycles shaping the miniature funicular universe.
+            A running trace of how the studio navigates complex systems.
           </p>
         </div>
         <div class="timeline">
-          <div class="timeline-item">
-            <strong>launching an adaptive go-to-market nerve center</strong>
-            <span>
-              Architected a GTM intelligence hub that connects revenue telemetry, integrated campaign ops,
-              and enablement rituals for a scale-up entering three new markets.
-            </span>
-          </div>
-          <div class="timeline-item">
-            <strong>designing an executive threat rehearsal arena</strong>
-            <span>
-              Built an immersive simulation program for global CISOs, blending scenario design, critical
-              response choreography, and live storytelling.
-            </span>
-          </div>
-          <div class="timeline-item">
-            <strong>spinning up a spatial computing exploration lab</strong>
-            <span>
-              Partnered with product leadership to prototype mixed-reality customer journeys that compress
-              onboarding timelines and elevate brand resonance.
-            </span>
-          </div>
+          <article class="timeline-item">
+            <span>Now</span>
+            <h3>Atlas 0.8 deploy</h3>
+            <p>
+              Rolling the latest atlas spine across a multinational security team, weaving real-time threat monitoring
+              with immersive executive briefings for rapid decision velocity.
+            </p>
+          </article>
+          <article class="timeline-item">
+            <span>Last month</span>
+            <h3>Storyworld field kit</h3>
+            <p>
+              Packaging a modular toolkit for teams to launch cinematic storyworlds in under six weeks, complete with
+              rituals, creative direction, and AI-assisted production flows.
+            </p>
+          </article>
+          <article class="timeline-item">
+            <span>Q1</span>
+            <h3>Immersive R&amp;D residency</h3>
+            <p>
+              Hosted a cross-discipline residency exploring AI choreography, ambient computing, and responsive spatial
+              design to reimagine how intelligence surfaces in physical environments.
+            </p>
+          </article>
         </div>
       </section>
 
-      <section id="connect">
-        <div class="cta-card">
-          <span class="tag">collaborate</span>
-          <h3>let's engineer the next chapter together.</h3>
-          <p>
-            miniature funicular thrives in the tension between complex systems and human experience. If you
-            need a partner to orchestrate clarity, craft, and velocity across your organization, drop a
-            note and let's map the ascent.
-          </p>
-          <a href="mailto:hello@miniaturefunicular.com">hello@miniaturefunicular.com</a>
-        </div>
+      <section class="cta" id="contact">
+        <h2>Bring miniature funicular into your next decisive moment</h2>
+        <p>
+          Share the mission, the timelines, and the stakes. We will architect the cinematic system that aligns your
+          teams, accelerates momentum, and lands your future story.
+        </p>
+        <a class="primary-action" href="mailto:hello@miniaturefunicular.com">hello@miniaturefunicular.com</a>
       </section>
     </main>
-
     <footer>
-      <div class="footer-links">
-        <a href="#atlas">atlas</a>
-        <a href="#work">work</a>
-        <a href="#process">process</a>
-        <a href="#connect">connect</a>
-      </div>
       <span>© miniature funicular · cinematic strategy studio</span>
+      <a href="mailto:hello@miniaturefunicular.com">hello@miniaturefunicular.com</a>
     </footer>
   </body>
 </html>
