@@ -44,7 +44,7 @@
   }
   body{transition:background 0.4s ease,color 0.4s ease;}
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
-  .app{display:grid;grid-template-columns:280px 320px 1fr;height:100%;position:relative}
+  .app{display:grid;grid-template-columns:280px 320px 1fr 260px;height:100%;position:relative}
   .outline-pane{background:var(--panel);border-right:1px solid var(--edge);padding:18px 18px 24px;overflow:auto;position:sticky;top:0;height:100vh;box-shadow:4px 0 14px rgba(0,0,0,0.12);display:flex;flex-direction:column;gap:12px;}
   .outline-pane.collapsed{display:none;}
   .outline-pane header{display:flex;align-items:center;justify-content:space-between;gap:12px;}
@@ -277,10 +277,19 @@
   .section-label span{display:flex;align-items:center;gap:6px;}
   .section-label .icon{opacity:0.7;}
 
+  .favorites-panel{background:var(--panel);border-left:1px solid var(--edge);padding:18px 18px 24px;overflow:auto;position:sticky;top:0;height:100vh;box-shadow:-4px 0 14px rgba(0,0,0,0.12);}
   .context-menu{position:fixed;z-index:10000;min-width:180px;background:var(--panel);border:1px solid var(--edge);border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,0.45);display:none;flex-direction:column;overflow:hidden;}
   .context-menu button{background:none;border:none;text-align:left;padding:10px 14px;font-size:13px;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
   .context-menu button:hover{background-color:rgba(255,255,255,0.12);}
   .context-menu button[disabled]{opacity:0.4;cursor:default;}
+  .favorites-panel h2{margin-top:0;font-size:17px;margin-bottom:6px;}
+  .favorites-panel.empty .empty-state{display:block;}
+  .favorites-panel .empty-state{display:none;color:var(--muted);font-size:13px;margin-top:12px;}
+  .favorite-item{padding:10px 12px;border:1px solid var(--edge);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:background 0.2s ease,border 0.2s ease,transform 0.15s ease;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .favorite-item:hover{background-color:rgba(255,255,255,0.12);border-color:var(--accent);transform:translateX(2px);}
+  .favorite-item button{background:none;border:none;color:var(--muted);cursor:pointer;padding:0;display:flex;}
+  .favorite-item button:hover{color:var(--accent);}
+
   .canvas-actions{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:10px;z-index:60;}
   .fisheye-toggle.active{box-shadow:0 0 0 2px rgba(255,155,106,0.35);}
 
@@ -303,7 +312,7 @@
   .dimmed{opacity:0.35;}
 
   @media (max-width:1300px){
-    .app{grid-template-columns:280px minmax(0,1fr);}
+    .app{grid-template-columns:280px minmax(0,1fr) 260px;}
     .outline-pane{display:none;}
   }
 
@@ -319,6 +328,9 @@
 
   @media (max-width:900px){
     .app{grid-template-columns:1fr;}
+    .favorites-panel{display:none;}
+    .app.show-favorites .favorites-panel{display:block;position:fixed;top:0;right:0;bottom:0;width:min(90vw,320px);transform:translateX(0);background:var(--panel);box-shadow:-6px 0 24px rgba(0,0,0,0.35);z-index:120;padding:24px 20px 28px;overflow:auto;}
+    .app.show-favorites::after{content:"";position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:110;}
     .details-pane{position:fixed;left:16px;right:16px;bottom:16px;top:auto;width:auto;max-height:50vh;z-index:130;}
   }
 
@@ -434,6 +446,10 @@
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
         <span>Lens</span>
       </button>
+      <button class="btn" id="focusFavoritesBtn" title="Show favorites panel">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21l-1.45-1.32C6.4 15.36 3 12.28 3 8.5A4.5 4.5 0 0 1 7.5 4c1.74 0 3.41 1.01 4.5 2.09C13.09 5.01 14.76 4 16.5 4A4.5 4.5 0 0 1 21 8.5c0 3.78-3.4 6.86-7.55 11.18z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Favorites</span>
+      </button>
     </div>
     <canvas id="c"></canvas>
     <!-- Overview minimap in bottom‑right corner -->
@@ -444,6 +460,13 @@
     <div class="details-pane" id="detailsPane" aria-live="polite"></div>
     <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true"></div>
   </div>
+  <aside class="favorites-panel empty" id="favoritesPanel" aria-label="Saved favorites">
+    <h2>Favorites</h2>
+    <p class="muted">Keep a shortlist of topics to revisit quickly.</p>
+    <div class="empty-state">Use the ☆ button on any topic to save it here.</div>
+    <div id="favoritesSummary" class="row"></div>
+    <div id="favoritesPanelList"></div>
+  </aside>
   <div class="sr-only" aria-live="polite" id="focusAnnounce"></div>
 </div>
 
@@ -849,13 +872,6 @@ function visible(n){
 function pathTo(n){ const p=[]; let cur=n; while(cur){ p.push(cur); cur=cur.parent; } return p.reverse(); }
 function collectVisible(){ const arr=[]; walk(root,n=>{ if(visible(n)) arr.push(n); }); return arr; }
 function collectLinks(){ const L=[]; walk(root,n=>{ if(!visible(n)) return; n.children.forEach(c=>{ if(visible(c)) L.push([n,c]); }); }); return L; }
-
-function indexTree(){
-  nodeById.clear();
-  walk(root, node => { nodeById.set(node.id, node); });
-}
-
-indexTree();
 
 function revealPath(node){
   let cur = node;
@@ -1900,7 +1916,7 @@ function toggleNode(n, animated){
   }
   // Let physics run briefly to settle the new layout, then freeze
   kickPhysics();
-  updateOutlineTree(n.id);
+  updateOutlineTree(node.id);
   if (!applyingUrlState){
     updateUrlFromState();
   }
@@ -2167,19 +2183,15 @@ function openContextMenu(node, pageX, pageY){
 function buildShareableLink(node){
   const params = new URLSearchParams();
   params.set('node', String(node.id));
-  const openChains = collectOpenChains();
-  const focusChain = pathTo(node).map(p => p.id);
-  const serializedFocus = focusChain.join('.');
-  if (!openChains.some(chain => chain.join('.') === serializedFocus)){
-    openChains.unshift(focusChain);
+  const openList = [];
+  walk(root, n => { if (n !== root && n.open){ openList.push(pathTo(n).map(p => p.id).join('.')); } });
+  if (!openList.includes(pathTo(node).map(p => p.id).join('.'))){
+    openList.push(pathTo(node).map(p => p.id).join('.'));
   }
-  if (openChains.length){
-    const trimmed = openChains.slice(0, URL_OPEN_LIMIT).map(chain => chain.join('.'));
-    params.set('open', trimmed.join(','));
-  }
-  if (Number.isFinite(offsetX)) params.set('x', offsetX.toFixed(1));
-  if (Number.isFinite(offsetY)) params.set('y', offsetY.toFixed(1));
-  if (Number.isFinite(scale)) params.set('z', scale.toFixed(3));
+  if (openList.length){ params.set('open', openList.join(',')); }
+  params.set('x', offsetX.toFixed(2));
+  params.set('y', offsetY.toFixed(2));
+  params.set('z', scale.toFixed(3));
   params.set('theme', document.documentElement.getAttribute('data-theme') || 'dark');
   if (fisheyeEnabled){ params.set('lens', '1'); }
   if (activeTags.size){ params.set('tags', Array.from(activeTags).join(',')); }
@@ -2515,18 +2527,6 @@ setTimeout(()=>{
 // Finds a node by its id. We'll use this when rendering favourites from stored IDs.
 function findNodeById(id){ return nodeById.get(id) || null; }
 
-const URL_OPEN_LIMIT = 60;
-
-function collectOpenChains(){
-  const chains = [];
-  walk(root, node => {
-    if (node !== root && node.open){
-      chains.push(pathTo(node).map(segment => segment.id));
-    }
-  });
-  return chains;
-}
-
 function updateUrlFromState(){
   if (applyingUrlState) return;
   const params = new URLSearchParams();
@@ -2534,20 +2534,19 @@ function updateUrlFromState(){
   if (focus){
     params.set('node', String(focus.id));
   }
-  const openChains = collectOpenChains();
-  if (openChains.length){
-    const trimmed = openChains.slice(0, URL_OPEN_LIMIT).map(chain => chain.join('.'));
-    params.set('open', trimmed.join(','));
+  const openList = [];
+  walk(root, node => {
+    if (node !== root && node.open){
+      const ids = pathTo(node).map(n => n.id).join('.');
+      openList.push(ids);
+    }
+  });
+  if (openList.length){
+    params.set('open', openList.join(','));
   }
-  if (Number.isFinite(offsetX)){
-    params.set('x', offsetX.toFixed(1));
-  }
-  if (Number.isFinite(offsetY)){
-    params.set('y', offsetY.toFixed(1));
-  }
-  if (Number.isFinite(scale)){
-    params.set('z', scale.toFixed(3));
-  }
+  params.set('x', offsetX.toFixed(2));
+  params.set('y', offsetY.toFixed(2));
+  params.set('z', scale.toFixed(3));
   const theme = document.documentElement.getAttribute('data-theme') || 'dark';
   params.set('theme', theme);
   if (fisheyeEnabled){
@@ -2563,194 +2562,80 @@ function updateUrlFromState(){
     params.set('tagsearch', '1');
   }
   const hash = '#' + params.toString();
-  if (window.location.hash !== hash){
-    try {
-      history.replaceState(null, '', hash);
-    } catch(e) {
-      window.location.hash = hash;
-    }
+  try {
+    history.replaceState(null, '', hash);
+  } catch(e) {
+    window.location.hash = hash;
   }
-}
-
-function safeParseStateFromHash(){
-  const hash = window.location.hash || '';
-  const query = hash.startsWith('#') ? hash.slice(1) : hash;
-  const params = new URLSearchParams(query);
-  const state = {
-    nodeId: null,
-    hasNode: params.has('node'),
-    openChains: [],
-    hasOpen: params.has('open'),
-    offsets: { x: null, y: null, z: null },
-    hasOffsets: params.has('x') || params.has('y') || params.has('z'),
-    theme: null,
-    hasTheme: params.has('theme'),
-    lens: false,
-    hasLens: params.has('lens'),
-    tags: [],
-    hasTags: params.has('tags'),
-    searchSubtree: false,
-    hasSearchSubtree: params.has('subtree'),
-    searchIncludeTags: false,
-    hasSearchIncludeTags: params.has('tagsearch')
-  };
-
-  if (state.hasNode){
-    const parsed = Number(params.get('node'));
-    if (Number.isFinite(parsed)){
-      state.nodeId = parsed;
-    }
-  }
-
-  if (state.hasOpen){
-    const raw = params.get('open') || '';
-    raw.split(',').slice(0, URL_OPEN_LIMIT).forEach(chain => {
-      if (!chain) return;
-      const ids = chain.split('.').map(id => Number(id)).filter(Number.isFinite);
-      if (ids.length){
-        state.openChains.push(ids);
-      }
-    });
-  }
-
-  if (params.has('x')){
-    const parsed = parseFloat(params.get('x'));
-    if (Number.isFinite(parsed)){
-      state.offsets.x = parsed;
-    }
-  }
-  if (params.has('y')){
-    const parsed = parseFloat(params.get('y'));
-    if (Number.isFinite(parsed)){
-      state.offsets.y = parsed;
-    }
-  }
-  if (params.has('z')){
-    const parsed = parseFloat(params.get('z'));
-    if (Number.isFinite(parsed)){
-      state.offsets.z = clamp(parsed, MIN_ZOOM, MAX_ZOOM);
-    }
-  }
-
-  if (state.hasTheme){
-    const theme = params.get('theme');
-    if (theme === 'light' || theme === 'dark'){
-      state.theme = theme;
-    }
-  }
-
-  if (state.hasLens){
-    state.lens = params.get('lens') === '1';
-  }
-
-  if (state.hasTags){
-    const tags = params.get('tags') || '';
-    state.tags = tags.split(',').map(tag => tag.trim()).filter(Boolean);
-  }
-
-  if (state.hasSearchSubtree){
-    state.searchSubtree = params.get('subtree') === '1';
-  }
-
-  if (state.hasSearchIncludeTags){
-    state.searchIncludeTags = params.get('tagsearch') === '1';
-  }
-
-  return state;
-}
-
-function applyOpenStateFromChains(chains){
-  walk(root, node => { if (node !== root) node.open = false; });
-  if (!chains || !chains.length) return;
-  chains.forEach(chain => {
-    if (!Array.isArray(chain) || !chain.length) return;
-    let current = nodeById.get(chain[0]) || root;
-    if (current !== root){
-      current = root;
-    }
-    for (let i = 1; i < chain.length; i++){
-      const candidate = nodeById.get(chain[i]);
-      if (!candidate || candidate.parent !== current){
-        current = null;
-        break;
-      }
-      current.open = true;
-      current = candidate;
-    }
-    if (current){
-      current.open = true;
-    }
-  });
 }
 
 function restoreStateFromUrl(){
-  const state = safeParseStateFromHash();
-  applyingUrlState = true;
-  try {
-    if (state.hasTheme && state.theme){
-      document.documentElement.setAttribute('data-theme', state.theme);
-      try { localStorage.setItem('atlas_theme', state.theme); } catch(e) {}
-    }
-    syncThemeControl();
-
-    if (state.hasLens){
-      fisheyeEnabled = state.lens;
-    }
-    if (fisheyeToggleBtn){
-      fisheyeToggleBtn.classList.toggle('active', !!fisheyeEnabled);
-    }
-
-    if (state.hasSearchSubtree){
-      searchInSubtree = state.searchSubtree;
-      try { localStorage.setItem('atlas_search_subtree', searchInSubtree ? '1' : '0'); } catch(e) {}
-    }
-    if (searchSubtreeElem){
-      searchSubtreeElem.checked = searchInSubtree;
-    }
-
-    if (state.hasSearchIncludeTags){
-      searchIncludeTags = state.searchIncludeTags;
-      try { localStorage.setItem('atlas_search_tags', searchIncludeTags ? '1' : '0'); } catch(e) {}
-    }
-    if (searchTagsElem){
-      searchTagsElem.checked = searchIncludeTags;
-    }
-
-    if (state.hasTags){
-      activeTags.clear();
-      state.tags.forEach(tag => activeTags.add(tag));
-      updateTagFiltersUI();
-      applyTagFilters();
-    } else {
-      updateTagFiltersUI();
-    }
-
-    if (state.hasOpen){
-      applyOpenStateFromChains(state.openChains);
-      walk(root, node => {
-        if (node.open && node.children && node.children.length > 0){
-          assignAngles(node);
-          layoutChildren(node);
-        }
-      });
-    }
-
-    const target = state.hasNode ? findNodeById(state.nodeId) : null;
-    const focusTarget = target || root;
-    focusNode(focusTarget, { animate: false, ensureVisible: true });
-
-    if (state.hasOffsets){
-      if (state.offsets.x !== null) offsetX = state.offsets.x;
-      if (state.offsets.y !== null) offsetY = state.offsets.y;
-      if (state.offsets.z !== null) scale = clamp(state.offsets.z, MIN_ZOOM, MAX_ZOOM);
-    }
-  } catch (error) {
-    console.error('Failed to restore URL state', error);
-    focusNode(root, { animate: false, ensureVisible: true });
-  } finally {
-    applyingUrlState = false;
-    updateUrlFromState();
+  if (!window.location.hash){
+    updateBreadcrumb(root);
+    return;
   }
+  const paramString = window.location.hash.slice(1);
+  const params = new URLSearchParams(paramString);
+  applyingUrlState = true;
+  const themeParam = params.get('theme');
+  if (themeParam){
+    document.documentElement.setAttribute('data-theme', themeParam);
+    try { localStorage.setItem('atlas_theme', themeParam); } catch(e) {}
+    syncThemeControl();
+  }
+  const lensParam = params.get('lens');
+  fisheyeEnabled = lensParam === '1';
+  if (fisheyeToggleBtn){
+    fisheyeToggleBtn.classList.toggle('active', fisheyeEnabled);
+  }
+  searchInSubtree = params.get('subtree') === '1';
+  searchIncludeTags = params.get('tagsearch') === '1';
+  if (searchSubtreeElem){
+    searchSubtreeElem.checked = searchInSubtree;
+  }
+  if (searchTagsElem){
+    searchTagsElem.checked = searchIncludeTags;
+  }
+  const xParam = params.get('x');
+  const yParam = params.get('y');
+  const zParam = params.get('z');
+  if (xParam) offsetX = parseFloat(xParam) || offsetX;
+  if (yParam) offsetY = parseFloat(yParam) || offsetY;
+  if (zParam) scale = clamp(parseFloat(zParam) || scale, MIN_ZOOM, MAX_ZOOM);
+  const tagsParam = params.get('tags');
+  if (tagsParam){
+    activeTags.clear();
+    tagsParam.split(',').filter(Boolean).forEach(t => activeTags.add(t));
+    updateTagFiltersUI();
+    applyTagFilters();
+  }
+  walk(root, node => { if (node !== root) node.open = false; });
+  const openParam = params.get('open');
+  if (openParam){
+    openParam.split(',').forEach(chain => {
+      const ids = chain.split('.').map(id => Number(id));
+      if (!ids.length) return;
+      let current = root;
+      for (let i = 1; i < ids.length; i++){
+        const next = current.children.find(ch => ch.id === ids[i]);
+        if (!next) return;
+        current.open = true;
+        current = next;
+      }
+      current.open = true;
+    });
+  }
+  walk(root, node => {
+    if (node.open && node.children && node.children.length > 0){
+      assignAngles(node);
+      layoutChildren(node);
+    }
+  });
+  const nodeParam = Number(params.get('node'));
+  const target = nodeParam ? findNodeById(nodeParam) : root;
+  updateOutlineTree(target ? target.id : root.id);
+  applyingUrlState = false;
+  focusNode(target || root, { animate: false, ensureVisible: true });
 }
 
 // Update breadcrumb trail based on a node's path
