@@ -111,6 +111,12 @@ let searchIncludeTags = false;
 let fisheyeEnabled = false;
 let applyingUrlState = false;
 let contextMenuNode = null;
+let detailsPopoverElem = null;
+let detailsContentElem = null;
+let detailsCloseBtn = null;
+let detailsReturnFocus = null;
+let detailsJustOpened = false;
+let detailsLastAnchorRect = null;
 const TAG_RULES = [
   { label: 'Network', patterns: [/network/i, /tcp|udp/i, /osi/i, /dns/i] },
   { label: 'Web', patterns: [/web/i, /http/i, /browser/i, /api/i] },
@@ -1657,6 +1663,10 @@ function openContextMenu(node, pageX, pageY){
     { label: 'Focus & frame', handler: () => focusNode(node, { animate: true, ensureVisible: true, frameChildren: true }) },
     { label: 'Expand branch', handler: () => expandSubtree(node) },
     { label: 'Collapse branch', handler: () => collapseSubtree(node) },
+    { label: 'Show details', handler: (btn) => {
+        const rect = btn?.getBoundingClientRect();
+        renderDetailsPanel(node, { anchorRect: rect || null, anchor: btn || null, open: true, restoreFocus: btn || null });
+      } },
     { label: 'Copy link', handler: () => {
         const link = buildShareableLink(node);
         navigator.clipboard?.writeText(link).catch(() => {});
@@ -1667,7 +1677,7 @@ function openContextMenu(node, pageX, pageY){
     btn.type = 'button';
     btn.textContent = action.label;
     btn.onclick = () => {
-      action.handler();
+      action.handler(btn);
       closeContextMenu();
     };
     if ((action.label === 'Expand branch' || action.label === 'Collapse branch') && (!node.children || !node.children.length)){
@@ -1789,6 +1799,9 @@ document.addEventListener('click', (e) => {
   }
   if (contextMenuElem && contextMenuElem.style.display === 'flex' && !contextMenuElem.contains(e.target)){
     closeContextMenu();
+  }
+  if (detailsPopoverElem && !detailsPopoverElem.hidden && !detailsJustOpened && !detailsPopoverElem.contains(e.target)){
+    hideDetailsPopover();
   }
 });
 function openPathOnly(n){
@@ -2298,80 +2311,193 @@ function updateBreadcrumb(n){
   }
 }
 
-function renderDetailsPanel(node){
-  const pane = document.getElementById('detailsPane');
-  if (!pane) return;
-  pane.innerHTML = '';
+function ensureDetailsPopover(){
+  if (detailsPopoverElem) return detailsPopoverElem;
+  const popover = document.createElement('div');
+  popover.className = 'details-popover';
+  popover.setAttribute('role', 'dialog');
+  popover.setAttribute('aria-modal', 'false');
+  popover.setAttribute('aria-hidden', 'true');
+  popover.setAttribute('aria-live', 'polite');
+  popover.hidden = true;
+
+  const header = document.createElement('div');
+  header.className = 'details-header';
+  detailsCloseBtn = document.createElement('button');
+  detailsCloseBtn.type = 'button';
+  detailsCloseBtn.className = 'details-close';
+  detailsCloseBtn.textContent = 'Close';
+  detailsCloseBtn.addEventListener('click', () => hideDetailsPopover());
+  header.appendChild(detailsCloseBtn);
+  popover.appendChild(header);
+
+  detailsContentElem = document.createElement('div');
+  detailsContentElem.id = 'detailsPopoverContent';
+  detailsContentElem.className = 'details-content';
+  popover.appendChild(detailsContentElem);
+
+  popover.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape'){
+      event.preventDefault();
+      hideDetailsPopover();
+    }
+  });
+
+  document.body.appendChild(popover);
+  detailsPopoverElem = popover;
+  return popover;
+}
+
+function hideDetailsPopover(){
+  if (!detailsPopoverElem || detailsPopoverElem.hidden) return;
+  detailsPopoverElem.hidden = true;
+  detailsPopoverElem.setAttribute('aria-hidden', 'true');
+  detailsPopoverElem.style.left = '';
+  detailsPopoverElem.style.top = '';
+  detailsPopoverElem.style.right = '';
+  detailsLastAnchorRect = null;
+  const restoreTarget = detailsReturnFocus;
+  detailsReturnFocus = null;
+  if (restoreTarget && typeof restoreTarget.focus === 'function'){
+    requestAnimationFrame(() => {
+      if (document.contains(restoreTarget)){
+        restoreTarget.focus();
+      } else if (document.body && typeof document.body.focus === 'function'){
+        document.body.focus();
+      }
+    });
+  }
+  detailsJustOpened = false;
+}
+
+function positionDetailsPopover(anchorRect){
+  if (!detailsPopoverElem) return;
+  const margin = 16;
+  if (anchorRect){
+    const size = detailsPopoverElem.getBoundingClientRect();
+    let left = anchorRect.left + window.scrollX;
+    let top = anchorRect.bottom + window.scrollY + 8;
+    const maxLeft = window.scrollX + window.innerWidth - size.width - margin;
+    const maxTop = window.scrollY + window.innerHeight - size.height - margin;
+    left = Math.min(Math.max(window.scrollX + margin, left), maxLeft);
+    top = Math.min(Math.max(window.scrollY + margin, top), maxTop);
+    detailsPopoverElem.style.left = `${left}px`;
+    detailsPopoverElem.style.top = `${top}px`;
+    detailsPopoverElem.style.right = 'auto';
+  } else {
+    detailsPopoverElem.style.right = `${margin}px`;
+    detailsPopoverElem.style.top = `${margin}px`;
+    detailsPopoverElem.style.left = 'auto';
+  }
+}
+
+function renderDetailsPanel(node, options = {}){
+  const shouldOpen = !!options.open;
+  const popoverIsOpen = detailsPopoverElem && !detailsPopoverElem.hidden;
+  if (!shouldOpen && !popoverIsOpen){
+    return;
+  }
+
+  const popover = ensureDetailsPopover();
+  if (!detailsContentElem) return;
+
+  detailsContentElem.innerHTML = '';
   if (!node){
     const empty = document.createElement('div');
     empty.className = 'empty';
     empty.textContent = 'Select a node to inspect its context.';
-    pane.appendChild(empty);
-    return;
-  }
-  pane.setAttribute('role', 'region');
-  pane.setAttribute('aria-label', `Context for ${fallbackText(node, 'name')}`);
-  const title = document.createElement('h2');
-  title.textContent = fallbackText(node, 'name');
-  pane.appendChild(title);
+    detailsContentElem.appendChild(empty);
+  } else {
+    const title = document.createElement('h2');
+    title.textContent = fallbackText(node, 'name');
+    detailsContentElem.appendChild(title);
 
-  const pathNodes = currentPath.map(p => fallbackText(p, 'name')).slice(1, -1).join(' › ');
-  if (pathNodes){
-    const meta = document.createElement('div');
-    meta.className = 'muted';
-    meta.textContent = pathNodes;
-    pane.appendChild(meta);
-  }
-
-  if (node.tags && node.tags.size > 0){
-    const tagLine = document.createElement('div');
-    tagLine.className = 'muted';
-    tagLine.textContent = 'Tags: ' + Array.from(node.tags).join(', ');
-    pane.appendChild(tagLine);
-  }
-
-  const neighbors = document.createElement('div');
-  neighbors.className = 'neighbor-section';
-  neighbors.setAttribute('role', 'navigation');
-  neighbors.setAttribute('aria-label', 'Neighbor nodes');
-
-  function appendGroup(label, nodes){
-    const heading = document.createElement('h3');
-    heading.textContent = label;
-    neighbors.appendChild(heading);
-    if (!nodes.length){
-      const empty = document.createElement('div');
-      empty.className = 'neighbor-empty';
-      empty.textContent = 'None';
-      neighbors.appendChild(empty);
-      return;
+    const pathNodes = currentPath.map(p => fallbackText(p, 'name')).slice(1, -1).join(' › ');
+    if (pathNodes){
+      const meta = document.createElement('div');
+      meta.className = 'muted';
+      meta.textContent = pathNodes;
+      detailsContentElem.appendChild(meta);
     }
-    const list = document.createElement('ul');
-    list.className = 'nav-group';
-    list.setAttribute('role', 'list');
-    nodes.forEach(targetNode => {
-      const item = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.className = 'nav-chip';
-      btn.textContent = fallbackText(targetNode, 'name');
-      btn.onclick = () => focusNode(targetNode, { animate: true, ensureVisible: true });
-      item.appendChild(btn);
-      list.appendChild(item);
-    });
-    neighbors.appendChild(list);
+
+    if (node.tags && node.tags.size > 0){
+      const tagLine = document.createElement('div');
+      tagLine.className = 'muted';
+      tagLine.textContent = 'Tags: ' + Array.from(node.tags).join(', ');
+      detailsContentElem.appendChild(tagLine);
+    }
+
+    const neighbors = document.createElement('div');
+    neighbors.className = 'neighbor-section';
+    neighbors.setAttribute('role', 'navigation');
+    neighbors.setAttribute('aria-label', 'Neighbor nodes');
+
+    function appendGroup(label, nodes){
+      const heading = document.createElement('h3');
+      heading.textContent = label;
+      neighbors.appendChild(heading);
+      if (!nodes.length){
+        const emptyGroup = document.createElement('div');
+        emptyGroup.className = 'neighbor-empty';
+        emptyGroup.textContent = 'None';
+        neighbors.appendChild(emptyGroup);
+        return;
+      }
+      const list = document.createElement('ul');
+      list.className = 'nav-group';
+      list.setAttribute('role', 'list');
+      nodes.forEach(targetNode => {
+        const item = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.className = 'nav-chip';
+        btn.textContent = fallbackText(targetNode, 'name');
+        btn.onclick = () => focusNode(targetNode, { animate: true, ensureVisible: true });
+        item.appendChild(btn);
+        list.appendChild(item);
+      });
+      neighbors.appendChild(list);
+    }
+
+    const parentNode = node.parent ? [node.parent] : [];
+    appendGroup('Parent', parentNode);
+    const siblings = node.parent ? node.parent.children.filter(ch => ch !== node) : [];
+    appendGroup('Siblings', siblings);
+    appendGroup('Children', node.children || []);
+    detailsContentElem.appendChild(neighbors);
+
+    const stats = document.createElement('div');
+    stats.className = 'muted';
+    stats.textContent = `${(node.children || []).length} child${(node.children || []).length === 1 ? '' : 'ren'} • depth ${node.depth}`;
+    detailsContentElem.appendChild(stats);
   }
 
-  const parentNode = node.parent ? [node.parent] : [];
-  appendGroup('Parent', parentNode);
-  const siblings = node.parent ? node.parent.children.filter(ch => ch !== node) : [];
-  appendGroup('Siblings', siblings);
-  appendGroup('Children', node.children || []);
-  pane.appendChild(neighbors);
+  const labelText = node ? `Context for ${fallbackText(node, 'name')}` : 'Context unavailable';
+  popover.setAttribute('aria-label', labelText);
+  if (detailsContentElem.id){
+    popover.setAttribute('aria-describedby', detailsContentElem.id);
+  }
+  popover.setAttribute('aria-hidden', 'false');
 
-  const stats = document.createElement('div');
-  stats.className = 'muted';
-  stats.textContent = `${(node.children || []).length} child${(node.children || []).length === 1 ? '' : 'ren'} • depth ${node.depth}`;
-  pane.appendChild(stats);
+  if (shouldOpen){
+    const anchorRect = options.anchorRect || (options.anchor instanceof HTMLElement ? options.anchor.getBoundingClientRect() : null);
+    detailsLastAnchorRect = anchorRect || null;
+    const restore = options.restoreFocus instanceof HTMLElement ? options.restoreFocus : (options.anchor instanceof HTMLElement ? options.anchor : document.activeElement);
+    detailsReturnFocus = restore;
+    detailsPopoverElem.hidden = false;
+    detailsJustOpened = true;
+    requestAnimationFrame(() => {
+      if (!detailsPopoverElem) return;
+      detailsPopoverElem.hidden = false;
+      positionDetailsPopover(detailsLastAnchorRect);
+      detailsJustOpened = false;
+      if (detailsCloseBtn){
+        detailsCloseBtn.focus();
+      }
+    });
+  } else if (detailsPopoverElem) {
+    detailsPopoverElem.hidden = false;
+    requestAnimationFrame(() => positionDetailsPopover(detailsLastAnchorRect));
+  }
 }
 
 function renderOutlineTree(){
@@ -2896,6 +3022,7 @@ if (helpCloseBtn){
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape'){
     closeContextMenu();
+    hideDetailsPopover();
   }
 });
 window.addEventListener('keydown', (e) => {
