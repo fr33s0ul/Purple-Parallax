@@ -24,6 +24,7 @@
     </aside>
     <aside class="primary">
       <h1>Cybersecurity Atlas</h1>
+      <div id="dataFreshness" class="muted" aria-live="polite"></div>
       <div class="muted">Wheel = zoom • drag = pan • click to focus • use toggle ⊕/⊖ to expand • <span class="key">WASD</span> pan • <span class="key">←↑→↓</span> navigate • <span class="key">+</span>/<span class="key">-</span> zoom • <span class="key">Enter</span> toggle • <span class="key">F</span> refocus</div>
       <div class="row search-wrapper">
         <input id="q" type="search" placeholder="Search the atlas" autocomplete="off" aria-label="Search topics" />
@@ -72,6 +73,9 @@
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M2 17l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Macro buckets</span></div>
       <div id="bucketTags" class="row"></div>
 
+      <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35 10.45 20.03C5.4 15.36 2 12.27 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.77-3.4 6.86-8.45 11.54L12 21.35Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Synthetic overview nodes</span></div>
+      <div id="overviewToggleRow" class="row"></div>
+
       <hr class="divider"/>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7m0 0 4-4m-4 4-4-4m20 15v-7m0 0 4-4m-4 4-4-4M9 7l3-4 3 4m-3-4v18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Export</span></div>
@@ -113,21 +117,34 @@
     </div>
     <canvas id="c"></canvas>
     <!-- Overview minimap in bottom‑right corner -->
-    <canvas id="minimap" width="200" height="200"></canvas>
+    <canvas id="minimap" width="200" height="200" role="img" aria-label="Atlas minimap"></canvas>
+    <button class="btn minimap-touch-toggle" id="minimapTouchToggle" type="button" aria-expanded="false">Touch minimap</button>
+    <div id="minimapTouchPanel" class="minimap-touch-panel" hidden aria-hidden="true">
+      <div class="minimap-touch-panel__body" role="region" aria-label="Touch minimap navigator">
+        <canvas id="minimapTouchCanvas" width="260" height="260"></canvas>
+        <p class="muted">Tap or drag inside the map to recenter the view. Use the close button to return.</p>
+        <button class="btn" id="minimapTouchClose" type="button">Close</button>
+      </div>
+    </div>
     <!-- Tooltip for node details -->
     <div id="tooltip"></div>
+    <div id="touchPreview" class="touch-preview" hidden aria-live="polite" aria-atomic="true"></div>
     <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true"></div>
     <div id="fatal" aria-live="polite" hidden></div>
+    <div id="loadingOverlay" role="status" aria-live="assertive" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Loading atlas data…</p>
+    </div>
   </div>
   <!-- Favorites pane removed (feature disabled globally) -->
   <div class="sr-only" aria-live="polite" id="focusAnnounce"></div>
 </div>
 
 <!-- Modal overlay for keyboard shortcuts help -->
-<div id="helpModal" class="modal">
-  <div class="modal-content">
-    <h2>Keyboard Shortcuts</h2>
-    <ul>
+<div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle" aria-describedby="helpModalBody" hidden>
+  <div class="modal-content" tabindex="-1">
+    <h2 id="helpModalTitle">Keyboard Shortcuts</h2>
+    <ul id="helpModalBody">
       <li><strong>← ↑ → ↓:</strong> Navigate the hierarchy (parent / child / siblings)</li>
       <li><strong>WASD:</strong> Pan the camera</li>
       <li><strong>+</strong> / <strong>-</strong>: Zoom in/out</li>
@@ -136,9 +153,13 @@
       <li><strong>Backspace:</strong> Return to the previous view</li>
       <li><strong>?</strong>: Show this help dialog</li>
     </ul>
-    <button id="helpCloseBtn" class="btn">Close</button>
+    <div class="modal-actions">
+      <button id="helpCloseBtn" class="btn">Close</button>
+    </div>
   </div>
 </div>
+
+<div id="toastRegion" class="toast-region" role="status" aria-live="polite" aria-atomic="true"></div>
 
 </body>
 </html>
