@@ -544,7 +544,8 @@ VISUAL
 // ----------------------------------------------------------------------------
 let data;
 try {
-  const response = await fetch('data/master.json');
+  const dataUrl = new URL('./data/master.json', document.baseURI);
+  const response = await fetch(dataUrl.href);
   if (!response.ok) {
     throw new Error(`Failed to fetch data/master.json: ${response.status}`);
   }
@@ -552,20 +553,33 @@ try {
   data = JSON.parse(JSON.stringify(master));
 } catch (error) {
   console.error('Unable to load atlas dataset', error);
-  const canvasWrap = document.querySelector('.canvas-wrap');
-  if (canvasWrap) {
-    const fallback = document.createElement('div');
-    fallback.textContent = 'Unable to load atlas data. Please refresh to try again.';
-    fallback.style.padding = '24px';
-    fallback.style.color = 'var(--muted, #8c99a6)';
-    fallback.style.fontSize = '14px';
-    fallback.style.fontFamily = 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
-    fallback.style.textAlign = 'center';
-    fallback.style.maxWidth = '420px';
-    fallback.style.margin = '40px auto';
-    canvasWrap.appendChild(fallback);
-  }
+  showFatalError(error);
   return;
+}
+
+function showFatalError(error){
+  const existing = document.getElementById('fatalError');
+  if (existing){
+    existing.textContent = `⚠️ Atlas failed to load: ${error?.message || error}`;
+    existing.style.display = 'block';
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.id = 'fatalError';
+  overlay.textContent = `⚠️ Atlas failed to load: ${error?.message || error}`;
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '16px';
+  overlay.style.zIndex = '9999';
+  overlay.style.background = 'rgba(29,29,53,0.94)';
+  overlay.style.border = '1px solid var(--edge, #4c4c80)';
+  overlay.style.borderRadius = '12px';
+  overlay.style.padding = '20px';
+  overlay.style.color = 'var(--ink, #e0e0ff)';
+  overlay.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace';
+  overlay.style.fontSize = '14px';
+  overlay.style.lineHeight = '1.5';
+  overlay.style.boxShadow = '0 18px 36px rgba(0,0,0,0.4)';
+  document.body.appendChild(overlay);
 }
 
 
@@ -758,6 +772,8 @@ function assignAngles(node){
 function reDepth(n,d){ n.depth=d; n.children.forEach(c=>reDepth(c,d+1)); }
 wrapIntoMacros(rawRoot);
 const root = rawRoot;
+
+const nodeById = new Map();
 
 function deriveTags(name){
   const lower = (name || '').toLowerCase();
@@ -2509,7 +2525,7 @@ setTimeout(()=>{
 // ----------------------------------------------------------------------------
 
 // Finds a node by its id. We'll use this when rendering favourites from stored IDs.
-function findNodeById(id){ let found=null; walk(root,n=>{ if(n.id===id) found=n; }); return found; }
+function findNodeById(id){ return nodeById.get(id) || null; }
 
 function updateUrlFromState(){
   if (applyingUrlState) return;
