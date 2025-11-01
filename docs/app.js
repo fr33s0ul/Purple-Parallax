@@ -98,6 +98,7 @@ const supportsHover = typeof window.matchMedia === 'function' ? window.matchMedi
 const flashStates = new Map();
 let lastFocusedNode = null;
 const activeTags = new Set();
+const openNodeIds = new Set();
 const activePathNodes = new Set();
 const activePathLinks = new Set();
 const currentPath = [];
@@ -111,6 +112,9 @@ let searchIncludeTags = false;
 let fisheyeEnabled = false;
 let applyingUrlState = false;
 let contextMenuNode = null;
+let clipboardWriteTimer = null;
+let clipboardPendingText = null;
+const CLIPBOARD_WRITE_DELAY_MS = 120;
 const TAG_RULES = [
   { label: 'Network', patterns: [/network/i, /tcp|udp/i, /osi/i, /dns/i] },
   { label: 'Web', patterns: [/web/i, /http/i, /browser/i, /api/i] },
@@ -309,7 +313,7 @@ root.name = "Cybersecurity Atlas";
 // deeper levels collapsed reduces empty space and prevents very long
 // connectors from dominating the initial view.  Users can expand
 // deeper branches interactively.
-walk(root, n=>{ n.open = (n.depth < 2); });
+walk(root, n=>{ setNodeOpenState(n, n.depth < 2); });
 
 // ----------------------------------------------------------------------------
 // Additional state for filters, breadcrumb and mini‑map
@@ -364,6 +368,35 @@ function screenToWorld(sx,sy){ return [sx/scale - offsetX, sy/scale - offsetY]; 
 function walk(n,fn){ fn(n); n.children.forEach(c=>walk(c,fn)); }
 function walkFrom(n, fn){ fn(n); (n.children || []).forEach(child => walkFrom(child, fn)); }
 
+function markNodeOpen(node){
+  if (!node || typeof node.id === 'undefined') return;
+  node.open = true;
+  openNodeIds.add(node.id);
+}
+
+function markNodeClosed(node){
+  if (!node || typeof node.id === 'undefined') return;
+  node.open = false;
+  openNodeIds.delete(node.id);
+}
+
+function setNodeOpenState(node, isOpen){
+  if (isOpen){
+    markNodeOpen(node);
+  } else {
+    markNodeClosed(node);
+  }
+}
+
+function syncOpenSetFromTree(){
+  openNodeIds.clear();
+  walk(root, node => {
+    if (node && typeof node.id !== 'undefined' && node.open){
+      openNodeIds.add(node.id);
+    }
+  });
+}
+
 walk(root, node => {
   if (node && typeof node.id !== 'undefined'){
     nodeById.set(node.id, node);
@@ -386,7 +419,7 @@ function collectLinks(){ const L=[]; walk(root,n=>{ if(!visible(n)) return; n.ch
 function revealPath(node){
   let cur = node;
   while (cur){
-    cur.open = true;
+    markNodeOpen(cur);
     cur = cur.parent;
   }
 }
@@ -465,7 +498,7 @@ function focusNode(node, options = {}){
   }
   if (frameChildren && node.children && node.children.length){
     if (!node.open){
-      node.open = true;
+      markNodeOpen(node);
       assignAngles(node);
     }
     layoutChildren(node);
@@ -1392,13 +1425,13 @@ function animateZoom(targetScale, anchorWx, anchorWy, ms){
 function toggleNode(n, animated){
   if (n.children.length===0) return;
   const opening = !n.open;
-  n.open = opening;
+  setNodeOpenState(n, opening);
   if (opening){
     // Automatically open the immediate children when a node is expanded.
     // Without this, children remain collapsed and the user must click
     // each child individually, which makes exploration cumbersome.  We
     // leave deeper descendants closed so users can drill down as desired.
-    n.children.forEach(ch => { ch.open = true; });
+    n.children.forEach(ch => { markNodeOpen(ch); });
     /*
       When opening a node, we need to reallocate angular sectors for the
       newly visible subtree.  Without doing so, children and deeper
@@ -1437,12 +1470,25 @@ let viewStack=[];
 let searchMatches = [];
 let highlightedResultIndex = -1;
 function snapshotView(){
-  const openMap={}; walk(root,n=>openMap[n.id]=n.open);
-  return {offsetX,offsetY,scale, openMap, focusId: lastFocusedNode ? lastFocusedNode.id : null};
+  return {
+    offsetX,
+    offsetY,
+    scale,
+    openIds: Array.from(openNodeIds),
+    focusId: lastFocusedNode ? lastFocusedNode.id : null
+  };
 }
 function restoreView(v){
   offsetX=v.offsetX; offsetY=v.offsetY; scale=v.scale;
-  walk(root,n=>{ n.open = !!v.openMap[n.id]; });
+  if (Array.isArray(v.openIds)){
+    const stored = new Set(v.openIds);
+    stored.add(root.id);
+    walk(root,n=>{ setNodeOpenState(n, stored.has(n.id)); });
+  } else if (v.openMap && typeof v.openMap === 'object'){
+    walk(root,n=>{ setNodeOpenState(n, !!v.openMap[n.id]); });
+  } else {
+    syncOpenSetFromTree();
+  }
   updateOutlineTree(v.focusId || root.id);
   if (typeof v.focusId === 'number'){
     const node = findNodeById(v.focusId);
@@ -1614,6 +1660,24 @@ function updateRecentSearchesUI(){
   });
 }
 
+function queueClipboardWrite(text){
+  if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') return;
+  if (clipboardWriteTimer === null){
+    clipboardPendingText = null;
+    navigator.clipboard.writeText(text).catch(() => {});
+    clipboardWriteTimer = setTimeout(() => {
+      clipboardWriteTimer = null;
+      if (clipboardPendingText !== null){
+        const next = clipboardPendingText;
+        clipboardPendingText = null;
+        queueClipboardWrite(next);
+      }
+    }, CLIPBOARD_WRITE_DELAY_MS);
+  } else {
+    clipboardPendingText = text;
+  }
+}
+
 function closeContextMenu(){
   if (!contextMenuElem) return;
   contextMenuElem.style.display = 'none';
@@ -1624,7 +1688,7 @@ function closeContextMenu(){
 function expandSubtree(node){
   if (!node) return;
   walkFrom(node, child => {
-    child.open = true;
+    markNodeOpen(child);
     if (child.children && child.children.length > 0){
       assignAngles(child);
       layoutChildren(child);
@@ -1638,7 +1702,7 @@ function expandSubtree(node){
 function collapseSubtree(node){
   if (!node) return;
   walkFrom(node, child => {
-    if (child !== node){ child.open = false; }
+    if (child !== node){ markNodeClosed(child); }
   });
   if (node.children && node.children.length > 0){
     assignAngles(node);
@@ -1659,7 +1723,7 @@ function openContextMenu(node, pageX, pageY){
     { label: 'Collapse branch', handler: () => collapseSubtree(node) },
     { label: 'Copy link', handler: () => {
         const link = buildShareableLink(node);
-        navigator.clipboard?.writeText(link).catch(() => {});
+        queueClipboardWrite(link);
       } }
   ];
   actions.forEach(action => {
@@ -1693,9 +1757,32 @@ function buildShareableLink(node){
   const params = new URLSearchParams();
   params.set('node', String(node.id));
   const openList = [];
-  walk(root, n => { if (n !== root && n.open){ openList.push(pathTo(n).map(p => p.id).join('.')); } });
-  if (!openList.includes(pathTo(node).map(p => p.id).join('.'))){
-    openList.push(pathTo(node).map(p => p.id).join('.'));
+  const seenChains = new Set();
+  for (const id of openNodeIds){
+    if (id === root.id) continue;
+    const current = findNodeById(id);
+    if (!current || !current.parent) continue;
+    const chain = [];
+    let cursor = current;
+    while (cursor && typeof cursor.id !== 'undefined'){
+      chain.push(cursor.id);
+      if (cursor === root) break;
+      cursor = cursor.parent || null;
+    }
+    if (!chain.length || chain[chain.length - 1] !== root.id){
+      continue;
+    }
+    const serialized = chain.reverse().join('.');
+    if (!seenChains.has(serialized)){
+      seenChains.add(serialized);
+      openList.push(serialized);
+      if (openList.length >= 50) break;
+    }
+  }
+  const focusChain = pathTo(node).map(p => p.id).join('.');
+  if (focusChain && !seenChains.has(focusChain)){
+    seenChains.add(focusChain);
+    openList.push(focusChain);
   }
   if (openList.length){ params.set('open', openList.join(',')); }
   params.set('x', offsetX.toFixed(2));
@@ -1792,10 +1879,10 @@ document.addEventListener('click', (e) => {
   }
 });
 function openPathOnly(n){
-  walk(root,x=>{ x.open=false; });
+  walk(root,x=>{ markNodeClosed(x); });
   const pathNodes = pathTo(n);
   // Mark nodes along the path as open
-  pathNodes.forEach(x=> x.open=true);
+  pathNodes.forEach(x=> markNodeOpen(x));
   // Radially lay out children of each node along the opened path.  This
   // minimises overlap when jumping directly to a deep node via search.
   pathNodes.forEach(x => {
@@ -1852,7 +1939,7 @@ const expandBtn = document.getElementById('expandBtn');
 if (expandBtn){
   expandBtn.onclick = () => {
     // Expand every node in the tree
-    walk(root, n => { n.open = true; });
+    walk(root, n => { markNodeOpen(n); });
     root.children.forEach(macro => assignAngles(macro));
     walk(root,n=>{
       if (n.open && n.children && n.children.length>0) layoutChildren(n);
@@ -1867,7 +1954,7 @@ if (expandBtn){
 const collapseBtn = document.getElementById('collapseBtn');
 if (collapseBtn){
   collapseBtn.onclick = () => {
-    walk(root,n=>{ if(n!==root) n.open=false; });
+    walk(root,n=>{ if(n===root){ markNodeOpen(n); } else { markNodeClosed(n); } });
     root.children.forEach(macro => assignAngles(macro));
     root.children.forEach(macro => layoutChildren(macro));
     updateOutlineTree(root.id);
@@ -2100,7 +2187,13 @@ function safeParseStateFromHash(){
 }
 
 function applyOpenChains(chains){
-  walk(root, node => { if (node !== root) node.open = false; });
+  walk(root, node => {
+    if (node === root){
+      markNodeOpen(node);
+    } else {
+      markNodeClosed(node);
+    }
+  });
   if (!Array.isArray(chains) || !chains.length) return;
   for (const chain of chains){
     if (!Array.isArray(chain) || !chain.length) continue;
@@ -2118,11 +2211,11 @@ function applyOpenChains(chains){
         current = null;
         break;
       }
-      current.open = true;
+      markNodeOpen(current);
       current = next;
     }
     if (current){
-      current.open = true;
+      markNodeOpen(current);
     }
   }
 }
@@ -2135,20 +2228,28 @@ function updateUrlFromState(){
     params.set('node', String(focus.id));
   }
   const openList = [];
-  walk(root, node => {
-    if (!node || node === root || !node.open || !node.parent) return;
-    if (openList.length >= 50) return;
+  const seenChains = new Set();
+  for (const id of openNodeIds){
+    if (id === root.id) continue;
+    const node = findNodeById(id);
+    if (!node || !node.parent) continue;
     const ids = [];
     let current = node;
-    while (current){
-      if (typeof current.id === 'undefined'){ break; }
+    while (current && typeof current.id !== 'undefined'){
       ids.push(current.id);
+      if (current === root) break;
       current = current.parent || null;
     }
-    if (ids.length){
-      openList.push(ids.reverse().join('.'));
+    if (!ids.length || ids[ids.length - 1] !== root.id){
+      continue;
     }
-  });
+    const serialized = ids.reverse().join('.');
+    if (!seenChains.has(serialized)){
+      seenChains.add(serialized);
+      openList.push(serialized);
+      if (openList.length >= 50) break;
+    }
+  }
   if (openList.length){
     params.set('open', openList.join(','));
   }
