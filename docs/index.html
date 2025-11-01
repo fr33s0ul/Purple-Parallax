@@ -13,25 +13,24 @@
     <style>
       :root {
         color-scheme: dark;
-        --page-width: min(1100px, 92vw);
-        --bg-color: #05040a;
-        --bg-overlay: radial-gradient(circle at 10% 10%, rgba(161, 117, 255, 0.4), transparent 52%),
-          radial-gradient(circle at 75% 15%, rgba(46, 206, 255, 0.32), transparent 58%),
-          radial-gradient(circle at 30% 80%, rgba(236, 72, 153, 0.28), transparent 64%),
-          linear-gradient(150deg, #05040a 0%, #0b0a1e 55%, #05040a 100%);
-        --surface-color: rgba(16, 18, 36, 0.74);
-        --surface-strong: rgba(24, 26, 52, 0.78);
-        --surface-soft: rgba(33, 35, 70, 0.34);
-        --border-color: rgba(130, 146, 204, 0.35);
-        --border-strong: rgba(148, 163, 184, 0.55);
-        --text-color: #f8f9ff;
-        --muted-color: rgba(214, 219, 238, 0.74);
-        --accent-color: #8f62ff;
-        --accent-soft: rgba(143, 98, 255, 0.2);
-        --accent-strong: #9d7fff;
-        --chip-color: rgba(56, 189, 248, 0.18);
-        --chip-text: #38bdf8;
-        --shadow: 0 30px 80px rgba(8, 9, 20, 0.65);
+        --page-width: min(1120px, 92vw);
+        --bg: radial-gradient(circle at 8% -10%, rgba(131, 92, 255, 0.45), transparent 55%),
+          radial-gradient(circle at 88% 18%, rgba(56, 189, 248, 0.32), transparent 60%),
+          radial-gradient(circle at 20% 80%, rgba(239, 68, 146, 0.28), transparent 60%),
+          #05040a;
+        --overlay: linear-gradient(140deg, rgba(143, 98, 255, 0.12), transparent 55%, rgba(56, 189, 248, 0.18));
+        --surface: rgba(16, 18, 36, 0.78);
+        --surface-strong: rgba(25, 28, 55, 0.82);
+        --surface-soft: rgba(30, 34, 70, 0.55);
+        --border: rgba(142, 154, 209, 0.35);
+        --border-strong: rgba(148, 163, 184, 0.5);
+        --text: #f5f6ff;
+        --muted: rgba(215, 220, 240, 0.78);
+        --accent: #8f62ff;
+        --accent-soft: rgba(143, 98, 255, 0.18);
+        --accent-strong: rgba(143, 98, 255, 0.72);
+        --cyan-soft: rgba(56, 189, 248, 0.22);
+        --shadow: 0 30px 70px rgba(5, 6, 16, 0.65);
       }
 
       * {
@@ -42,31 +41,23 @@
         margin: 0;
         min-height: 100vh;
         font-family: "Inter", "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: var(--bg-color);
-        color: var(--text-color);
-        position: relative;
+        background: var(--bg);
+        color: var(--text);
         display: flex;
         flex-direction: column;
         align-items: center;
         overflow-x: hidden;
-      }
-
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        background: var(--bg-overlay);
-        z-index: -2;
+        position: relative;
       }
 
       body::after {
         content: "";
         position: fixed;
         inset: 0;
-        background: linear-gradient(125deg, rgba(143, 98, 255, 0.16), transparent 55%, rgba(56, 189, 248, 0.18));
+        background: var(--overlay);
         pointer-events: none;
         mix-blend-mode: screen;
-        opacity: 0.7;
+        opacity: 0.75;
         z-index: -1;
       }
 
@@ -85,8 +76,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 2.4rem;
-        padding: clamp(1.5rem, 4vw, 2.4rem) 0 0;
+        gap: 2.2rem;
+        padding: clamp(1.4rem, 4vw, 2.2rem) 0 0;
       }
 
       .brand {
@@ -96,16 +87,17 @@
 
       .brand span {
         font-family: "Space Grotesk", "Inter", sans-serif;
+        font-size: clamp(1.4rem, 3vw, 1.9rem);
         font-weight: 700;
         letter-spacing: -0.02em;
         text-transform: lowercase;
-        font-size: clamp(1.4rem, 3vw, 1.9rem);
       }
 
       .brand small {
         font-size: 0.95rem;
-        color: var(--muted-color);
-        letter-spacing: 0.02em;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
       }
 
       nav {
@@ -120,31 +112,31 @@
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
-        padding: 0.45rem 0.9rem;
+        padding: 0.45rem 0.95rem;
         border-radius: 999px;
         border: 1px solid rgba(143, 98, 255, 0.3);
-        color: var(--muted-color);
+        background: rgba(143, 98, 255, 0.1);
+        color: var(--muted);
         font-weight: 500;
         transition: all 0.25s ease;
-        background: rgba(143, 98, 255, 0.08);
       }
 
       .nav-link:hover,
       .nav-link:focus-visible {
-        color: var(--text-color);
+        color: var(--text);
         border-color: rgba(143, 98, 255, 0.55);
-        background: rgba(143, 98, 255, 0.16);
+        background: rgba(143, 98, 255, 0.18);
       }
 
       main {
         display: grid;
-        gap: clamp(3rem, 6vw, 4.2rem);
-        padding: clamp(1.6rem, 5vw, 3rem) 0 clamp(4.6rem, 7vw, 5.6rem);
+        gap: clamp(3.2rem, 5vw, 4.5rem);
+        padding: clamp(1.8rem, 5vw, 3rem) 0 clamp(4.6rem, 7vw, 6rem);
       }
 
       .hero {
         display: grid;
-        gap: clamp(2.4rem, 5vw, 3.5rem);
+        gap: clamp(2.4rem, 5vw, 3.4rem);
       }
 
       .hero-heading {
@@ -158,8 +150,8 @@
         gap: 0.4rem;
         border-radius: 999px;
         padding: 0.35rem 0.85rem;
-        border: 1px solid rgba(143, 98, 255, 0.5);
-        background: rgba(143, 98, 255, 0.15);
+        border: 1px solid rgba(143, 98, 255, 0.55);
+        background: rgba(143, 98, 255, 0.18);
         color: var(--accent-strong);
         font-size: 0.82rem;
         font-weight: 600;
@@ -170,20 +162,19 @@
       h1 {
         margin: 0;
         font-family: "Space Grotesk", "Inter", sans-serif;
-        font-size: clamp(2.8rem, 5.5vw, 4.6rem);
+        font-size: clamp(2.9rem, 5.6vw, 4.8rem);
         letter-spacing: -0.02em;
       }
 
       .hero-copy {
-        color: var(--muted-color);
+        color: var(--muted);
         font-size: clamp(1.05rem, 2vw, 1.25rem);
         line-height: 1.7;
-        max-width: 48ch;
+        max-width: 50ch;
       }
 
       .hero-actions {
         display: flex;
-        align-items: center;
         gap: 1rem;
         flex-wrap: wrap;
       }
@@ -195,8 +186,8 @@
         padding: 0.75rem 1.4rem;
         border-radius: 999px;
         border: 1px solid rgba(143, 98, 255, 0.6);
-        background: linear-gradient(120deg, rgba(143, 98, 255, 0.25), rgba(56, 189, 248, 0.22));
-        color: var(--text-color);
+        background: linear-gradient(120deg, rgba(143, 98, 255, 0.28), rgba(56, 189, 248, 0.24));
+        color: var(--text);
         font-weight: 600;
         letter-spacing: 0.02em;
         box-shadow: var(--shadow);
@@ -210,7 +201,7 @@
         border-radius: 999px;
         border: 1px solid rgba(148, 163, 184, 0.4);
         background: rgba(15, 16, 32, 0.6);
-        color: var(--muted-color);
+        color: var(--muted);
         font-weight: 500;
       }
 
@@ -218,9 +209,9 @@
         display: grid;
         gap: 1.1rem;
         padding: clamp(1.8rem, 4vw, 2.8rem);
-        border-radius: 24px;
-        background: linear-gradient(160deg, rgba(15, 18, 42, 0.72), rgba(18, 22, 54, 0.65));
-        border: 1px solid rgba(143, 98, 255, 0.26);
+        border-radius: 26px;
+        background: linear-gradient(160deg, rgba(15, 18, 42, 0.78), rgba(18, 22, 54, 0.7));
+        border: 1px solid rgba(143, 98, 255, 0.28);
         box-shadow: var(--shadow);
         position: relative;
         overflow: hidden;
@@ -230,9 +221,9 @@
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(circle at 10% 10%, rgba(143, 98, 255, 0.25), transparent 55%),
-          radial-gradient(circle at 75% 85%, rgba(56, 189, 248, 0.32), transparent 55%);
-        opacity: 0.8;
+        background: radial-gradient(circle at 10% 15%, rgba(143, 98, 255, 0.2), transparent 55%),
+          radial-gradient(circle at 80% 85%, rgba(56, 189, 248, 0.26), transparent 55%);
+        opacity: 0.75;
         mix-blend-mode: screen;
         pointer-events: none;
       }
@@ -244,7 +235,7 @@
         font-family: "Space Grotesk", "Inter", sans-serif;
         font-size: 1.15rem;
         font-weight: 600;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
@@ -254,15 +245,15 @@
         justify-content: center;
         width: 32px;
         height: 32px;
-        border-radius: 999px;
-        background: rgba(143, 98, 255, 0.2);
+        border-radius: 50%;
+        background: var(--accent-soft);
         border: 1px solid rgba(143, 98, 255, 0.4);
         font-size: 0.9rem;
       }
 
       .panel-description {
         margin: 0;
-        color: var(--muted-color);
+        color: var(--muted);
         font-size: 0.98rem;
         line-height: 1.65;
       }
@@ -276,22 +267,22 @@
       .stat {
         padding: 1rem;
         border-radius: 18px;
-        border: 1px solid rgba(148, 163, 184, 0.22);
+        border: 1px solid rgba(148, 163, 184, 0.24);
         background: rgba(16, 18, 36, 0.55);
         display: grid;
-        gap: 0.4rem;
+        gap: 0.45rem;
       }
 
       .stat strong {
         font-family: "Space Grotesk", "Inter", sans-serif;
         font-weight: 600;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
       }
 
       .stat span {
-        font-size: 0.85rem;
-        color: var(--muted-color);
-        letter-spacing: 0.02em;
+        font-size: 0.82rem;
+        color: var(--muted);
+        letter-spacing: 0.04em;
       }
 
       .section-heading {
@@ -310,9 +301,9 @@
       }
 
       .section-heading p {
-        max-width: 42ch;
-        color: var(--muted-color);
-        line-height: 1.6;
+        max-width: 46ch;
+        color: var(--muted);
+        line-height: 1.65;
         font-size: 1rem;
       }
 
@@ -326,11 +317,11 @@
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
-        padding: 0.35rem 0.9rem;
+        padding: 0.38rem 0.95rem;
         border-radius: 999px;
-        background: var(--chip-color);
-        border: 1px solid rgba(56, 189, 248, 0.4);
-        color: var(--chip-text);
+        background: rgba(56, 189, 248, 0.18);
+        border: 1px solid rgba(56, 189, 248, 0.38);
+        color: rgba(152, 228, 255, 0.95);
         font-size: 0.78rem;
         letter-spacing: 0.18em;
         text-transform: uppercase;
@@ -347,9 +338,9 @@
         position: relative;
         display: grid;
         gap: 1rem;
-        padding: 1.8rem;
+        padding: 1.85rem;
         border-radius: 22px;
-        background: var(--surface-color);
+        background: var(--surface);
         border: 1px solid rgba(143, 98, 255, 0.24);
         overflow: hidden;
       }
@@ -358,8 +349,8 @@
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(circle at 20% 20%, rgba(143, 98, 255, 0.16), transparent 60%),
-          radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.18), transparent 60%);
+        background: radial-gradient(circle at 18% 16%, rgba(143, 98, 255, 0.16), transparent 60%),
+          radial-gradient(circle at 82% 82%, rgba(56, 189, 248, 0.18), transparent 60%);
         opacity: 0.7;
         pointer-events: none;
       }
@@ -374,15 +365,15 @@
         display: flex;
         justify-content: space-between;
         gap: 1rem;
-        color: var(--muted-color);
+        color: var(--muted);
         font-size: 0.86rem;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
       }
 
       .work-description {
         margin: 0;
-        color: var(--muted-color);
+        color: var(--muted);
         font-size: 0.95rem;
         line-height: 1.6;
       }
@@ -394,16 +385,16 @@
       }
 
       .method-card {
-        padding: 1.6rem;
+        padding: 1.65rem;
         border-radius: 20px;
         background: var(--surface-strong);
-        border: 1px solid rgba(148, 163, 184, 0.3);
+        border: 1px solid var(--border);
         display: grid;
         gap: 0.8rem;
       }
 
       .method-card span {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         text-transform: uppercase;
         letter-spacing: 0.18em;
         color: rgba(143, 98, 255, 0.75);
@@ -412,13 +403,13 @@
       .method-card h3 {
         margin: 0;
         font-family: "Space Grotesk", "Inter", sans-serif;
-        font-size: 1.35rem;
+        font-size: 1.32rem;
       }
 
       .method-card p {
         margin: 0;
-        font-size: 0.95rem;
-        color: var(--muted-color);
+        font-size: 0.94rem;
+        color: var(--muted);
         line-height: 1.6;
       }
 
@@ -426,101 +417,100 @@
         display: grid;
         gap: 1rem;
         position: relative;
-        padding-left: 1.5rem;
+        padding-left: 1.55rem;
       }
 
       .timeline::before {
         content: "";
         position: absolute;
         left: 0.6rem;
-        top: 0.5rem;
-        bottom: 0.5rem;
+        top: 0.6rem;
+        bottom: 0.6rem;
         width: 2px;
         background: linear-gradient(180deg, rgba(143, 98, 255, 0.45), rgba(56, 189, 248, 0.35));
       }
 
       .timeline-item {
         position: relative;
-        padding: 1.2rem 1.5rem;
+        padding: 1.4rem 1.4rem 1.4rem 1.6rem;
         border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
         background: rgba(16, 18, 36, 0.6);
-        border: 1px solid rgba(143, 98, 255, 0.22);
         display: grid;
-        gap: 0.45rem;
+        gap: 0.6rem;
       }
 
       .timeline-item::before {
         content: "";
         position: absolute;
-        left: -0.95rem;
-        top: 1.4rem;
-        width: 12px;
-        height: 12px;
-        border-radius: 999px;
-        background: rgba(143, 98, 255, 0.85);
-        border: 2px solid #08091c;
-        box-shadow: 0 0 0 4px rgba(143, 98, 255, 0.25);
+        left: -1.05rem;
+        top: 1.65rem;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: rgba(143, 98, 255, 0.9);
+        border: 2px solid rgba(6, 6, 18, 0.9);
+        box-shadow: 0 0 0 6px rgba(143, 98, 255, 0.25);
       }
 
       .timeline-item span {
         font-size: 0.78rem;
-        letter-spacing: 0.2em;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
-        color: rgba(143, 98, 255, 0.75);
+        color: rgba(143, 98, 255, 0.72);
       }
 
       .timeline-item h3 {
         margin: 0;
         font-family: "Space Grotesk", "Inter", sans-serif;
-        font-size: 1.2rem;
+        font-size: 1.25rem;
       }
 
       .timeline-item p {
         margin: 0;
-        color: var(--muted-color);
-        font-size: 0.92rem;
+        font-size: 0.94rem;
+        color: var(--muted);
         line-height: 1.6;
       }
 
       .cta {
-        border-radius: 24px;
-        border: 1px solid rgba(143, 98, 255, 0.3);
-        background: linear-gradient(140deg, rgba(16, 18, 36, 0.75), rgba(24, 26, 52, 0.72));
-        padding: clamp(2rem, 5vw, 2.8rem);
         display: grid;
-        gap: 1rem;
-        text-align: center;
+        gap: 1.3rem;
+        padding: clamp(2.6rem, 6vw, 3.4rem);
+        border-radius: 24px;
+        background: linear-gradient(160deg, rgba(15, 18, 42, 0.8), rgba(18, 24, 62, 0.75));
+        border: 1px solid rgba(143, 98, 255, 0.32);
+        box-shadow: var(--shadow);
+        text-align: left;
       }
 
       .cta h2 {
         margin: 0;
         font-family: "Space Grotesk", "Inter", sans-serif;
-        font-size: clamp(1.9rem, 4vw, 2.6rem);
+        font-size: clamp(2rem, 4vw, 2.6rem);
       }
 
       .cta p {
-        margin: 0 auto;
-        max-width: 48ch;
+        margin: 0;
+        color: var(--muted);
         font-size: 1rem;
-        color: var(--muted-color);
-        line-height: 1.6;
-      }
-
-      .cta a {
-        justify-self: center;
+        line-height: 1.65;
+        max-width: 58ch;
       }
 
       footer {
-        padding: clamp(2.4rem, 6vw, 3.2rem) 0 clamp(1.8rem, 4vw, 2.6rem);
         display: grid;
-        gap: 1.2rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        align-items: center;
+        gap: 1rem;
+        padding: clamp(2.4rem, 4vw, 3rem) 0 clamp(2.4rem, 4vw, 3.2rem);
         border-top: 1px solid rgba(148, 163, 184, 0.22);
         margin-top: auto;
       }
 
       footer span {
-        font-size: 0.85rem;
-        color: var(--muted-color);
+        font-size: 0.82rem;
+        color: var(--muted);
         letter-spacing: 0.12em;
         text-transform: uppercase;
       }
@@ -529,7 +519,7 @@
         justify-self: end;
         font-size: 0.95rem;
         letter-spacing: 0.05em;
-        color: var(--chip-text);
+        color: rgba(148, 210, 255, 0.95);
       }
 
       @media (min-width: 960px) {
@@ -539,7 +529,7 @@
         }
       }
 
-      @media (max-width: 720px) {
+      @media (max-width: 760px) {
         header {
           flex-direction: column;
           align-items: flex-start;
@@ -574,9 +564,8 @@
           <span class="tag">Cinematic strategy</span>
           <h1>Immersive brand systems, orchestrated for velocity</h1>
           <p class="hero-copy">
-            miniature funicular is a cinematic strategy studio engineering story worlds for ambitious teams.
-            We orchestrate narrative, design, and experience so companies can move with confidence through
-            pivotal moments.
+            miniature funicular is a cinematic strategy studio engineering story worlds for ambitious teams. We
+            orchestrate narrative, design, and experience so companies can move with confidence through pivotal moments.
           </p>
           <div class="hero-actions">
             <a class="primary-action" href="#contact">Partner with miniature funicular</a>
@@ -586,8 +575,8 @@
         <aside class="hero-panel">
           <div class="panel-title"><span>mf</span>Active playbooks</div>
           <p class="panel-description">
-            Each engagement merges narrative architecture, spatial design, and operational choreography.
-            Velocity, clarity, and emotion interlock to move audiences from sensing to action.
+            Each engagement merges narrative architecture, spatial design, and operational choreography. Velocity,
+            clarity, and emotion interlock to move audiences from sensing to action.
           </p>
           <div class="panel-stats">
             <div class="stat">
@@ -610,8 +599,8 @@
         <div class="section-heading">
           <h2>Selected work</h2>
           <p>
-            A few moments where miniature funicular pulled teams through massive shifts. Each timeline merges
-            orchestrated intelligence, multi-sensory experience, and decisive operations.
+            A few moments where miniature funicular pulled teams through massive shifts. Each timeline merges orchestrated
+            intelligence, multi-sensory experience, and decisive operations.
           </p>
         </div>
         <div class="chip-row">
@@ -661,8 +650,8 @@
         <div class="section-heading">
           <h2>Operating method</h2>
           <p>
-            We choreograph systems in layers—clarity first, velocity always. Each phase stacks to create a universe
-            your teams can live inside while pushing the frontier forward.
+            We choreograph systems in layers—clarity first, velocity always. Each phase stacks to create a universe your
+            teams can live inside while pushing the frontier forward.
           </p>
         </div>
         <div class="method-grid">
@@ -686,8 +675,8 @@
             <span>03</span>
             <h3>Activation</h3>
             <p>
-              Experience design, cinematic storytelling, and operational rollout merge. We deploy the atlas, craft
-              hero moments, and embed automation.
+              Experience design, cinematic storytelling, and operational rollout merge. We deploy the atlas, craft hero
+              moments, and embed automation.
             </p>
           </article>
           <article class="method-card">
@@ -705,8 +694,8 @@
         <div class="section-heading">
           <h2>Signal log</h2>
           <p>
-            Glimpses into current experiments, launches, and research cycles shaping the miniature funicular universe.
-            A running trace of how the studio navigates complex systems.
+            Glimpses into current experiments, launches, and research cycles shaping the miniature funicular universe. A
+            running trace of how the studio navigates complex systems.
           </p>
         </div>
         <div class="timeline">
