@@ -68,6 +68,7 @@ const profileConfig = {
   delayMs: profileDelayMs
 };
 let totalNodeCount = 0;
+let currentFocusNode = null;
 const loadingOverlayElem = document.getElementById('loadingOverlay');
 const dataFreshnessElem = document.getElementById('dataFreshness');
 const toastRegion = document.getElementById('toastRegion');
@@ -2686,7 +2687,6 @@ function toggleNode(n, animated){
   }
 }
 const qElem = document.getElementById('q'), resultsElem = document.getElementById('results');
-let currentFocusNode=null;
 let viewStack=[];
 let searchMatches = [];
 let highlightedResultIndex = -1;
