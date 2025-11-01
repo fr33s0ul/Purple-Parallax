@@ -48,7 +48,26 @@ VISUAL
 // ----------------------------------------------------------------------------
 // DATA (kept intact). Same as your v11 dataset; we only wrap under 7 buckets.
 // ----------------------------------------------------------------------------
-(async function(){
+function showFatalError(error){
+  console.error(error);
+  let target = document.getElementById('fatal');
+  if (!target){
+    target = document.createElement('div');
+    target.id = 'fatal';
+    const host = document.body || document.documentElement;
+    if (host){
+      host.appendChild(target);
+    }
+  }
+  if (target){
+    target.hidden = false;
+    target.removeAttribute('hidden');
+    target.textContent = `⚠️ Atlas failed to load: ${error?.message || error}`;
+    target.style.cssText = 'position:fixed;inset:16px;z-index:9999;background:#2b2b2b;color:#fff;padding:12px;border-radius:8px;font:14px/1.4 ui-monospace,monospace;';
+  }
+}
+
+async function boot(){
 // ----------------------------------------------------------------------------
 // DATA LOADING
 // ----------------------------------------------------------------------------
@@ -66,17 +85,6 @@ try {
   showFatalError(error);
   return;
 }
-
-function showFatalError(error){
-  const target = document.getElementById('fatal');
-  if (target){
-    target.hidden = false;
-    target.textContent = `⚠️ Atlas failed to load: ${error?.message || error}`;
-    target.style.cssText = 'position:fixed;inset:16px;z-index:9999;background:#2b2b2b;color:#fff;padding:12px;border-radius:8px;font:14px/1.4 ui-monospace,monospace;';
-  }
-  console.error(error);
-}
-
 
 function fallbackText(data, field, fallback = 'No data available') {
   if (!data || typeof data !== 'object') return fallback;
@@ -3008,5 +3016,9 @@ if (supportsHover){
 }
 
 
-})();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  boot().catch(showFatalError);
+});
 
