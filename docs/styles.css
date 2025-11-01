@@ -148,6 +148,12 @@
   .details-popover .nav-link{border:1px solid var(--edge);background:linear-gradient(135deg,rgba(255,255,255,0.03),rgba(0,0,0,0.08));color:var(--ink);border-radius:999px;padding:6px 10px;font-size:12px;cursor:pointer;transition:background 0.2s ease,border-color 0.2s ease,transform 0.15s ease;display:inline-flex;align-items:center;gap:6px;}
   .details-popover .nav-chip:hover,
   .details-popover .nav-link:hover{background-color:rgba(255,255,255,0.12);border-color:var(--accent);transform:translateY(-1px);}
+  #srOutlineTree{list-style:none;padding-left:0;margin:0;}
+  #srOutlineTree ul{list-style:none;padding-left:18px;margin:4px 0 0;}
+  #srOutlineTree .sr-outline-row{display:flex;align-items:center;gap:8px;}
+  #srOutlineTree .sr-outline-toggle{border:1px solid var(--edge);border-radius:6px;padding:2px 6px;font-size:12px;background:rgba(0,0,0,0.12);color:var(--ink);}
+  #srOutlineTree .sr-outline-toggle--spacer{display:inline-flex;width:18px;justify-content:center;}
+  #srOutlineTree .sr-outline-focus{border:none;background:none;color:var(--ink);text-decoration:underline;font-size:12px;padding:0;}
   .details-popover .neighbor-section h3{margin:8px 0 0;font-size:13px;}
   .details-popover .neighbor-empty{font-size:13px;color:var(--muted);}
   .details-popover .empty{font-size:13px;color:var(--muted);}
