@@ -418,14 +418,57 @@ function visible(n){
   return visible(n.parent);
 }
 function pathTo(n){ const p=[]; let cur=n; while(cur){ p.push(cur); cur=cur.parent; } return p.reverse(); }
-function collectVisible(){ const arr=[]; walk(root,n=>{ if(visible(n)) arr.push(n); }); return arr; }
-function collectLinks(){ const L=[]; walk(root,n=>{ if(!visible(n)) return; n.children.forEach(c=>{ if(visible(c)) L.push([n,c]); }); }); return L; }
+
+const visibleNodesCache = [];
+const visibleLinksCache = [];
+let visibilityCacheDirty = true;
+
+function recomputeVisibilityCaches(){
+  visibleNodesCache.length = 0;
+  visibleLinksCache.length = 0;
+  const visibleSet = new Set();
+  walk(root, node => {
+    if (visible(node)){
+      visibleNodesCache.push(node);
+      visibleSet.add(node.id);
+    }
+  });
+  walk(root, node => {
+    if (!visibleSet.has(node.id)) return;
+    node.children.forEach(child => {
+      if (visibleSet.has(child.id)){
+        visibleLinksCache.push([node, child]);
+      }
+    });
+  });
+  visibilityCacheDirty = false;
+}
+function ensureVisibilityCaches(){
+  if (visibilityCacheDirty){
+    recomputeVisibilityCaches();
+  }
+}
+function invalidateVisibilityCaches(){
+  visibilityCacheDirty = true;
+}
+function refreshVisibilityCaches(){
+  invalidateVisibilityCaches();
+  ensureVisibilityCaches();
+}
+function collectVisible(){ ensureVisibilityCaches(); return visibleNodesCache; }
+function collectLinks(){ ensureVisibilityCaches(); return visibleLinksCache; }
+
+refreshVisibilityCaches();
 
 function revealPath(node){
   let cur = node;
+  let changed = false;
   while (cur){
     markNodeOpen(cur);
     cur = cur.parent;
+  }
+  if (changed){
+    refreshVisibilityCaches();
   }
 }
 
@@ -502,11 +545,16 @@ function focusNode(node, options = {}){
     }
   }
   if (frameChildren && node.children && node.children.length){
+    let openedForFrameChildren = false;
     if (!node.open){
       markNodeOpen(node);
       assignAngles(node);
+      openedForFrameChildren = true;
     }
     layoutChildren(node);
+    if (openedForFrameChildren){
+      refreshVisibilityCaches();
+    }
     updateOutlineTree(node.id);
     kickPhysics();
   } else {
@@ -1474,6 +1522,7 @@ function toggleNode(n, animated){
       if (t < 1 && n.open) requestAnimationFrame(anim);
     })(t0);
   }
+  refreshVisibilityCaches();
   // Let physics run briefly to settle the new layout, then freeze
   kickPhysics();
   updateOutlineTree(node.id);
@@ -1711,6 +1760,7 @@ function expandSubtree(node){
       layoutChildren(child);
     }
   });
+  refreshVisibilityCaches();
   updateOutlineTree(node.id);
   kickPhysics();
   if (!applyingUrlState){ updateUrlFromState(); }
@@ -1725,6 +1775,7 @@ function collapseSubtree(node){
     assignAngles(node);
     layoutChildren(node);
   }
+  refreshVisibilityCaches();
   updateOutlineTree(node.id);
   kickPhysics();
   if (!applyingUrlState){ updateUrlFromState(); }
@@ -1923,6 +1974,7 @@ function openPathOnly(n){
   // After laying out the opened path, allow physics to run briefly to
   // settle the arrangement, then freeze.  This avoids jitter while
   // preserving the new configuration.
+  refreshVisibilityCaches();
   kickPhysics();
 }
 function jumpToMatch(n){
@@ -1968,6 +2020,7 @@ if (expandBtn){
     walk(root,n=>{
       if (n.open && n.children && n.children.length>0) layoutChildren(n);
     });
+    refreshVisibilityCaches();
     updateOutlineTree(root.id);
     if (!applyingUrlState){ updateUrlFromState(); }
     kickPhysics(1500);
@@ -1981,6 +2034,7 @@ if (collapseBtn){
     walk(root,n=>{ if(n===root){ markNodeOpen(n); } else { markNodeClosed(n); } });
     root.children.forEach(macro => assignAngles(macro));
     root.children.forEach(macro => layoutChildren(macro));
+    refreshVisibilityCaches();
     updateOutlineTree(root.id);
     kickPhysics();
     if (!applyingUrlState){
@@ -2234,6 +2288,9 @@ function applyOpenChains(chains){
     if (current){
       markNodeOpen(current);
     }
+  }
+  if (changed){
+    refreshVisibilityCaches();
   }
 }
 
@@ -2831,7 +2888,10 @@ function updateFiltersUI(){
     cb.type = 'checkbox';
     cb.checked = macroVisibility[n.id];
     cb.style.marginRight = '6px';
-    cb.onchange = () => { macroVisibility[n.id] = cb.checked; };
+    cb.onchange = () => {
+      macroVisibility[n.id] = cb.checked;
+      refreshVisibilityCaches();
+    };
     const span = document.createElement('span');
     span.textContent = fallbackText(n, 'name');
     label.appendChild(cb);
