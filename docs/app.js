@@ -51,10 +51,37 @@ VISUAL
 const DATA_CACHE_KEY = 'atlas_dataset_cache_v2';
 const DATA_META_KEY = 'atlas_dataset_meta_v2';
 const DATA_STALE_MS = 1000 * 60 * 60 * 24; // 24 hours
+const urlParams = new URLSearchParams(window.location.search);
+const requestedDataset = urlParams.get('dataset');
+const sanitizedDataset = requestedDataset ? requestedDataset.replace(/[^a-z0-9_\-]/gi, '') : 'atlas';
+const datasetFile = sanitizedDataset.endsWith('.json') ? sanitizedDataset : `${sanitizedDataset}.json`;
+const datasetLabel = datasetFile.replace(/\.json$/i, '');
+const profileRequested = urlParams.has('profile');
+const profileDurationParam = Number(urlParams.get('profileDuration'));
+const profileDurationMs = Number.isFinite(profileDurationParam) && profileDurationParam > 0 ? profileDurationParam : 6000;
+const profileDelayParam = Number(urlParams.get('profileDelay'));
+const profileDelayMs = Number.isFinite(profileDelayParam) && profileDelayParam >= 0 ? profileDelayParam : 1200;
+const profileConfig = {
+  enabled: profileRequested,
+  dataset: datasetLabel,
+  durationMs: profileDurationMs,
+  delayMs: profileDelayMs
+};
+let totalNodeCount = 0;
 const loadingOverlayElem = document.getElementById('loadingOverlay');
 const dataFreshnessElem = document.getElementById('dataFreshness');
 const toastRegion = document.getElementById('toastRegion');
 let datasetMeta = null;
+let renderPending = false;
+
+function requestRender(){
+  if (renderPending) return;
+  renderPending = true;
+  requestAnimationFrame(() => {
+    renderPending = false;
+    draw();
+  });
+}
 
 function showFatalError(error){
   console.error(error);
@@ -181,14 +208,16 @@ async function boot(){
 // ----------------------------------------------------------------------------
 // DATA LOADING
 // ----------------------------------------------------------------------------
-setLoadingState(true, 'Loading atlas data…');
+setLoadingState(true, `Loading ${datasetLabel} dataset…`);
 let data;
 let usedCache = false;
 let loadError = null;
 let cachedMeta = null;
+const cacheKey = datasetLabel === 'atlas' ? DATA_CACHE_KEY : `${DATA_CACHE_KEY}:${datasetLabel}`;
+const metaKey = datasetLabel === 'atlas' ? DATA_META_KEY : `${DATA_META_KEY}:${datasetLabel}`;
 try {
-  const cachedJson = localStorage.getItem(DATA_CACHE_KEY);
-  const cachedMetaJson = localStorage.getItem(DATA_META_KEY);
+  const cachedJson = localStorage.getItem(cacheKey);
+  const cachedMetaJson = localStorage.getItem(metaKey);
   if (cachedJson){
     data = JSON.parse(cachedJson);
     usedCache = true;
@@ -201,13 +230,13 @@ try {
   console.warn('Failed to read cached dataset', error);
 }
 try {
-  const dataUrl = new URL('./data/atlas.json', document.baseURI);
+  const dataUrl = new URL(`./data/${datasetFile}`, document.baseURI);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
   const response = await fetch(dataUrl.href, { cache: 'no-store', signal: controller.signal });
   clearTimeout(timeout);
   if (!response.ok) {
-    throw new Error(`Failed to fetch data/atlas.json: ${response.status}`);
+    throw new Error(`Failed to fetch data/${datasetFile}: ${response.status}`);
   }
   const master = await response.json();
   data = JSON.parse(JSON.stringify(master));
@@ -217,8 +246,8 @@ try {
     etag: response.headers.get('etag') || null
   };
   try {
-    localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(data));
-    localStorage.setItem(DATA_META_KEY, JSON.stringify(datasetMeta));
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem(metaKey, JSON.stringify(datasetMeta));
   } catch (error) {
     console.warn('Failed to persist dataset cache', error);
   }
@@ -461,6 +490,54 @@ wrapIntoMacros(rawRoot);
 const root = rawRoot;
 
 const nodeById = new Map();
+const HYDRATION_BASE_DEPTH = 2;
+const hydrationState = {
+  baseDepth: HYDRATION_BASE_DEPTH,
+  hydratedIds: new Set(),
+  queue: [],
+  handle: null
+};
+const scheduleIdle = typeof requestIdleCallback === 'function'
+  ? (cb) => requestIdleCallback(cb, { timeout: 32 })
+  : (cb) => setTimeout(() => cb({ timeRemaining: () => 0, didTimeout: true }), 16);
+
+function markNodeHydrated(node){
+  if (!node || node.__hydrated) return;
+  node.__hydrated = true;
+  hydrationState.hydratedIds.add(node.id);
+}
+
+function enqueueHydration(nodes){
+  nodes.forEach(node => {
+    if (!node || node.__hydrated) return;
+    hydrationState.queue.push(node);
+  });
+  scheduleHydrationRun();
+}
+
+function scheduleHydrationRun(){
+  if (hydrationState.handle !== null) return;
+  const runner = (deadline) => {
+    hydrationState.handle = null;
+    const start = performance.now();
+    while (hydrationState.queue.length){
+      const node = hydrationState.queue.shift();
+      if (!node || node.__hydrated) continue;
+      markNodeHydrated(node);
+      if (deadline && typeof deadline.timeRemaining === 'function'){
+        if (deadline.timeRemaining() <= 1) break;
+      } else if (performance.now() - start > 12){
+        break;
+      }
+    }
+    if (hydrationState.queue.length){
+      hydrationState.handle = scheduleIdle(runner);
+    } else {
+      requestRender();
+    }
+  };
+  hydrationState.handle = scheduleIdle(runner);
+}
 
 function deriveTags(name){
   const lower = (name || '').toLowerCase();
@@ -481,6 +558,13 @@ function annotateTags(node){
 
 annotateTags(root);
 applyTagFilters();
+totalNodeCount = 0;
+walk(root, () => { totalNodeCount += 1; });
+if (typeof window !== 'undefined'){
+  window.__atlasDatasetLabel = datasetLabel;
+  window.__atlasTotalNodes = totalNodeCount;
+  window.__atlasProfileConfig = profileConfig;
+}
 
 // Set a custom root title for the map.  This updates both the data model
 // and the UI breadcrumbs.  Without this override, the root would retain its
@@ -494,6 +578,14 @@ root.name = "Cybersecurity Atlas";
 // connectors from dominating the initial view.  Users can expand
 // deeper branches interactively.
 walk(root, n=>{ setNodeOpenState(n, n.depth < 2); });
+walk(root, node => {
+  if (!node.parent || node.depth <= hydrationState.baseDepth){
+    markNodeHydrated(node);
+  } else {
+    node.__hydrated = false;
+  }
+});
+
 
 // ----------------------------------------------------------------------------
 // Additional state for filters, breadcrumb and mini‑map
@@ -547,7 +639,7 @@ const minimapTouchPanel = document.getElementById('minimapTouchPanel');
 const minimapTouchClose = document.getElementById('minimapTouchClose');
 const minimapTouchCanvas = document.getElementById('minimapTouchCanvas');
 const touchPreviewElem = document.getElementById('touchPreview');
-function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
+function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; requestRender(); }
 window.addEventListener('resize', resize); resize();
 
 // Camera
@@ -610,6 +702,35 @@ function visible(n){
 }
 function pathTo(n){ const p=[]; let cur=n; while(cur){ p.push(cur); cur=cur.parent; } return p.reverse(); }
 
+const lodState = { depthLimit: Infinity, lowDetail: false };
+const lastVisibleNodeIds = new Set();
+
+function computeLodInfo(currentScale){
+  if (!Number.isFinite(currentScale)){
+    return { depthLimit: Infinity, lowDetail: false };
+  }
+  if (currentScale <= 0.45){
+    return { depthLimit: 2, lowDetail: true };
+  }
+  if (currentScale <= 0.65){
+    return { depthLimit: 3, lowDetail: true };
+  }
+  if (currentScale <= 0.85){
+    return { depthLimit: 4, lowDetail: false };
+  }
+  return { depthLimit: Infinity, lowDetail: false };
+}
+
+function shouldRenderNodeAtLod(node, depthLimit, focusNode){
+  if (!node) return false;
+  if (!Number.isFinite(depthLimit)) return true;
+  if (node.depth <= depthLimit) return true;
+  if (!focusNode) return false;
+  if (node === focusNode) return true;
+  const path = pathTo(node);
+  return path.includes(focusNode);
+}
+
 const visibleNodesCache = [];
 const visibleLinksCache = [];
 let visibilityCacheDirty = true;
@@ -634,6 +755,7 @@ function recomputeVisibilityCaches(){
     });
   });
   visibilityCacheDirty = false;
+  scheduleHydrationForVisibleNodes();
 }
 function ensureVisibilityCaches(){
   if (visibilityCacheDirty){
@@ -647,8 +769,60 @@ function refreshVisibilityCaches(){
   invalidateVisibilityCaches();
   ensureVisibilityCaches();
 }
-function collectVisible(){ ensureVisibilityCaches(); return visibleNodesCache; }
-function collectLinks(){ ensureVisibilityCaches(); return visibleLinksCache; }
+function scheduleHydrationForVisibleNodes(){
+  if (!visibleNodesCache.length) return;
+  const candidates = [];
+  visibleNodesCache.forEach(node => {
+    if (node.__hydrated) return;
+    if (!node.parent || node.depth <= hydrationState.baseDepth){
+      markNodeHydrated(node);
+      return;
+    }
+    candidates.push(node);
+  });
+  if (candidates.length){
+    enqueueHydration(candidates);
+  }
+}
+
+function collectVisible(){
+  ensureVisibilityCaches();
+  const { depthLimit, lowDetail } = computeLodInfo(scale);
+  lodState.depthLimit = depthLimit;
+  lodState.lowDetail = lowDetail;
+  lastVisibleNodeIds.clear();
+  const focus = lastFocusedNode;
+  const output = [];
+  const hydrationList = [];
+  visibleNodesCache.forEach(node => {
+    if (!shouldRenderNodeAtLod(node, depthLimit, focus)){
+      return;
+    }
+    if (!node.__hydrated){
+      hydrationList.push(node);
+      return;
+    }
+    output.push(node);
+    lastVisibleNodeIds.add(node.id);
+  });
+  if (hydrationList.length){
+    enqueueHydration(hydrationList);
+  }
+  return output;
+}
+function collectLinks(){
+  ensureVisibilityCaches();
+  if (lastVisibleNodeIds.size === 0){
+    return [];
+  }
+  const filtered = [];
+  for (const pair of visibleLinksCache){
+    const [a, b] = pair;
+    if (!lastVisibleNodeIds.has(a.id) || !lastVisibleNodeIds.has(b.id)) continue;
+    filtered.push(pair);
+  }
+  return filtered;
+}
 
 refreshVisibilityCaches();
 
@@ -1085,6 +1259,7 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
   const lensRadius = 480;
   const lensStrength = 0.35;
   const now = performance.now();
+  const lowDetailMode = lodState.lowDetail;
   for (const [a,b] of links){
     const [x1,y1] = worldToScreenLocal(a.x,a.y);
     const [x2,y2] = worldToScreenLocal(b.x,b.y);
@@ -1122,6 +1297,10 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
         targetCtx.globalAlpha *= 0.7;
       }
     }
+    if (lowDetailMode && renderScale < 0.65 && !isActiveLink){
+      targetCtx.globalAlpha *= 0.7;
+      targetCtx.lineWidth = Math.max(0.7, targetCtx.lineWidth * 0.75);
+    }
     targetCtx.beginPath();
     targetCtx.moveTo(x1,y1);
     const mx = (x1+x2)/2;
@@ -1135,18 +1314,41 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
   if (hoverPulse > Math.PI * 2) hoverPulse -= Math.PI * 2;
   for (const n of vis){
     if (n.syntheticOverview && !showSyntheticNodes) continue;
+    const cat = nodeCategoryIndex(n);
+    const isActivePath = activePathNodes.has(n.id);
+    const isFocused = lastFocusedNode && lastFocusedNode.id === n.id;
     const flashExpiry = flashStates.get(n.id);
     if (flashExpiry && flashExpiry <= now){
       flashStates.delete(n.id);
     }
     const flashActive = flashExpiry && flashExpiry > now;
+    if (lowDetailMode && renderScale < 0.75 && n.depth > 1 && !isFocused && !isActivePath && !flashActive && !n.match){
+      targetCtx.save();
+      const [sx,sy] = worldToScreenLocal(n.x,n.y);
+      const radius = Math.max(3.8, 5.6 * renderScale);
+      const dimmed = activeTags.size>0 && n.dimmed;
+      targetCtx.globalAlpha = dimmed ? 0.18 : 0.55;
+      targetCtx.fillStyle = ringColour(cat);
+      targetCtx.beginPath();
+      targetCtx.arc(sx, sy, radius, 0, Math.PI * 2);
+      targetCtx.fill();
+      if (flashActive){
+        targetCtx.globalAlpha = 0.85;
+        targetCtx.lineWidth = 1.6;
+        targetCtx.strokeStyle = accentColour;
+        targetCtx.stroke();
+      }
+      if (shouldUpdateHitboxes){
+        n._hit = {x: sx - radius, y: sy - radius, w: radius * 2, h: radius * 2, sx, sy};
+        n._toggle = null;
+      }
+      targetCtx.restore();
+      continue;
+    }
     const {w,h,lines,isChip} = measureNode(n, targetCtx);
     const [sx,sy] = worldToScreenLocal(n.x,n.y);
-    const cat = nodeCategoryIndex(n);
     let fill, stroke, text;
     const themeDark = document.documentElement.getAttribute('data-theme')!=='light';
-    const isActivePath = activePathNodes.has(n.id);
-    const isFocused = lastFocusedNode && lastFocusedNode.id === n.id;
     const isSynthetic = !!n.syntheticOverview;
     if (n===root){
       fill = themeDark? "#111827" : "#ffffff";
@@ -1664,6 +1866,22 @@ let mobileSidebarOpen = false;
 let mobileSidebarReturnFocus = null;
 let sidebarFocusTrapHandler = null;
 let sidebarFocusInHandler = null;
+const schedulePointerWork = (() => {
+  let rafId = null;
+  let pending = null;
+  return (fn) => {
+    pending = fn;
+    if (rafId !== null) return;
+    rafId = requestAnimationFrame(() => {
+      const task = pending;
+      pending = null;
+      rafId = null;
+      if (typeof task === 'function'){
+        task();
+      }
+    });
+  };
+})();
 canvas.addEventListener('mousedown',e=>{
   const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
   lastMouse=[x,y];
@@ -1701,28 +1919,28 @@ window.addEventListener('mouseup',()=>{
 canvas.addEventListener('mousemove',e=>{
   const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
   if (draggingCanvas){
-    const dx=(x - dragStart[0]) / scale, dy=(y - dragStart[1]) / scale;
-    offsetX = grabStart[0] + dx; offsetY = grabStart[1] + dy;
-    // flag as moved when panning beyond a small threshold
-    if (!movedDuringDrag){
-      const mdx = x - mouseDownScreen[0];
-      const mdy = y - mouseDownScreen[1];
-      // Use a larger threshold to reduce accidental toggles on minor movement when panning
-      // Increase threshold to reduce accidental toggles on small pointer movements
-      if (Math.abs(mdx) > 6 || Math.abs(mdy) > 6) movedDuringDrag = true;
-    }
+    schedulePointerWork(() => {
+      const dx=(x - dragStart[0]) / scale, dy=(y - dragStart[1]) / scale;
+      offsetX = grabStart[0] + dx; offsetY = grabStart[1] + dy;
+      if (!movedDuringDrag){
+        const mdx = x - mouseDownScreen[0];
+        const mdy = y - mouseDownScreen[1];
+        if (Math.abs(mdx) > 6 || Math.abs(mdy) > 6) movedDuringDrag = true;
+      }
+      requestRender();
+    });
   } else if (dragNode){
-    const [wx,wy] = screenToWorld(x,y);
-    dragNode.x = wx + dragNode._grabDx;
-    dragNode.y = wy + dragNode._grabDy;
-    // flag as moved when dragging node beyond a small threshold
-    if (!movedDuringDrag){
-      const mdx = x - mouseDownScreen[0];
-      const mdy = y - mouseDownScreen[1];
-      // Use a larger threshold to reduce accidental toggles on minor movement
-      // Increase threshold to reduce accidental toggles on small pointer movements
-      if (Math.abs(mdx) > 6 || Math.abs(mdy) > 6) movedDuringDrag = true;
-    }
+    schedulePointerWork(() => {
+      const [wx,wy] = screenToWorld(x,y);
+      dragNode.x = wx + dragNode._grabDx;
+      dragNode.y = wy + dragNode._grabDy;
+      if (!movedDuringDrag){
+        const mdx = x - mouseDownScreen[0];
+        const mdy = y - mouseDownScreen[1];
+        if (Math.abs(mdx) > 6 || Math.abs(mdy) > 6) movedDuringDrag = true;
+      }
+      requestRender();
+    });
   }
 });
 canvas.addEventListener('touchstart', (e) => {
@@ -1861,15 +2079,18 @@ canvas.addEventListener('contextmenu', e => {
     closeContextMenu();
   }
 });
+const wheelZoom = throttle((deltaY, wx, wy) => {
+  const factor = deltaY > 0 ? 0.85 : 1.15;
+  const targetScale = clamp(scale * factor, MIN_ZOOM, MAX_ZOOM);
+  animateZoom(targetScale, wx, wy, WHEEL_EASE_MS);
+}, 48);
+
 canvas.addEventListener('wheel', (e)=>{
   closeContextMenu();
   e.preventDefault();
   const r = canvas.getBoundingClientRect(); const cx=e.clientX-r.left, cy=e.clientY-r.top;
   const [wx,wy] = screenToWorld(cx,cy);
-  // Apply a responsive zoom factor so wheels and trackpads reach the desired scale quickly without jumpy steps.
-  const factor = e.deltaY > 0 ? 0.85 : 1.15;
-  const targetScale = clamp(scale * factor, MIN_ZOOM, MAX_ZOOM);
-  animateZoom(targetScale, wx, wy, WHEEL_EASE_MS);
+  wheelZoom(e.deltaY, wx, wy);
 }, { passive: false });
 function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
 function animateZoom(targetScale, anchorWx, anchorWy, ms){
@@ -1882,6 +2103,7 @@ function animateZoom(targetScale, anchorWx, anchorWy, ms){
     const s = startScale + (targetScale-startScale)*ease(t);
     const [cx,cy] = worldToScreen(anchorWx,anchorWy);
     offsetX = (cx/s) - anchorWx; offsetY = (cy/s) - anchorWy; scale=s;
+    requestRender();
     if (t<1) {
       requestAnimationFrame(step);
     } else if (!applyingUrlState) {
@@ -1953,7 +2175,7 @@ function renderSearchResults(rawTerm){
     resultsElem.setAttribute('aria-expanded', 'false');
     walk(root, n => { n.match = false; });
     updateRecentSearchesUI();
-    draw();
+    requestRender();
     return;
   }
   searchMatchesAll = buildSearchMatches(term);
@@ -1974,7 +2196,7 @@ function renderSearchResultsPage(){
     resultsElem.classList.add('visible');
     resultsElem.setAttribute('aria-expanded', 'true');
     currentFocusNode = null;
-    draw();
+    requestRender();
     return;
   }
   const start = Math.max(0, Math.min(searchPageIndex * SEARCH_PAGE_SIZE, Math.max(0, total - 1)));
@@ -2050,7 +2272,7 @@ function renderSearchResultsPage(){
   resultsElem.classList.add('visible');
   resultsElem.setAttribute('aria-expanded', 'true');
   resultsElem.classList.toggle('persist', searchDropdownPinned);
-  draw();
+  requestRender();
 }
 function snapshotView(){
   return {
@@ -2378,7 +2600,7 @@ function setActiveSearchResult(index){
   currentFocusNode = entry ? entry.node : null;
   if (currentFocusNode){
     triggerNodeFlash(currentFocusNode, 1500);
-    draw();
+    requestRender();
   }
 }
 
@@ -2678,7 +2900,7 @@ window.addEventListener('keydown', e=>{
 function focusTo(n, targetScale=1, animated=true){
   const desiredX = (canvas.width/2)/targetScale - n.x;
   const desiredY = (canvas.height/2)/targetScale - n.y;
-  if (!animated){ offsetX=desiredX; offsetY=desiredY; scale=targetScale; return; }
+  if (!animated){ offsetX=desiredX; offsetY=desiredY; scale=targetScale; requestRender(); return; }
   const sx0=offsetX, sy0=offsetY, sc0=scale;
   const dx=desiredX-sx0, dy=desiredY-sy0, ds=targetScale-sc0;
   const t0=performance.now();
@@ -2688,6 +2910,7 @@ function focusTo(n, targetScale=1, animated=true){
     offsetX = sx0 + dx*ease(t);
     offsetY = sy0 + dy*ease(t);
     scale   = sc0 + ds*ease(t);
+    requestRender();
     if (t<1) requestAnimationFrame(anim);
   })(t0);
 }
@@ -2710,15 +2933,72 @@ function kickPhysics(ms = 800){
     physicsEnabled = false;
   }, ms);
 }
+function runFrameProfiler({ durationMs = 6000, label = datasetLabel } = {}){
+  if (typeof requestAnimationFrame !== 'function') return;
+  const samples = [];
+  let start = null;
+  let last = null;
+  function step(now){
+    if (start === null){
+      start = now;
+      last = now;
+      requestAnimationFrame(step);
+      return;
+    }
+    const delta = now - last;
+    last = now;
+    if (delta > 0){
+      samples.push(1000 / delta);
+    }
+    if (now - start < durationMs){
+      requestAnimationFrame(step);
+    } else {
+      finalize();
+    }
+  }
+  function finalize(){
+    if (!samples.length) return;
+    const sum = samples.reduce((acc, val) => acc + val, 0);
+    const average = sum / samples.length;
+    const min = Math.min(...samples);
+    const sorted = [...samples].sort((a, b) => a - b);
+    const p5Index = Math.max(0, Math.floor(sorted.length * 0.05));
+    const p5 = sorted[p5Index];
+    const below30 = samples.filter(v => v < 30).length;
+    const metrics = {
+      dataset: label,
+      totalNodes: totalNodeCount,
+      durationMs,
+      framesSampled: samples.length,
+      averageFps: Number(average.toFixed(2)),
+      minFps: Number(min.toFixed(2)),
+      p5Fps: Number(p5.toFixed(2)),
+      framesBelow30: below30
+    };
+    if (typeof window !== 'undefined'){
+      window.__atlasProfileResults = metrics;
+    }
+    try {
+      localStorage.setItem('atlas_profile_metrics', JSON.stringify(metrics));
+    } catch (error) {
+      console.warn('Unable to persist frame metrics', error);
+    }
+    console.groupCollapsed(`[Atlas] Frame profiler (${label})`);
+    console.table(metrics);
+    console.groupEnd();
+  }
+  requestAnimationFrame(step);
+}
 function loop(now){
   const dt = Math.min(0.05, (now-lastTime)/1000); lastTime=now;
   if (physicsEnabled){
     tick(dt);
+    requestRender();
   }
-  draw();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
+requestRender();
 setTimeout(()=>{
   // Assign fresh angular spans and positions for the initial view.  This
   // ensures macro buckets are evenly spaced around the root when only
@@ -2732,6 +3012,14 @@ setTimeout(()=>{
   // render.
   kickPhysics(1200);
 }, 0);
+
+if (profileConfig.enabled){
+  setTimeout(() => {
+    const label = `${datasetLabel} (${totalNodeCount} nodes)`;
+    kickPhysics(Math.max(profileConfig.durationMs + 400, 1200));
+    runFrameProfiler({ durationMs: profileConfig.durationMs, label });
+  }, profileConfig.delayMs);
+}
 
 // ----------------------------------------------------------------------------
 // UI helpers: breadcrumb, filters, tooltip, minimap, help modal, sidebar collapse
@@ -3430,7 +3718,7 @@ function updateFiltersUI(){
       macroVisibility[n.id] = cb.checked;
       refreshVisibilityCaches();
       updateOutlineTree(lastFocusedNode ? lastFocusedNode.id : root.id);
-      draw();
+      requestRender();
       if (!applyingUrlState){ scheduleUrlUpdate(); }
     };
     const span = document.createElement('span');
@@ -3445,7 +3733,7 @@ function updateFiltersUI(){
 function applySyntheticVisibilityChanges(){
   refreshVisibilityCaches();
   updateOutlineTree(lastFocusedNode ? lastFocusedNode.id : root.id);
-  draw();
+  requestRender();
   updateMinimap();
   if (!applyingUrlState){ scheduleUrlUpdate(); }
 }
