@@ -265,8 +265,10 @@ const activePathNodes = new Set();
 const activePathLinks = new Set();
 const currentPath = [];
 const outlineItems = new Map();
+const srOutlineItems = new Map();
 let outlineOrder = [];
 let outlineLastFocusedId = null;
+const srOutlineCollapsed = new Set();
 const RECENT_SEARCH_LIMIT = 8;
 let recentSearches = [];
 let searchInSubtree = false;
@@ -293,6 +295,7 @@ let searchDropdownPinned = true;
 let searchDebounceTimer = null;
 const OUTLINE_VISIBILITY_KEY = 'atlas_outline_collapsed';
 let outlineCollapsed = false;
+const ONBOARDING_SEEN_KEY = 'atlas_onboarding_seen_v1';
 const TAG_RULES = [
   { label: 'Network', patterns: [/network/i, /tcp|udp/i, /osi/i, /dns/i] },
   { label: 'Web', patterns: [/web/i, /http/i, /browser/i, /api/i] },
@@ -533,6 +536,7 @@ document.documentElement.setAttribute('data-theme', initialTheme);
 const outlinePaneElem = document.getElementById('outlinePane');
 const outlineTreeElem = document.getElementById('outlineTree');
 const outlineStatusElem = document.getElementById('outlineStatus');
+const srOutlineTreeElem = document.getElementById('srOutlineTree');
 const contextMenuElem = document.getElementById('contextMenu');
 const focusAnnounceElem = document.getElementById('focusAnnounce');
 const fisheyeToggleBtn = document.getElementById('fisheyeToggleBtn');
@@ -2646,35 +2650,42 @@ const png2Btn = document.getElementById('png2');
 if (png2Btn){ png2Btn.onclick = () => exportPNG(2); }
 const png4Btn = document.getElementById('png4');
 if (png4Btn){ png4Btn.onclick = () => exportPNG(4); }
-window.addEventListener('keydown', e=>{
-  const active = document.activeElement;
-  const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
-  const key = e.key;
-  if (isTyping && key !== '?' && key !== 'Escape'){ return; }
-  const step = 60/scale;
-  const lower = key.toLowerCase();
-  let cameraChanged = false;
-  if (lower==='w'){ offsetY += step; cameraChanged = true; e.preventDefault(); }
-  else if (lower==='s'){ offsetY -= step; cameraChanged = true; e.preventDefault(); }
-  else if (lower==='a'){ offsetX += step; cameraChanged = true; e.preventDefault(); }
-  else if (lower==='d'){ offsetX -= step; cameraChanged = true; e.preventDefault(); }
-  else if (e.shiftKey && lower==='j'){ e.preventDefault(); for (let i=0;i<5;i++){ focusSiblingNode(1); } }
-  else if (e.shiftKey && lower==='k'){ e.preventDefault(); for (let i=0;i<5;i++){ focusSiblingNode(-1); } }
-  else if (lower==='h'){ e.preventDefault(); focusParentNode(); }
-  else if (lower==='l'){ e.preventDefault(); focusFirstChild(); }
-  else if (lower==='j'){ e.preventDefault(); focusSiblingNode(1); }
-  else if (lower==='k'){ e.preventDefault(); focusSiblingNode(-1); }
-  else if (key==='ArrowUp'){ e.preventDefault(); focusParentNode(); }
-  else if (key==='ArrowDown'){ e.preventDefault(); focusFirstChild(); }
-  else if (key==='ArrowLeft'){ e.preventDefault(); focusSiblingNode(-1); }
-  else if (key==='ArrowRight'){ e.preventDefault(); focusSiblingNode(1); }
-  else if (key==='+'){ animateZoom(clamp(scale*1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
-  else if (key==='-'){ animateZoom(clamp(scale/1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
-  else if (key==='Enter' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true, frameChildren: true }); }
-  else if (lower==='f' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true }); }
-  else if (key === 'Backspace'){ e.preventDefault(); const v = viewStack.pop(); if (v){ restoreView(v); } }
-  if (cameraChanged && !applyingUrlState){ scheduleUrlUpdate(); }
-});
+  window.addEventListener('keydown', e=>{
+    const active = document.activeElement;
+    const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+    const key = e.key;
+    if (isTyping && key !== '?' && key !== 'Escape'){ return; }
+    if (e.defaultPrevented) return;
+    const step = 60/scale;
+    const lower = key.toLowerCase();
+    const hierarchicalModifier = e.ctrlKey || e.metaKey;
+    const shouldPanWithArrows = !hierarchicalModifier && !e.altKey;
+    let cameraChanged = false;
+    if (lower==='w'){ offsetY += step; cameraChanged = true; e.preventDefault(); }
+    else if (lower==='s'){ offsetY -= step; cameraChanged = true; e.preventDefault(); }
+    else if (lower==='a'){ offsetX += step; cameraChanged = true; e.preventDefault(); }
+    else if (lower==='d'){ offsetX -= step; cameraChanged = true; e.preventDefault(); }
+    else if (key==='ArrowUp' && shouldPanWithArrows){ e.preventDefault(); offsetY += step; cameraChanged = true; }
+    else if (key==='ArrowDown' && shouldPanWithArrows){ e.preventDefault(); offsetY -= step; cameraChanged = true; }
+    else if (key==='ArrowLeft' && shouldPanWithArrows){ e.preventDefault(); offsetX += step; cameraChanged = true; }
+    else if (key==='ArrowRight' && shouldPanWithArrows){ e.preventDefault(); offsetX -= step; cameraChanged = true; }
+    else if (e.shiftKey && lower==='j'){ e.preventDefault(); for (let i=0;i<5;i++){ focusSiblingNode(1); } }
+    else if (e.shiftKey && lower==='k'){ e.preventDefault(); for (let i=0;i<5;i++){ focusSiblingNode(-1); } }
+    else if (lower==='h'){ e.preventDefault(); focusParentNode(); }
+    else if (lower==='l'){ e.preventDefault(); focusFirstChild(); }
+    else if (lower==='j'){ e.preventDefault(); focusSiblingNode(1); }
+    else if (lower==='k'){ e.preventDefault(); focusSiblingNode(-1); }
+    else if (hierarchicalModifier && key==='ArrowUp'){ e.preventDefault(); focusParentNode(); }
+    else if (hierarchicalModifier && key==='ArrowDown'){ e.preventDefault(); focusFirstChild(); }
+    else if (hierarchicalModifier && key==='ArrowLeft'){ e.preventDefault(); focusSiblingNode(-1); }
+    else if (hierarchicalModifier && key==='ArrowRight'){ e.preventDefault(); focusSiblingNode(1); }
+    else if (key==='+' || (key==='=' && e.shiftKey)){ e.preventDefault(); animateZoom(clamp(scale*1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
+    else if (key==='-' || key==='_'){ e.preventDefault(); animateZoom(clamp(scale/1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
+    else if (key==='Enter' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true, frameChildren: true }); }
+    else if (lower==='f' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true }); }
+    else if (key === 'Backspace'){ e.preventDefault(); const v = viewStack.pop(); if (v){ restoreView(v); } }
+    if (cameraChanged && !applyingUrlState){ scheduleUrlUpdate(); }
+  });
 function focusTo(n, targetScale=1, animated=true){
   const desiredX = (canvas.width/2)/targetScale - n.x;
   const desiredY = (canvas.height/2)/targetScale - n.y;
@@ -3197,6 +3208,7 @@ function renderOutlineTree(){
   const previousFocus = outlineLastFocusedId || (lastFocusedNode ? lastFocusedNode.id : root.id);
   outlineTreeElem.innerHTML = '';
   outlineItems.clear();
+  srOutlineItems.clear();
   outlineOrder = [];
   const build = (node, depth) => {
     if (node.syntheticOverview && !showSyntheticNodes) return null;
@@ -3277,6 +3289,7 @@ function renderOutlineTree(){
     return li;
   };
   outlineTreeElem.appendChild(build(root, 0));
+  renderScreenReaderOutline();
   outlineLastFocusedId = outlineItems.has(previousFocus) ? previousFocus : (lastFocusedNode ? lastFocusedNode.id : root.id);
   updateOutlineSelection();
 }
@@ -3301,6 +3314,100 @@ function updateOutlineSelection(){
       row.focus();
     }
   }
+  updateScreenReaderOutlineSelection();
+}
+
+function renderScreenReaderOutline(){
+  if (!srOutlineTreeElem) return;
+  srOutlineTreeElem.innerHTML = '';
+  srOutlineItems.clear();
+  const tree = document.createElement('ul');
+  tree.setAttribute('role', 'tree');
+  tree.className = 'sr-outline-list';
+  srOutlineTreeElem.appendChild(tree);
+  const build = (node, depth) => {
+    if (node.syntheticOverview && !showSyntheticNodes) return null;
+    const li = document.createElement('li');
+    li.setAttribute('role', 'treeitem');
+    li.dataset.nodeId = String(node.id);
+    li.setAttribute('aria-level', String(depth + 1));
+    const row = document.createElement('div');
+    row.className = 'sr-outline-row';
+    const hasChildren = node.children && node.children.length > 0;
+    if (hasChildren){
+      const groupId = `sr-outline-children-${node.id}`;
+      const collapsed = srOutlineCollapsed.has(node.id);
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'sr-outline-toggle';
+      toggle.setAttribute('aria-controls', groupId);
+      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      toggle.textContent = collapsed ? 'Expand' : 'Collapse';
+      toggle.addEventListener('click', () => {
+        if (srOutlineCollapsed.has(node.id)){
+          srOutlineCollapsed.delete(node.id);
+        } else {
+          srOutlineCollapsed.add(node.id);
+        }
+        renderScreenReaderOutline();
+        updateScreenReaderOutlineSelection();
+      });
+      row.appendChild(toggle);
+      li.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      const group = document.createElement('ul');
+      group.setAttribute('role', 'group');
+      group.id = groupId;
+      group.hidden = collapsed;
+      node.children.forEach(child => {
+        const childItem = build(child, depth + 1);
+        if (childItem){ group.appendChild(childItem); }
+      });
+      li.appendChild(row);
+      li.appendChild(group);
+    } else {
+      const spacer = document.createElement('span');
+      spacer.className = 'sr-outline-toggle sr-outline-toggle--spacer';
+      spacer.setAttribute('aria-hidden', 'true');
+      spacer.textContent = '•';
+      row.appendChild(spacer);
+      li.setAttribute('aria-expanded', 'false');
+      li.appendChild(row);
+    }
+    const label = document.createElement('span');
+    label.className = 'sr-outline-label';
+    label.textContent = fallbackText(node, 'name');
+    row.appendChild(label);
+    const focusBtn = document.createElement('button');
+    focusBtn.type = 'button';
+    focusBtn.className = 'sr-outline-focus';
+    focusBtn.textContent = 'Focus in map';
+    focusBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      srOutlineCollapsed.delete(node.id);
+      let ancestor = node.parent;
+      while (ancestor){
+        srOutlineCollapsed.delete(ancestor.id);
+        ancestor = ancestor.parent;
+      }
+      outlineLastFocusedId = node.id;
+      focusNode(node, { animate: true, ensureVisible: true });
+    });
+    row.appendChild(focusBtn);
+    srOutlineItems.set(node.id, li);
+    return li;
+  };
+  const rootItem = build(root, 0);
+  if (rootItem){
+    tree.appendChild(rootItem);
+  }
+}
+
+function updateScreenReaderOutlineSelection(){
+  if (!srOutlineItems || srOutlineItems.size === 0) return;
+  const focusId = lastFocusedNode ? lastFocusedNode.id : root.id;
+  srOutlineItems.forEach((item, id) => {
+    item.setAttribute('aria-current', id === focusId ? 'true' : 'false');
+  });
 }
 
 function announceFocus(node){
@@ -4040,8 +4147,24 @@ window.addEventListener('resize', () => {
 const helpBtn = document.getElementById('helpBtn');
 const helpCloseBtn = document.getElementById('helpCloseBtn');
 const helpModal = document.getElementById('helpModal');
+const onboardingModal = document.getElementById('onboardingModal');
+const onboardingSkipBtn = document.getElementById('onboardingSkipBtn');
+const onboardingShortcutsBtn = document.getElementById('onboardingShortcutsBtn');
 const focusableSelector = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 let helpModalReturnFocus = null;
+let onboardingReturnFocus = null;
+
+function syncBodyModalState(){
+  const helpOpen = !!(helpModal && helpModal.classList.contains('open'));
+  const onboardingOpen = !!(onboardingModal && onboardingModal.classList.contains('open'));
+  if (document.body){
+    if (helpOpen || onboardingOpen){
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+  }
+}
 
 function getFocusableElements(container){
   if (!container) return [];
@@ -4055,7 +4178,7 @@ function openHelpModal(trigger){
   helpModal.setAttribute('aria-hidden', 'false');
   helpModalReturnFocus = trigger || document.activeElement;
   if (appRootElem){ appRootElem.setAttribute('aria-hidden', 'true'); }
-  document.body.classList.add('modal-open');
+  syncBodyModalState();
   const focusable = getFocusableElements(helpModal);
   const target = focusable[0] || helpModal;
   if (target){ target.focus(); }
@@ -4066,13 +4189,66 @@ function closeHelpModal(){
   helpModal.classList.remove('open');
   helpModal.setAttribute('aria-hidden', 'true');
   helpModal.hidden = true;
-  if (appRootElem){ appRootElem.removeAttribute('aria-hidden'); }
-  document.body.classList.remove('modal-open');
+  const onboardingOpen = onboardingModal && onboardingModal.classList.contains('open');
+  if (appRootElem && !onboardingOpen){ appRootElem.removeAttribute('aria-hidden'); }
+  syncBodyModalState();
   const focusTarget = helpModalReturnFocus;
   helpModalReturnFocus = null;
   if (focusTarget && typeof focusTarget.focus === 'function'){
     focusTarget.focus();
   }
+}
+
+function markOnboardingSeen(){
+  try { localStorage.setItem(ONBOARDING_SEEN_KEY, '1'); } catch(e) {}
+}
+
+function openOnboardingModal(trigger){
+  if (!onboardingModal) return;
+  onboardingModal.hidden = false;
+  onboardingModal.classList.add('open');
+  onboardingModal.setAttribute('aria-hidden', 'false');
+  onboardingReturnFocus = trigger || document.activeElement;
+  if (appRootElem){ appRootElem.setAttribute('aria-hidden', 'true'); }
+  syncBodyModalState();
+  const focusable = getFocusableElements(onboardingModal);
+  const target = focusable[0] || onboardingModal;
+  if (target){ target.focus(); }
+}
+
+function closeOnboardingModal(options = {}){
+  if (!onboardingModal || onboardingModal.hidden) return;
+  const { persistSeen = false, restoreFocus = true } = options;
+  onboardingModal.classList.remove('open');
+  onboardingModal.setAttribute('aria-hidden', 'true');
+  onboardingModal.hidden = true;
+  if (persistSeen){ markOnboardingSeen(); }
+  const helpOpen = helpModal && helpModal.classList.contains('open');
+  if (appRootElem && !helpOpen){ appRootElem.removeAttribute('aria-hidden'); }
+  syncBodyModalState();
+  const focusTarget = onboardingReturnFocus;
+  onboardingReturnFocus = null;
+  if (restoreFocus && focusTarget && typeof focusTarget.focus === 'function'){
+    focusTarget.focus();
+  }
+}
+
+function shouldShowOnboarding(){
+  try {
+    return localStorage.getItem(ONBOARDING_SEEN_KEY) !== '1';
+  } catch(e) {
+    return true;
+  }
+}
+
+function maybeShowOnboardingCoachmark(){
+  if (!onboardingModal) return;
+  if (!shouldShowOnboarding()) return;
+  setTimeout(() => {
+    if (onboardingModal.classList.contains('open')) return;
+    if (helpModal && helpModal.classList.contains('open')) return;
+    openOnboardingModal(helpBtn);
+  }, 600);
 }
 
 if (helpModal){
@@ -4108,16 +4284,51 @@ if (helpBtn){
 if (helpCloseBtn){
   helpCloseBtn.addEventListener('click', () => closeHelpModal());
 }
+if (onboardingSkipBtn){
+  onboardingSkipBtn.addEventListener('click', () => closeOnboardingModal({ persistSeen: true }));
+}
+if (onboardingShortcutsBtn){
+  onboardingShortcutsBtn.addEventListener('click', () => {
+    closeOnboardingModal({ persistSeen: true, restoreFocus: false });
+    openHelpModal(onboardingShortcutsBtn);
+  });
+}
+if (onboardingModal){
+  onboardingModal.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape'){
+      event.preventDefault();
+      closeOnboardingModal({ persistSeen: true });
+      return;
+    }
+    if (event.key === 'Tab'){
+      const focusable = getFocusableElements(onboardingModal).filter(el => el.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey){
+        if (document.activeElement === first){
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (document.activeElement === last){
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  });
+}
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape'){
     closeContextMenu();
     hideDetailsPopover();
     closeHelpModal();
+    closeOnboardingModal({ persistSeen: true });
   }
 });
 window.addEventListener('keydown', (e) => {
   if (e.key === '?'){
     e.preventDefault();
+    closeOnboardingModal({ persistSeen: true, restoreFocus: false });
     if (helpModal && helpModal.classList.contains('open')){
       closeHelpModal();
     } else {
@@ -4145,6 +4356,7 @@ updateSubFiltersUI();
 updateTagFiltersUI();
 renderOutlineTree();
 updateRecentSearchesUI();
+maybeShowOnboardingCoachmark();
 
 // Sidebar reopen button: when clicked, restore the sidebar and hide the
 // overlay.  Also update the main toggle arrow to reflect the state.
