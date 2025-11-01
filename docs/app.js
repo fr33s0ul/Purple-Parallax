@@ -1515,7 +1515,7 @@ function buildSearchMatches(rawTerm){
 }
 
 function escapeRegExp(str){
-  return str.replace(/[.*+?^${}()|[\]\]/g, '\$&');
+  return str.replace(/[\\^$.*+?()[\]{}|]/g, '\$&');
 }
 
 function highlightText(text, tokens){
@@ -2585,7 +2585,6 @@ if (outlineTreeElem){
   });
   outlineTreeElem.addEventListener('keydown', handleOutlineKeyDown);
 }
-}
 
 // Render Filters UI for macro buckets
 function updateFiltersUI(){
@@ -3014,7 +3013,6 @@ if (supportsHover){
   });
   canvas.addEventListener('mouseleave', () => { hideTooltip(); });
 }
-
 
 }
 
