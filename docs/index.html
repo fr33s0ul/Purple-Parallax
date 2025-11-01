@@ -72,7 +72,11 @@
       <div id="breadcrumb" class="row"></div>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Filters</span></div>
-      <div id="filters" class="row"></div>
+      <div class="row helper-row">
+        <p class="helper-text" id="macroFilterHelp">Toggle macro buckets to hide large slices of the map while exploring. Your selections are remembered on this device.</p>
+        <button class="btn-link" id="clearFiltersBtn" type="button" aria-describedby="macroFilterHelp">Clear filters</button>
+      </div>
+      <div id="filters" class="row filter-list" aria-describedby="macroFilterHelp"></div>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M2 17l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Macro buckets</span></div>
       <div id="bucketTags" class="row"></div>
@@ -102,7 +106,10 @@
       <div id="subFilters" class="row"></div>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6-6 6 6M6 15l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Tags</span></div>
-      <div id="tagFilters" class="tag-list" aria-label="Tag filters"></div>
+      <div class="row helper-row">
+        <p class="helper-text" id="tagFilterHelp">Mix and match tags to spotlight related topics. Checked tags stay active the next time you open the atlas.</p>
+      </div>
+      <div id="tagFilters" class="tag-list filter-list" aria-label="Tag filters" aria-describedby="tagFilterHelp"></div>
     </aside>
   </div>
   <!-- Reopen button appears when the sidebar is collapsed.  It floats on the
