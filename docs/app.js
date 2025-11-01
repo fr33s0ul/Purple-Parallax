@@ -48,6 +48,14 @@ VISUAL
 // ----------------------------------------------------------------------------
 // DATA (kept intact). Same as your v11 dataset; we only wrap under 7 buckets.
 // ----------------------------------------------------------------------------
+const DATA_CACHE_KEY = 'atlas_dataset_cache_v2';
+const DATA_META_KEY = 'atlas_dataset_meta_v2';
+const DATA_STALE_MS = 1000 * 60 * 60 * 24; // 24 hours
+const loadingOverlayElem = document.getElementById('loadingOverlay');
+const dataFreshnessElem = document.getElementById('dataFreshness');
+const toastRegion = document.getElementById('toastRegion');
+let datasetMeta = null;
+
 function showFatalError(error){
   console.error(error);
   let target = document.getElementById('fatal');
@@ -67,24 +75,178 @@ function showFatalError(error){
   }
 }
 
+function setLoadingState(active, message = 'Loading…'){
+  if (!loadingOverlayElem) return;
+  if (typeof message === 'string'){ const label = loadingOverlayElem.querySelector('p'); if (label){ label.textContent = message; } }
+  loadingOverlayElem.hidden = !active;
+}
+
+function showToast(message, options = {}){
+  if (!toastRegion || !message) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  const title = document.createElement('strong');
+  title.textContent = options.title || 'Notice';
+  const body = document.createElement('span');
+  body.textContent = message;
+  toast.appendChild(title);
+  toast.appendChild(body);
+  toastRegion.appendChild(toast);
+  const lifetime = typeof options.duration === 'number' ? options.duration : 4000;
+  setTimeout(() => { toast.remove(); }, lifetime);
+}
+
+function formatRelativeTime(timestamp){
+  if (!Number.isFinite(timestamp)) return '';
+  const diffMs = Date.now() - timestamp;
+  const units = [
+    { limit: 1000 * 60, divisor: 1000, unit: 'second' },
+    { limit: 1000 * 60 * 60, divisor: 1000 * 60, unit: 'minute' },
+    { limit: 1000 * 60 * 60 * 24, divisor: 1000 * 60 * 60, unit: 'hour' },
+    { limit: Infinity, divisor: 1000 * 60 * 60 * 24, unit: 'day' }
+  ];
+  for (const entry of units){
+    if (Math.abs(diffMs) < entry.limit){
+      const value = Math.round(diffMs / entry.divisor);
+      try {
+        const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+        return rtf.format(-value, entry.unit);
+      } catch {
+        return `${Math.abs(value)} ${entry.unit}${Math.abs(value) === 1 ? '' : 's'} ago`;
+      }
+    }
+  }
+  return '';
+}
+
+function updateDataFreshnessDisplay(meta, { usedCache = false, error = null } = {}){
+  if (!dataFreshnessElem) return;
+  dataFreshnessElem.innerHTML = '';
+  const parts = [];
+  if (meta && Number.isFinite(meta.fetchedAt)){
+    parts.push(`Dataset loaded ${formatRelativeTime(meta.fetchedAt)}`);
+    if (meta.lastModified){
+      parts.push(`Last modified ${meta.lastModified}`);
+    }
+  }
+  if (!parts.length){
+    parts.push('Dataset freshness unknown');
+  }
+  const text = document.createElement('span');
+  text.textContent = parts.join(' • ');
+  dataFreshnessElem.appendChild(text);
+  if (usedCache){
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.textContent = 'Cached copy';
+    dataFreshnessElem.appendChild(badge);
+  }
+  if (error){
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.textContent = 'Offline fallback';
+    dataFreshnessElem.appendChild(badge);
+  }
+}
+
+function throttle(fn, wait){
+  let lastTime = 0;
+  let timeout = null;
+  let storedArgs = null;
+  const later = () => {
+    lastTime = Date.now();
+    timeout = null;
+    fn.apply(null, storedArgs);
+    storedArgs = null;
+  };
+  return function throttled(...args){
+    storedArgs = args;
+    const now = Date.now();
+    const remaining = wait - (now - lastTime);
+    if (remaining <= 0 || remaining > wait){
+      if (timeout){
+        clearTimeout(timeout);
+        timeout = null;
+      }
+      lastTime = now;
+      fn.apply(null, args);
+      storedArgs = null;
+    } else if (!timeout){
+      timeout = setTimeout(later, remaining);
+    }
+  };
+}
+
 async function boot(){
 // ----------------------------------------------------------------------------
 // DATA LOADING
 // ----------------------------------------------------------------------------
+setLoadingState(true, 'Loading atlas data…');
 let data;
+let usedCache = false;
+let loadError = null;
+let cachedMeta = null;
+try {
+  const cachedJson = localStorage.getItem(DATA_CACHE_KEY);
+  const cachedMetaJson = localStorage.getItem(DATA_META_KEY);
+  if (cachedJson){
+    data = JSON.parse(cachedJson);
+    usedCache = true;
+  }
+  if (cachedMetaJson){
+    cachedMeta = JSON.parse(cachedMetaJson);
+    datasetMeta = cachedMeta;
+  }
+} catch (error) {
+  console.warn('Failed to read cached dataset', error);
+}
 try {
   const dataUrl = new URL('./data/atlas.json', document.baseURI);
-  const response = await fetch(dataUrl.href);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  const response = await fetch(dataUrl.href, { cache: 'no-store', signal: controller.signal });
+  clearTimeout(timeout);
   if (!response.ok) {
     throw new Error(`Failed to fetch data/atlas.json: ${response.status}`);
   }
   const master = await response.json();
   data = JSON.parse(JSON.stringify(master));
+  datasetMeta = {
+    fetchedAt: Date.now(),
+    lastModified: response.headers.get('last-modified') || null,
+    etag: response.headers.get('etag') || null
+  };
+  try {
+    localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(DATA_META_KEY, JSON.stringify(datasetMeta));
+  } catch (error) {
+    console.warn('Failed to persist dataset cache', error);
+  }
+  usedCache = false;
 } catch (error) {
-  console.error('Unable to load atlas dataset', error);
-  showFatalError(error);
-  return;
+  console.error('Unable to refresh atlas dataset', error);
+  loadError = error;
+  if (!data){
+    showFatalError(error);
+    setLoadingState(false);
+    return;
+  }
+  usedCache = true;
+  showToast('Showing cached dataset. Refresh once you are back online.', { title: 'Offline mode' });
+  if (!datasetMeta && cachedMeta){
+    datasetMeta = cachedMeta;
+  } else if (!datasetMeta){
+    datasetMeta = { fetchedAt: Date.now(), lastModified: null };
+  }
 }
+if (!datasetMeta){
+  datasetMeta = { fetchedAt: Date.now(), lastModified: null };
+}
+updateDataFreshnessDisplay(datasetMeta, { usedCache, error: loadError });
+if (datasetMeta && Number.isFinite(datasetMeta.fetchedAt) && Date.now() - datasetMeta.fetchedAt > DATA_STALE_MS){
+  showToast('Atlas data may be older than a day. Refresh when online for the latest view.', { title: 'Stale cache', duration: 4200 });
+}
+setLoadingState(false);
 
 function fallbackText(data, field, fallback = 'No data available') {
   if (!data || typeof data !== 'object') return fallback;
@@ -112,12 +274,25 @@ let searchIncludeTags = false;
 let fisheyeEnabled = false;
 let applyingUrlState = false;
 let contextMenuNode = null;
+let contextMenuReturnFocus = null;
 let detailsPopoverElem = null;
 let detailsContentElem = null;
 let detailsCloseBtn = null;
 let detailsReturnFocus = null;
 let detailsJustOpened = false;
 let detailsLastAnchorRect = null;
+const OVERVIEW_VISIBILITY_KEY = 'atlas_overview_visibility';
+const OVERVIEW_DIM_KEY = 'atlas_overview_dim';
+let showSyntheticNodes = true;
+let dimSyntheticNodes = false;
+const SEARCH_DEBOUNCE_MS = 200;
+const SEARCH_PAGE_SIZE = 8;
+let searchPageIndex = 0;
+let searchMatchesAll = [];
+let searchDropdownPinned = true;
+let searchDebounceTimer = null;
+const OUTLINE_VISIBILITY_KEY = 'atlas_outline_collapsed';
+let outlineCollapsed = false;
 const TAG_RULES = [
   { label: 'Network', patterns: [/network/i, /tcp|udp/i, /osi/i, /dns/i] },
   { label: 'Web', patterns: [/web/i, /http/i, /browser/i, /api/i] },
@@ -152,7 +327,7 @@ function addDetailNodesForDataset(node, depth=0) {
     // Depth 2 corresponds to second‑level categories (root → macro → category)
     if (depth === 2 && node.children.length > 0) {
       const summary = node.children.map(c => c.name).join(', ');
-      node.children.push({ name: 'Overview: ' + summary });
+      node.children.push({ name: 'Overview: ' + summary, syntheticOverview: true });
     }
   }
 }
@@ -200,6 +375,8 @@ function mkNode(d, depth=0){
     parent: null,
     children: [],
     isMacro:false,
+    syntheticOverview: !!d.syntheticOverview,
+    provenance: d.syntheticOverview ? 'synthetic' : 'primary',
     angleHome:0, // for depth‑1
     ringIndex:0,
     match:false,
@@ -327,11 +504,15 @@ root.children.forEach(n => { macroVisibility[n.id] = true; });
 try { recentSearches = JSON.parse(localStorage.getItem('atlas_recent_searches')) || []; } catch(e) { recentSearches = []; }
 try { searchInSubtree = localStorage.getItem('atlas_search_subtree') === '1'; } catch(e) { searchInSubtree = false; }
 try { searchIncludeTags = localStorage.getItem('atlas_search_tags') === '1'; } catch(e) { searchIncludeTags = false; }
+try { showSyntheticNodes = localStorage.getItem(OVERVIEW_VISIBILITY_KEY) !== 'hidden'; } catch(e) { showSyntheticNodes = true; }
+try { dimSyntheticNodes = localStorage.getItem(OVERVIEW_DIM_KEY) === '1'; } catch(e) { dimSyntheticNodes = false; }
+try { outlineCollapsed = localStorage.getItem(OUTLINE_VISIBILITY_KEY) === '1'; } catch(e) { outlineCollapsed = false; }
 
 // Currently hovered node for tooltip
 let hoverNode = null;
 // Store mini‑map scaling information for hit detection
 let miniMapBounds = null;
+let miniMapTouchBounds = null;
 
 // ----------------------------------------------------------------------------
 // Canvas & UI
@@ -345,9 +526,10 @@ const ctx = canvas.getContext('2d');
 const exportCanvas = document.createElement('canvas');
 const exportCtx = exportCanvas.getContext('2d');
 const storedTheme = (typeof localStorage !== 'undefined') ? localStorage.getItem('atlas_theme') : null;
-if (storedTheme){
-  document.documentElement.setAttribute('data-theme', storedTheme);
-}
+const prefersDark = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+let themeLocked = !!storedTheme;
+const initialTheme = storedTheme || (prefersDark && prefersDark.matches ? 'dark' : 'light');
+document.documentElement.setAttribute('data-theme', initialTheme);
 const outlinePaneElem = document.getElementById('outlinePane');
 const outlineTreeElem = document.getElementById('outlineTree');
 const outlineStatusElem = document.getElementById('outlineStatus');
@@ -357,6 +539,14 @@ const fisheyeToggleBtn = document.getElementById('fisheyeToggleBtn');
 const searchSubtreeElem = document.getElementById('searchSubtree');
 const searchTagsElem = document.getElementById('searchTags');
 const recentSearchesElem = document.getElementById('recentSearches');
+const overviewToggleRowElem = document.getElementById('overviewToggleRow');
+const appRootElem = document.querySelector('.app');
+const primarySidebarElem = document.querySelector('aside.primary');
+const minimapTouchToggle = document.getElementById('minimapTouchToggle');
+const minimapTouchPanel = document.getElementById('minimapTouchPanel');
+const minimapTouchClose = document.getElementById('minimapTouchClose');
+const minimapTouchCanvas = document.getElementById('minimapTouchCanvas');
+const touchPreviewElem = document.getElementById('touchPreview');
 function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
 window.addEventListener('resize', resize); resize();
 
@@ -408,6 +598,7 @@ walk(root, node => {
   }
 });
 function visible(n){
+  if (n.syntheticOverview && !showSyntheticNodes) return false;
   // A node is visible if all its ancestors are expanded, and its top-level macro bucket is not filtered out.
   if (!n.parent) return true;
   // Check macro visibility: find first-level macro ancestor (child of root)
@@ -436,6 +627,7 @@ function recomputeVisibilityCaches(){
   walk(root, node => {
     if (!visibleSet.has(node.id)) return;
     node.children.forEach(child => {
+      if (!showSyntheticNodes && child.syntheticOverview) return;
       if (visibleSet.has(child.id)){
         visibleLinksCache.push([node, child]);
       }
@@ -472,12 +664,11 @@ function revealPath(node){
   }
 }
 
-function relayoutAncestors(node){
+function relayoutAncestors(node, { immediate = false } = {}){
   let cur = node;
   while (cur){
     if (cur.parent){
-      assignAngles(cur.parent);
-      layoutChildren(cur.parent);
+      queueLayout(cur.parent, { immediate });
     }
     cur = cur.parent;
   }
@@ -540,7 +731,7 @@ function focusNode(node, options = {}){
       openPathOnly(node);
     } else {
       revealPath(node);
-      relayoutAncestors(node);
+      relayoutAncestors(node, { immediate: true });
       kickPhysics();
     }
   }
@@ -943,6 +1134,7 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
   hoverPulse += 0.1;
   if (hoverPulse > Math.PI * 2) hoverPulse -= Math.PI * 2;
   for (const n of vis){
+    if (n.syntheticOverview && !showSyntheticNodes) continue;
     const flashExpiry = flashStates.get(n.id);
     if (flashExpiry && flashExpiry <= now){
       flashStates.delete(n.id);
@@ -955,6 +1147,7 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
     const themeDark = document.documentElement.getAttribute('data-theme')!=='light';
     const isActivePath = activePathNodes.has(n.id);
     const isFocused = lastFocusedNode && lastFocusedNode.id === n.id;
+    const isSynthetic = !!n.syntheticOverview;
     if (n===root){
       fill = themeDark? "#111827" : "#ffffff";
       stroke = themeDark? "#334155" : "#cbd5e1";
@@ -984,6 +1177,10 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
         fill = lightenColor(fill, themeDark ? 0.28 : 0.18);
       }
     }
+    if (isSynthetic){
+      stroke = accentColour;
+      fill = lightenColor(fill, themeDark ? 0.12 : 0.22);
+    }
     // If this node is hovered, apply a subtle pulse animation: scale up and
     // lighten the fill and stroke slightly.  The star of the show is the
     // accent colour as stroke to draw the eye.  The pulsation uses the
@@ -1007,6 +1204,9 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
     targetCtx.save();
     const shouldDim = activeTags.size>0 && n.dimmed && !isActivePath;
     targetCtx.globalAlpha = shouldDim ? 0.35 : 1;
+    if (isSynthetic && dimSyntheticNodes){
+      targetCtx.globalAlpha *= 0.55;
+    }
     if (!isActivePath && !n.match){
       targetCtx.globalAlpha *= 0.85;
     }
@@ -1069,6 +1269,30 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
       const label = fallbackText(n, 'name');
       const shortLabel = label.length > 18 ? label.slice(0, 17) + '…' : label;
       targetCtx.fillText(shortLabel, sx, sy);
+    }
+    if (isSynthetic){
+      targetCtx.save();
+      const badgeText = 'Overview';
+      const badgeFontSize = Math.max(9, 8 * renderScale);
+      targetCtx.font = '600 ' + badgeFontSize + 'px Segoe UI, Arial, sans-serif';
+      const badgePaddingX = 6 * renderScale;
+      const badgePaddingY = 4 * renderScale;
+      const textWidth = targetCtx.measureText(badgeText).width;
+      const badgeWidth = textWidth + badgePaddingX * 2;
+      const badgeHeight = 14 * renderScale;
+      const badgeX = x + 8 * renderScale;
+      const badgeY = y + hh - badgeHeight - 6 * renderScale;
+      targetCtx.fillStyle = themeDark ? 'rgba(255,155,106,0.16)' : 'rgba(255,155,106,0.22)';
+      targetCtx.strokeStyle = accentColour;
+      targetCtx.lineWidth = 1;
+      roundRect(targetCtx, badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight / 2);
+      targetCtx.fill();
+      targetCtx.stroke();
+      targetCtx.fillStyle = accentColour;
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(badgeText, badgeX + badgeWidth / 2, badgeY + badgeHeight / 2 + 0.5);
+      targetCtx.restore();
     }
     if (n.children && n.children.length > 0 && renderScale > 0.75){
       targetCtx.save();
@@ -1299,6 +1523,105 @@ function layoutChildren(n){
   });
 }
 
+const layoutWorkQueue = [];
+const layoutQueuedIds = new Set();
+let layoutFrameHandle = null;
+let layoutVisibilityPending = false;
+let layoutPhysicsPending = false;
+let pendingPhysicsDuration = null;
+
+function runLayoutForNode(node){
+  if (!node || !node.children || node.children.length === 0) return;
+  assignAngles(node);
+  layoutChildren(node);
+}
+
+function queueLayout(node, { includeAncestors = false, immediate = false } = {}){
+  if (!node) return;
+  if (includeAncestors){
+    let cursor = node;
+    while (cursor){
+      queueLayout(cursor, { includeAncestors: false, immediate });
+      cursor = cursor.parent || null;
+    }
+    return;
+  }
+  if (!node.children || node.children.length === 0){
+    if (layoutQueuedIds.has(node?.id)){
+      layoutQueuedIds.delete(node.id);
+    }
+    return;
+  }
+  if (immediate){
+    if (layoutQueuedIds.has(node.id)){
+      layoutQueuedIds.delete(node.id);
+      const index = layoutWorkQueue.indexOf(node);
+      if (index !== -1){
+        layoutWorkQueue.splice(index, 1);
+      }
+    }
+    runLayoutForNode(node);
+    return;
+  }
+  if (layoutQueuedIds.has(node.id)) return;
+  layoutQueuedIds.add(node.id);
+  layoutWorkQueue.push(node);
+  scheduleLayoutProcessing();
+}
+
+function scheduleLayoutProcessing(){
+  if (layoutFrameHandle !== null) return;
+  layoutFrameHandle = requestAnimationFrame(processLayoutQueue);
+}
+
+function processLayoutQueue(){
+  layoutFrameHandle = null;
+  const deadline = performance.now() + 8;
+  while (layoutWorkQueue.length){
+    const node = layoutWorkQueue.shift();
+    layoutQueuedIds.delete(node.id);
+    runLayoutForNode(node);
+    if (performance.now() >= deadline){
+      break;
+    }
+  }
+  if (layoutWorkQueue.length){
+    layoutFrameHandle = requestAnimationFrame(processLayoutQueue);
+  } else {
+    if (layoutVisibilityPending){
+      refreshVisibilityCaches();
+      layoutVisibilityPending = false;
+    }
+    if (layoutPhysicsPending){
+      const duration = typeof pendingPhysicsDuration === 'number' ? pendingPhysicsDuration : undefined;
+      pendingPhysicsDuration = null;
+      layoutPhysicsPending = false;
+      kickPhysics(duration);
+    }
+  }
+}
+
+function requestVisibilityRefresh(){
+  layoutVisibilityPending = true;
+  if (layoutWorkQueue.length === 0 && layoutFrameHandle === null){
+    refreshVisibilityCaches();
+    layoutVisibilityPending = false;
+  }
+}
+
+function requestPhysicsKick(ms){
+  layoutPhysicsPending = true;
+  if (typeof ms === 'number'){
+    pendingPhysicsDuration = Math.max(pendingPhysicsDuration || 0, ms);
+  }
+  if (layoutWorkQueue.length === 0 && layoutFrameHandle === null){
+    const duration = typeof pendingPhysicsDuration === 'number' ? pendingPhysicsDuration : ms;
+    pendingPhysicsDuration = null;
+    layoutPhysicsPending = false;
+    kickPhysics(duration);
+  }
+}
+
 // ----------------------------------------------------------------------------
 // Interaction (pan/zoom/drag, click toggle, wheel smooth zoom)
 // ----------------------------------------------------------------------------
@@ -1316,16 +1639,38 @@ let mouseDownScreen = [0,0];
 // click handler will only toggle the node if the mouse went down and up on
 // the same node without significant movement.
 let downNode = null;
+
+function hitTestNodeAt(x, y){
+  const vis = collectVisible();
+  for (let i = vis.length - 1; i >= 0; i--){
+    const candidate = vis[i];
+    const hit = candidate._hit;
+    if (!hit) continue;
+    if (x >= hit.x && x <= hit.x + hit.w && y >= hit.y && y <= hit.y + hit.h){
+      return candidate;
+    }
+  }
+  return null;
+}
+
+let touchPressTimer = null;
+let touchStartPoint = null;
+let touchCandidateNode = null;
+let touchPreviewNode = null;
+let touchPreviewTimer = null;
+let suppressNextClick = false;
+let minimapTouchReturnFocus = null;
+let mobileSidebarOpen = false;
+let mobileSidebarReturnFocus = null;
+let sidebarFocusTrapHandler = null;
+let sidebarFocusInHandler = null;
 canvas.addEventListener('mousedown',e=>{
   const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
   lastMouse=[x,y];
   // Reset movement detection at the start of each mouse press
   movedDuringDrag = false;
   mouseDownScreen=[x,y];
-  const vis = collectVisible();
-  let target=null;
-  // find the node under the pointer
-  for (let i=vis.length-1;i>=0;i--){ const n=vis[i]; const h=n._hit; if (!h) continue; if (x>=h.x && x<=h.x+h.w && y>=h.y && y<=h.y+h.h){ target=n; break; } }
+  let target = hitTestNodeAt(x, y);
   if (target){
     dragNode=target; target.isDragging=true;
     const [wx,wy] = screenToWorld(x,y);
@@ -1380,16 +1725,90 @@ canvas.addEventListener('mousemove',e=>{
     }
   }
 });
+canvas.addEventListener('touchstart', (e) => {
+  closeContextMenu();
+  if (e.touches && e.touches.length > 1){
+    clearTimeout(touchPressTimer);
+    touchPressTimer = null;
+    touchCandidateNode = null;
+    return;
+  }
+  const point = pointerPositionFromEvent(e);
+  if (!point) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = point.clientX - rect.left;
+  const y = point.clientY - rect.top;
+  lastMouse = [x, y];
+  touchStartPoint = { x, y };
+  touchCandidateNode = hitTestNodeAt(x, y);
+  if (touchPressTimer){
+    clearTimeout(touchPressTimer);
+  }
+  if (touchCandidateNode){
+    touchPressTimer = setTimeout(() => {
+      touchPressTimer = null;
+      showTouchPreview(touchCandidateNode);
+    }, 280);
+  }
+});
+canvas.addEventListener('touchmove', (e) => {
+  if (!touchStartPoint) return;
+  const point = pointerPositionFromEvent(e);
+  if (!point) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = point.clientX - rect.left;
+  const y = point.clientY - rect.top;
+  const dx = Math.abs(x - touchStartPoint.x);
+  const dy = Math.abs(y - touchStartPoint.y);
+  if (dx > 18 || dy > 18){
+    if (touchPressTimer){
+      clearTimeout(touchPressTimer);
+      touchPressTimer = null;
+    }
+  }
+});
+canvas.addEventListener('touchend', (e) => {
+  if (touchPressTimer){
+    clearTimeout(touchPressTimer);
+    touchPressTimer = null;
+  }
+  if (!touchStartPoint){
+    touchCandidateNode = null;
+    return;
+  }
+  const point = pointerPositionFromEvent(e);
+  if (point && touchCandidateNode){
+    const rect = canvas.getBoundingClientRect();
+    const x = point.clientX - rect.left;
+    const y = point.clientY - rect.top;
+    const dx = Math.abs(x - touchStartPoint.x);
+    const dy = Math.abs(y - touchStartPoint.y);
+    if (dx <= 18 && dy <= 18){
+      showTouchPreview(touchCandidateNode);
+    }
+  }
+  touchCandidateNode = null;
+  touchStartPoint = null;
+});
+canvas.addEventListener('touchcancel', () => {
+  if (touchPressTimer){
+    clearTimeout(touchPressTimer);
+    touchPressTimer = null;
+  }
+  touchCandidateNode = null;
+  touchStartPoint = null;
+});
 canvas.addEventListener('click',e=>{
   closeContextMenu();
+  if (suppressNextClick){
+    suppressNextClick = false;
+    downNode = null;
+    movedDuringDrag = false;
+    return;
+  }
   // Determine which node (if any) the mouse is over on click
   const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
-  let target=null;
-  const vis = collectVisible();
-  for (let i=vis.length-1;i>=0;i--){
-    const n=vis[i]; const h=n._hit; if (!h) continue;
-    if (x>=h.x && x<=h.x+h.w && y>=h.y && y<=h.y+h.h){ target=n; break; }
-  }
+  let target = hitTestNodeAt(x, y);
   // Determine if the pointer moved significantly since the press. Use the stored mouseDownScreen to avoid relying on mousemove events (which may not fire in all drag simulations).
   const dxMove = x - mouseDownScreen[0];
   const dyMove = y - mouseDownScreen[1];
@@ -1424,15 +1843,9 @@ canvas.addEventListener('dblclick', e => {
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
-  const vis = collectVisible();
-  for (let i = vis.length - 1; i >= 0; i--){
-    const n = vis[i];
-    const h = n._hit;
-    if (!h) continue;
-    if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h){
-      focusNode(n, { animate: true, ensureVisible: true, frameChildren: true });
-      break;
-    }
+  const target = hitTestNodeAt(x, y);
+  if (target){
+    focusNode(target, { animate: true, ensureVisible: true, frameChildren: true });
   }
 });
 canvas.addEventListener('contextmenu', e => {
@@ -1441,17 +1854,7 @@ canvas.addEventListener('contextmenu', e => {
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
-  const vis = collectVisible();
-  let target = null;
-  for (let i = vis.length - 1; i >= 0; i--){
-    const n = vis[i];
-    const h = n._hit;
-    if (!h) continue;
-    if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h){
-      target = n;
-      break;
-    }
-  }
+  const target = hitTestNodeAt(x, y);
   if (target){
     openContextMenu(target, e.pageX, e.pageY);
   } else {
@@ -1482,52 +1885,43 @@ function animateZoom(targetScale, anchorWx, anchorWy, ms){
     if (t<1) {
       requestAnimationFrame(step);
     } else if (!applyingUrlState) {
-      updateUrlFromState();
+      scheduleUrlUpdate();
     }
   }
   requestAnimationFrame(step);
 }
 function toggleNode(n, animated){
-  if (n.children.length===0) return;
+  if (!n.children || n.children.length === 0) return;
   const opening = !n.open;
   setNodeOpenState(n, opening);
   if (opening){
-    // Automatically open the immediate children when a node is expanded.
-    // Without this, children remain collapsed and the user must click
-    // each child individually, which makes exploration cumbersome.  We
-    // leave deeper descendants closed so users can drill down as desired.
-    n.children.forEach(ch => { markNodeOpen(ch); });
-    /*
-      When opening a node, we need to reallocate angular sectors for the
-      newly visible subtree.  Without doing so, children and deeper
-      descendants retain their previous angleHome values and can overlap
-      each other or extend into neighbouring sectors.  By calling
-      assignAngles(n), each child receives an equal share of its
-      parent's angularSpan and gets a fresh angleHome value.  After
-      assigning angles, layoutChildren(n) positions all open
-      descendants using those angles.  This ensures a tidy, symmetric
-      expansion every time and prevents entangled leaves.
-    */
-    assignAngles(n);
-    layoutChildren(n);
-    // Initialise appearance state for the children so they fade in
+    // Automatically open immediate children when expanding so the first
+    // interaction reveals the full branch.  Deeper descendants remain
+    // collapsed so the user can drill down gradually.
     n.children.forEach(ch => {
+      markNodeOpen(ch);
       ch.appear = 0;
     });
+    // Schedule a progressive layout pass for the node and its ancestors.
+    // This defers expensive angle assignment and radial layout work across
+    // animation frames, preventing large branches from freezing the UI.
+    queueLayout(n, { includeAncestors: true });
     // Animate the appearance quickly for a snappy feel (180 ms)
     const t0 = performance.now();
     (function anim(time){
-      const t = Math.min(1,(time - t0) / 180);
+      const t = Math.min(1, (time - t0) / 180);
       n.children.forEach(ch => ch.appear = t);
       if (t < 1 && n.open) requestAnimationFrame(anim);
     })(t0);
+  } else {
+    queueLayout(n, { includeAncestors: true });
   }
-  refreshVisibilityCaches();
+  requestVisibilityRefresh();
   // Let physics run briefly to settle the new layout, then freeze
-  kickPhysics();
-  updateOutlineTree(node.id);
+  requestPhysicsKick();
+  updateOutlineTree(n.id);
   if (!applyingUrlState){
-    updateUrlFromState();
+    scheduleUrlUpdate();
   }
 }
 const qElem = document.getElementById('q'), resultsElem = document.getElementById('results');
@@ -1535,6 +1929,129 @@ let currentFocusNode=null;
 let viewStack=[];
 let searchMatches = [];
 let highlightedResultIndex = -1;
+
+function scheduleSearch(term){
+  if (searchDebounceTimer){
+    clearTimeout(searchDebounceTimer);
+  }
+  searchDebounceTimer = setTimeout(() => {
+    searchDebounceTimer = null;
+    renderSearchResults(term);
+  }, SEARCH_DEBOUNCE_MS);
+}
+
+function renderSearchResults(rawTerm){
+  if (!resultsElem) return;
+  const term = (rawTerm || '').trim();
+  searchMatches = [];
+  highlightedResultIndex = -1;
+  if (!term){
+    searchMatchesAll = [];
+    searchPageIndex = 0;
+    resultsElem.innerHTML = '';
+    resultsElem.classList.remove('visible');
+    resultsElem.setAttribute('aria-expanded', 'false');
+    walk(root, n => { n.match = false; });
+    updateRecentSearchesUI();
+    draw();
+    return;
+  }
+  searchMatchesAll = buildSearchMatches(term);
+  searchPageIndex = 0;
+  renderSearchResultsPage();
+}
+
+function renderSearchResultsPage(){
+  if (!resultsElem) return;
+  resultsElem.innerHTML = '';
+  const total = searchMatchesAll.length;
+  if (!total){
+    const empty = document.createElement('div');
+    empty.className = 'hit';
+    empty.textContent = 'No matches available';
+    empty.setAttribute('role', 'status');
+    resultsElem.appendChild(empty);
+    resultsElem.classList.add('visible');
+    resultsElem.setAttribute('aria-expanded', 'true');
+    currentFocusNode = null;
+    draw();
+    return;
+  }
+  const start = Math.max(0, Math.min(searchPageIndex * SEARCH_PAGE_SIZE, Math.max(0, total - 1)));
+  const pageMatches = searchMatchesAll.slice(start, start + SEARCH_PAGE_SIZE);
+  searchMatches = pageMatches;
+  pageMatches.forEach((entry, idx) => {
+    const node = entry.node;
+    const item = document.createElement('div');
+    item.className = 'hit';
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
+    const title = document.createElement('span');
+    title.innerHTML = highlightText(fallbackText(node, 'name'), lastSearchTokens);
+    const pathSpan = document.createElement('small');
+    const pathLabel = pathTo(node).slice(1, -1).map(p => fallbackText(p, 'name')).join(' › ');
+    pathSpan.innerHTML = pathLabel ? highlightText(pathLabel, lastSearchTokens) : 'Top-level';
+    item.appendChild(title);
+    item.appendChild(pathSpan);
+    item.onmouseenter = () => setActiveSearchResult(idx);
+    item.onclick = () => {
+      setActiveSearchResult(idx);
+      jumpToMatch(node);
+      if (!searchDropdownPinned){
+        hideSearchResults();
+      }
+    };
+    resultsElem.appendChild(item);
+  });
+  const nav = document.createElement('div');
+  nav.className = 'search-nav';
+  const info = document.createElement('span');
+  const end = Math.min(total, start + pageMatches.length);
+  info.textContent = `${start + 1}–${end} of ${total}`;
+  nav.appendChild(info);
+  const pinBtn = document.createElement('button');
+  pinBtn.type = 'button';
+  pinBtn.textContent = searchDropdownPinned ? 'Unpin' : 'Pin';
+  pinBtn.title = searchDropdownPinned ? 'Allow closing on outside click' : 'Keep results pinned open';
+  pinBtn.onclick = () => {
+    searchDropdownPinned = !searchDropdownPinned;
+    pinBtn.textContent = searchDropdownPinned ? 'Unpin' : 'Pin';
+    pinBtn.title = searchDropdownPinned ? 'Allow closing on outside click' : 'Keep results pinned open';
+    resultsElem.classList.toggle('persist', searchDropdownPinned);
+  };
+  nav.appendChild(pinBtn);
+  const prevBtn = document.createElement('button');
+  prevBtn.type = 'button';
+  prevBtn.textContent = 'Prev';
+  prevBtn.disabled = start === 0;
+  prevBtn.onclick = () => {
+    if (start === 0) return;
+    searchPageIndex = Math.max(0, searchPageIndex - 1);
+    renderSearchResultsPage();
+  };
+  nav.appendChild(prevBtn);
+  const nextBtn = document.createElement('button');
+  nextBtn.type = 'button';
+  nextBtn.textContent = 'Next';
+  nextBtn.disabled = end >= total;
+  nextBtn.onclick = () => {
+    if (end >= total) return;
+    searchPageIndex += 1;
+    renderSearchResultsPage();
+  };
+  nav.appendChild(nextBtn);
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.textContent = 'Close';
+  closeBtn.onclick = () => hideSearchResults();
+  nav.appendChild(closeBtn);
+  resultsElem.appendChild(nav);
+  setActiveSearchResult(0);
+  resultsElem.classList.add('visible');
+  resultsElem.setAttribute('aria-expanded', 'true');
+  resultsElem.classList.toggle('persist', searchDropdownPinned);
+  draw();
+}
 function snapshotView(){
   return {
     offsetX,
@@ -1577,6 +2094,7 @@ function buildSearchMatches(rawTerm){
   const matches = [];
   const seen = new Set();
   function scoreNode(node){
+    if (node.syntheticOverview && !showSyntheticNodes) return null;
     const lowerName = (node.name || '').toLowerCase();
     let score = 0;
     for (const token of lastSearchTokens){
@@ -1614,6 +2132,7 @@ function buildSearchMatches(rawTerm){
     return score;
   }
   walkFrom(scopeRoot, n => {
+    if (n.syntheticOverview && !showSyntheticNodes) return;
     if (seen.has(n.id)) return;
     const nodeScore = scoreNode(n);
     if (nodeScore !== null){
@@ -1638,56 +2157,6 @@ function highlightText(text, tokens){
     result = result.replace(pattern, '<mark>$1</mark>');
   });
   return result;
-}
-
-function renderSearchResults(rawTerm){
-  const term = (rawTerm || '').trim();
-  searchMatches = [];
-  highlightedResultIndex = -1;
-  resultsElem.innerHTML = '';
-  if (!term){
-    resultsElem.classList.remove('visible');
-    resultsElem.setAttribute('aria-expanded', 'false');
-    walk(root, n => { n.match = false; });
-    updateRecentSearchesUI();
-    return;
-  }
-  searchMatches = buildSearchMatches(term).slice(0, 7);
-  if (searchMatches.length === 0){
-    const empty = document.createElement('div');
-    empty.className = 'hit';
-    empty.textContent = 'No matches available';
-    empty.setAttribute('role', 'status');
-    resultsElem.appendChild(empty);
-    resultsElem.classList.add('visible');
-    resultsElem.setAttribute('aria-expanded', 'true');
-    currentFocusNode = null;
-    return;
-  }
-  searchMatches.forEach((entry, idx) => {
-    const node = entry.node;
-    const item = document.createElement('div');
-    item.className = 'hit';
-    item.setAttribute('role', 'option');
-    item.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
-    const title = document.createElement('span');
-    title.innerHTML = highlightText(fallbackText(node, 'name'), lastSearchTokens);
-    const pathSpan = document.createElement('small');
-    const pathLabel = pathTo(node).slice(1, -1).map(p => fallbackText(p, 'name')).join(' › ');
-    pathSpan.innerHTML = pathLabel ? highlightText(pathLabel, lastSearchTokens) : 'Top-level';
-    item.appendChild(title);
-    item.appendChild(pathSpan);
-    item.onmouseenter = () => setActiveSearchResult(idx);
-    item.onclick = () => {
-      setActiveSearchResult(idx);
-      jumpToMatch(node);
-      hideSearchResults();
-    };
-    resultsElem.appendChild(item);
-  });
-  setActiveSearchResult(0);
-  resultsElem.classList.add('visible');
-  resultsElem.setAttribute('aria-expanded', 'true');
 }
 
 function rememberSearch(term){
@@ -1746,24 +2215,26 @@ function queueClipboardWrite(text){
 
 function closeContextMenu(){
   if (!contextMenuElem) return;
-  contextMenuElem.style.display = 'none';
   contextMenuElem.setAttribute('aria-hidden', 'true');
+  contextMenuElem.style.pointerEvents = 'none';
   contextMenuNode = null;
+  const restore = contextMenuReturnFocus;
+  contextMenuReturnFocus = null;
+  if (restore && typeof restore.focus === 'function'){
+    restore.focus();
+  }
 }
 
 function expandSubtree(node){
   if (!node) return;
   walkFrom(node, child => {
     markNodeOpen(child);
-    if (child.children && child.children.length > 0){
-      assignAngles(child);
-      layoutChildren(child);
-    }
   });
-  refreshVisibilityCaches();
+  queueLayout(node, { includeAncestors: true });
+  requestVisibilityRefresh();
   updateOutlineTree(node.id);
-  kickPhysics();
-  if (!applyingUrlState){ updateUrlFromState(); }
+  requestPhysicsKick(1000);
+  if (!applyingUrlState){ scheduleUrlUpdate(); }
 }
 
 function collapseSubtree(node){
@@ -1771,20 +2242,18 @@ function collapseSubtree(node){
   walkFrom(node, child => {
     if (child !== node){ markNodeClosed(child); }
   });
-  if (node.children && node.children.length > 0){
-    assignAngles(node);
-    layoutChildren(node);
-  }
-  refreshVisibilityCaches();
+  queueLayout(node, { includeAncestors: true });
+  requestVisibilityRefresh();
   updateOutlineTree(node.id);
-  kickPhysics();
-  if (!applyingUrlState){ updateUrlFromState(); }
+  requestPhysicsKick();
+  if (!applyingUrlState){ scheduleUrlUpdate(); }
 }
 
 function openContextMenu(node, pageX, pageY){
   if (!contextMenuElem || !node) return;
   contextMenuElem.innerHTML = '';
   contextMenuNode = node;
+  contextMenuReturnFocus = document.activeElement;
   const actions = [
     { label: 'Focus & frame', handler: () => focusNode(node, { animate: true, ensureVisible: true, frameChildren: true }) },
     { label: 'Expand branch', handler: () => expandSubtree(node) },
@@ -1816,13 +2285,34 @@ function openContextMenu(node, pageX, pageY){
   });
   contextMenuElem.style.left = `${pageX}px`;
   contextMenuElem.style.top = `${pageY}px`;
-  contextMenuElem.style.display = 'flex';
   contextMenuElem.setAttribute('aria-hidden', 'false');
+  contextMenuElem.style.pointerEvents = 'auto';
   const bounds = contextMenuElem.getBoundingClientRect();
   const adjustedX = Math.min(pageX, window.innerWidth - bounds.width - 16);
   const adjustedY = Math.min(pageY, window.innerHeight - bounds.height - 16);
   contextMenuElem.style.left = `${Math.max(0, adjustedX)}px`;
   contextMenuElem.style.top = `${Math.max(0, adjustedY)}px`;
+  const buttons = contextMenuElem.querySelectorAll('button');
+  if (buttons.length){
+    buttons[0].focus();
+  }
+  contextMenuElem.onkeydown = (event) => {
+    const items = Array.from(contextMenuElem.querySelectorAll('button'));
+    if (!items.length) return;
+    const index = items.indexOf(document.activeElement);
+    if (event.key === 'ArrowDown'){
+      event.preventDefault();
+      const next = index === -1 ? 0 : (index + 1) % items.length;
+      items[next].focus();
+    } else if (event.key === 'ArrowUp'){
+      event.preventDefault();
+      const prev = index <= 0 ? items.length - 1 : index - 1;
+      items[prev].focus();
+    } else if (event.key === 'Escape'){
+      event.preventDefault();
+      closeContextMenu();
+    }
+  };
 }
 
 function buildShareableLink(node){
@@ -1870,7 +2360,7 @@ function buildShareableLink(node){
 }
 
 function setActiveSearchResult(index){
-  const items = Array.from(resultsElem.children);
+  const items = Array.from(resultsElem.querySelectorAll('.hit'));
   if (!items.length){
     highlightedResultIndex = -1;
     currentFocusNode = null;
@@ -1886,12 +2376,19 @@ function setActiveSearchResult(index){
   });
   const entry = searchMatches[highlightedResultIndex];
   currentFocusNode = entry ? entry.node : null;
+  if (currentFocusNode){
+    triggerNodeFlash(currentFocusNode, 1500);
+    draw();
+  }
 }
 
 function hideSearchResults(){
   resultsElem.classList.remove('visible');
   resultsElem.innerHTML = '';
   highlightedResultIndex = -1;
+  searchMatchesAll = [];
+  searchPageIndex = 0;
+  resultsElem.classList.remove('persist');
   if (!qElem.value.trim()){
     walk(root, n => { n.match = false; });
     currentFocusNode = lastFocusedNode || null;
@@ -1901,7 +2398,7 @@ function hideSearchResults(){
 }
 
 qElem.addEventListener('input', () => {
-  renderSearchResults(qElem.value);
+  scheduleSearch(qElem.value);
 });
 
 qElem.addEventListener('focus', () => {
@@ -1943,7 +2440,7 @@ qElem.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('click', (e) => {
-  if (!resultsElem.contains(e.target) && e.target !== qElem){
+  if (resultsElem.classList.contains('visible') && !searchDropdownPinned && !resultsElem.contains(e.target) && e.target !== qElem){
     hideSearchResults();
   }
   if (contextMenuElem && contextMenuElem.style.display === 'flex' && !contextMenuElem.contains(e.target)){
@@ -1951,6 +2448,9 @@ document.addEventListener('click', (e) => {
   }
   if (detailsPopoverElem && !detailsPopoverElem.hidden && !detailsJustOpened && !detailsPopoverElem.contains(e.target)){
     hideDetailsPopover();
+  }
+  if (touchPreviewElem && touchPreviewElem.classList.contains('visible') && !touchPreviewElem.contains(e.target)){
+    hideTouchPreview();
   }
 });
 function openPathOnly(n){
@@ -1962,12 +2462,11 @@ function openPathOnly(n){
   // minimises overlap when jumping directly to a deep node via search.
   pathNodes.forEach(x => {
     if (x.children && x.children.length>0) {
-      // Reassign angular spans for this node and all descendants.  This
-      // ensures that any previously hidden children get fresh angles
-      // allocated in the parent's sector before positioning.  Without
-      // updating angles, newly opened branches may overlap old layouts.
-      assignAngles(x);
-      layoutChildren(x);
+      // Force an immediate layout so the subsequent focus animation uses the
+      // latest geometry.  We bypass the progressive queue here because this
+      // path is taken when jumping directly to a node via search, where the
+      // view should update synchronously.
+      queueLayout(x, { immediate: true });
     }
   });
 
@@ -2006,24 +2505,23 @@ if (fisheyeToggleBtn){
   fisheyeToggleBtn.addEventListener('click', () => {
     fisheyeEnabled = !fisheyeEnabled;
     fisheyeToggleBtn.classList.toggle('active', fisheyeEnabled);
+    fisheyeToggleBtn.setAttribute('aria-pressed', fisheyeEnabled ? 'true' : 'false');
     if (!applyingUrlState){
-      updateUrlFromState();
+      scheduleUrlUpdate();
     }
   });
+  fisheyeToggleBtn.setAttribute('aria-pressed', fisheyeEnabled ? 'true' : 'false');
 }
 const expandBtn = document.getElementById('expandBtn');
 if (expandBtn){
   expandBtn.onclick = () => {
     // Expand every node in the tree
     walk(root, n => { markNodeOpen(n); });
-    root.children.forEach(macro => assignAngles(macro));
-    walk(root,n=>{
-      if (n.open && n.children && n.children.length>0) layoutChildren(n);
-    });
-    refreshVisibilityCaches();
+    queueLayout(root);
+    requestVisibilityRefresh();
     updateOutlineTree(root.id);
-    if (!applyingUrlState){ updateUrlFromState(); }
-    kickPhysics(1500);
+    if (!applyingUrlState){ scheduleUrlUpdate(); }
+    requestPhysicsKick(1500);
   };
 }
 // Collapse All handled below with layout and physics adjustments
@@ -2032,13 +2530,12 @@ const collapseBtn = document.getElementById('collapseBtn');
 if (collapseBtn){
   collapseBtn.onclick = () => {
     walk(root,n=>{ if(n===root){ markNodeOpen(n); } else { markNodeClosed(n); } });
-    root.children.forEach(macro => assignAngles(macro));
-    root.children.forEach(macro => layoutChildren(macro));
-    refreshVisibilityCaches();
+    queueLayout(root);
+    requestVisibilityRefresh();
     updateOutlineTree(root.id);
-    kickPhysics();
+    requestPhysicsKick();
     if (!applyingUrlState){
-      updateUrlFromState();
+      scheduleUrlUpdate();
     }
     updateBreadcrumb(root);
   };
@@ -2049,18 +2546,30 @@ function syncThemeControl(){
   const label = themeBtnElem.querySelector('span');
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   if (label) label.textContent = isLight ? 'Dark' : 'Light';
+  themeBtnElem.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+  themeBtnElem.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
 }
 if (themeBtnElem){
   themeBtnElem.onclick = () => {
+    themeLocked = true;
     const html = document.documentElement;
     const isLight = html.getAttribute('data-theme') === 'light';
     const nextTheme = isLight ? 'dark' : 'light';
     html.setAttribute('data-theme', nextTheme);
     try { localStorage.setItem('atlas_theme', nextTheme); } catch(e) {}
     syncThemeControl();
-    if (!applyingUrlState){ updateUrlFromState(); }
+    if (!applyingUrlState){ scheduleUrlUpdate(); }
   };
   syncThemeControl();
+}
+if (prefersDark){
+  prefersDark.addEventListener('change', (event) => {
+    if (themeLocked) return;
+    const nextTheme = event.matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', nextTheme);
+    syncThemeControl();
+    if (!applyingUrlState){ scheduleUrlUpdate(); }
+  });
 }
 if (searchSubtreeElem){
   searchSubtreeElem.checked = searchInSubtree;
@@ -2068,9 +2577,9 @@ if (searchSubtreeElem){
     searchInSubtree = searchSubtreeElem.checked;
     try { localStorage.setItem('atlas_search_subtree', searchInSubtree ? '1' : '0'); } catch(e) {}
     if (qElem.value.trim()){
-      renderSearchResults(qElem.value);
+      scheduleSearch(qElem.value);
     }
-    updateUrlFromState();
+    scheduleUrlUpdate();
   });
 }
 if (searchTagsElem){
@@ -2079,18 +2588,29 @@ if (searchTagsElem){
     searchIncludeTags = searchTagsElem.checked;
     try { localStorage.setItem('atlas_search_tags', searchIncludeTags ? '1' : '0'); } catch(e) {}
     if (qElem.value.trim()){
-      renderSearchResults(qElem.value);
+      scheduleSearch(qElem.value);
     }
-    updateUrlFromState();
+    scheduleUrlUpdate();
   });
 }
 
 const collapseOutlineBtn = document.getElementById('collapseOutlineBtn');
-if (collapseOutlineBtn && outlinePaneElem){
+if (outlinePaneElem && collapseOutlineBtn){
+  if (outlineCollapsed){
+    outlinePaneElem.classList.add('collapsed');
+    collapseOutlineBtn.textContent = 'Show';
+    collapseOutlineBtn.setAttribute('aria-expanded', 'false');
+    outlinePaneElem.setAttribute('aria-hidden', 'true');
+  }
   collapseOutlineBtn.addEventListener('click', () => {
     const collapsed = outlinePaneElem.classList.toggle('collapsed');
     collapseOutlineBtn.textContent = collapsed ? 'Show' : 'Hide';
     collapseOutlineBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    outlinePaneElem.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+    try { localStorage.setItem(OUTLINE_VISIBILITY_KEY, collapsed ? '1' : '0'); } catch(e) {}
+    if (focusAnnounceElem){
+      focusAnnounceElem.textContent = collapsed ? 'Outline collapsed' : 'Outline expanded';
+    }
   });
 }
 
@@ -2104,13 +2624,21 @@ if (bucketTagsElem){
   });
 }
 function exportPNG(mult){
-  const width = canvas.width * mult;
-  const height = canvas.height * mult;
-  exportCanvas.width = width;
-  exportCanvas.height = height;
+  const pixelRatio = window.devicePixelRatio || 1;
+  const baseWidth = canvas.clientWidth || canvas.width;
+  const baseHeight = canvas.clientHeight || canvas.height;
+  const outputWidth = baseWidth * mult;
+  const outputHeight = baseHeight * mult;
+  exportCanvas.width = Math.round(outputWidth * pixelRatio);
+  exportCanvas.height = Math.round(outputHeight * pixelRatio);
   const cameraState = { scale: scale * mult, offsetX, offsetY };
-  renderScene(exportCtx, width, height, cameraState, { skipMinimap: true, updateHitboxes: false });
+  showToast(`Rendering ${Math.round(mult * pixelRatio * 100)}% scale snapshot…`, { title: 'Export', duration: 1800 });
+  exportCtx.save();
+  exportCtx.scale(pixelRatio, pixelRatio);
+  renderScene(exportCtx, outputWidth, outputHeight, cameraState, { skipMinimap: true, updateHitboxes: false });
+  exportCtx.restore();
   const a=document.createElement('a'); a.href=exportCanvas.toDataURL('image/png'); a.download='infosec_universe_'+mult+'x.png'; a.click();
+  showToast('Export ready—check your downloads.', { title: 'Export complete', duration: 2400 });
 }
 const png1Btn = document.getElementById('png1');
 if (png1Btn){ png1Btn.onclick = () => exportPNG(1); }
@@ -2145,7 +2673,7 @@ window.addEventListener('keydown', e=>{
   else if (key==='Enter' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true, frameChildren: true }); }
   else if (lower==='f' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true }); }
   else if (key === 'Backspace'){ e.preventDefault(); const v = viewStack.pop(); if (v){ restoreView(v); } }
-  if (cameraChanged && !applyingUrlState){ updateUrlFromState(); }
+  if (cameraChanged && !applyingUrlState){ scheduleUrlUpdate(); }
 });
 function focusTo(n, targetScale=1, animated=true){
   const desiredX = (canvas.width/2)/targetScale - n.x;
@@ -2359,6 +2887,8 @@ function updateUrlFromState(){
   }
 }
 
+const scheduleUrlUpdate = throttle(() => updateUrlFromState(), 250);
+
 function restoreStateFromUrl(){
   if (!window.location.hash){
     updateBreadcrumb(root);
@@ -2376,6 +2906,7 @@ function restoreStateFromUrl(){
     fisheyeEnabled = state.lens;
     if (fisheyeToggleBtn){
       fisheyeToggleBtn.classList.toggle('active', fisheyeEnabled);
+      fisheyeToggleBtn.setAttribute('aria-pressed', fisheyeEnabled ? 'true' : 'false');
     }
     searchInSubtree = state.subtree;
     searchIncludeTags = state.tagsearch;
@@ -2397,8 +2928,7 @@ function restoreStateFromUrl(){
     applyOpenChains(state.openChains);
     walk(root, node => {
       if (node.open && node.children && node.children.length > 0){
-        assignAngles(node);
-        layoutChildren(node);
+        queueLayout(node, { immediate: true });
       }
     });
     const target = state.nodeId !== null ? findNodeById(state.nodeId) : root;
@@ -2469,7 +2999,7 @@ function updateBreadcrumb(n){
   updateOutlineSelection();
   announceFocus(n);
   if (!applyingUrlState){
-    updateUrlFromState();
+    scheduleUrlUpdate();
   }
 }
 
@@ -2669,6 +3199,7 @@ function renderOutlineTree(){
   outlineItems.clear();
   outlineOrder = [];
   const build = (node, depth) => {
+    if (node.syntheticOverview && !showSyntheticNodes) return null;
     const li = document.createElement('li');
     li.setAttribute('role', 'treeitem');
     li.dataset.nodeId = node.id;
@@ -2704,6 +3235,12 @@ function renderOutlineTree(){
       nameSpan.style.opacity = '0.6';
     }
     label.appendChild(nameSpan);
+    if (node.syntheticOverview){
+      const badge = document.createElement('span');
+      badge.className = 'overview-badge';
+      badge.textContent = 'Overview';
+      label.appendChild(badge);
+    }
     if (hasChildren){
       const count = document.createElement('span');
       count.className = 'count';
@@ -2729,7 +3266,8 @@ function renderOutlineTree(){
         group.className = 'tree-children';
         group.setAttribute('role', 'group');
         node.children.forEach(child => {
-          group.appendChild(build(child, depth + 1));
+          const childLi = build(child, depth + 1);
+          if (childLi){ group.appendChild(childLi); }
         });
         li.appendChild(group);
       }
@@ -2891,6 +3429,9 @@ function updateFiltersUI(){
     cb.onchange = () => {
       macroVisibility[n.id] = cb.checked;
       refreshVisibilityCaches();
+      updateOutlineTree(lastFocusedNode ? lastFocusedNode.id : root.id);
+      draw();
+      if (!applyingUrlState){ scheduleUrlUpdate(); }
     };
     const span = document.createElement('span');
     span.textContent = fallbackText(n, 'name');
@@ -2898,6 +3439,53 @@ function updateFiltersUI(){
     label.appendChild(span);
     filtersElem.appendChild(label);
   });
+}
+
+
+function applySyntheticVisibilityChanges(){
+  refreshVisibilityCaches();
+  updateOutlineTree(lastFocusedNode ? lastFocusedNode.id : root.id);
+  draw();
+  updateMinimap();
+  if (!applyingUrlState){ scheduleUrlUpdate(); }
+}
+
+function updateOverviewControls(){
+  if (!overviewToggleRowElem) return;
+  overviewToggleRowElem.innerHTML = '';
+  const showLabel = document.createElement('label');
+  showLabel.className = 'muted';
+  const showInput = document.createElement('input');
+  showInput.type = 'checkbox';
+  showInput.checked = showSyntheticNodes;
+  showInput.addEventListener('change', () => {
+    showSyntheticNodes = showInput.checked;
+    try { localStorage.setItem(OVERVIEW_VISIBILITY_KEY, showSyntheticNodes ? 'shown' : 'hidden'); } catch(e) {}
+    if (!showSyntheticNodes){
+      dimSyntheticNodes = false;
+      try { localStorage.setItem(OVERVIEW_DIM_KEY, '0'); } catch(e) {}
+    }
+    updateOverviewControls();
+    applySyntheticVisibilityChanges();
+  });
+  showLabel.appendChild(showInput);
+  showLabel.appendChild(document.createTextNode(' Display overview summaries'));
+  overviewToggleRowElem.appendChild(showLabel);
+
+  const dimLabel = document.createElement('label');
+  dimLabel.className = 'muted';
+  const dimInput = document.createElement('input');
+  dimInput.type = 'checkbox';
+  dimInput.checked = dimSyntheticNodes;
+  dimInput.disabled = !showSyntheticNodes;
+  dimInput.addEventListener('change', () => {
+    dimSyntheticNodes = dimInput.checked;
+    try { localStorage.setItem(OVERVIEW_DIM_KEY, dimSyntheticNodes ? '1' : '0'); } catch(e) {}
+    applySyntheticVisibilityChanges();
+  });
+  dimLabel.appendChild(dimInput);
+  dimLabel.appendChild(document.createTextNode(' Dim overview nodes'));
+  overviewToggleRowElem.appendChild(dimLabel);
 }
 
 
@@ -2966,7 +3554,7 @@ function updateTagFiltersUI(){
     input.onchange = () => {
       if (input.checked){ activeTags.add(tag); } else { activeTags.delete(tag); }
       applyTagFilters();
-      if (!applyingUrlState){ updateUrlFromState(); }
+      if (!applyingUrlState){ scheduleUrlUpdate(); }
     };
     const span = document.createElement('span');
     span.textContent = tag;
@@ -3016,6 +3604,10 @@ function showTooltip(n, pageX, pageY){
     tagDiv.textContent = 'Tags: ' + Array.from(n.tags).join(', ');
     tooltipElem.appendChild(tagDiv);
   }
+  const provenance = document.createElement('div');
+  provenance.className = 'badge';
+  provenance.textContent = n.syntheticOverview ? 'Synthetic overview summary' : 'Curated dataset node';
+  tooltipElem.appendChild(provenance);
   // Children count
   if (n.children && n.children.length > 0){
     const countDiv = document.createElement('div');
@@ -3030,15 +3622,72 @@ function showTooltip(n, pageX, pageY){
 }
 function hideTooltip(){ if (tooltipElem) tooltipElem.style.display = 'none'; }
 
+function showTouchPreview(node){
+  if (!touchPreviewElem || !node) return;
+  hideTooltip();
+  touchPreviewElem.innerHTML = '';
+  const header = document.createElement('header');
+  const title = document.createElement('h3');
+  title.textContent = fallbackText(node, 'name');
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Dismiss node preview');
+  closeBtn.textContent = '✕';
+  closeBtn.onclick = () => hideTouchPreview();
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+  touchPreviewElem.appendChild(header);
+  const pathNodes = pathTo(node).slice(1);
+  if (pathNodes.length){
+    const pathDiv = document.createElement('div');
+    pathDiv.className = 'path';
+    pathDiv.textContent = pathNodes.map(p => fallbackText(p, 'name')).join(' › ');
+    touchPreviewElem.appendChild(pathDiv);
+  }
+  if (node.tags && node.tags.size){
+    const tagsDiv = document.createElement('div');
+    tagsDiv.className = 'tags';
+    node.tags.forEach(tag => {
+      const tagChip = document.createElement('span');
+      tagChip.textContent = tag;
+      tagsDiv.appendChild(tagChip);
+    });
+    touchPreviewElem.appendChild(tagsDiv);
+  }
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  const details = [];
+  details.push(node.syntheticOverview ? 'Synthetic overview summary' : 'Curated dataset node');
+  if (node.children && node.children.length){
+    details.push(`${node.children.length} child${node.children.length === 1 ? '' : 'ren'}`);
+  }
+  meta.textContent = details.join(' • ');
+  touchPreviewElem.appendChild(meta);
+  touchPreviewElem.hidden = false;
+  touchPreviewElem.classList.add('visible');
+  touchPreviewNode = node;
+  suppressNextClick = true;
+  if (touchPreviewTimer){
+    clearTimeout(touchPreviewTimer);
+  }
+  touchPreviewTimer = setTimeout(() => hideTouchPreview(), 6000);
+}
+
+function hideTouchPreview(){
+  if (!touchPreviewElem) return;
+  if (touchPreviewTimer){
+    clearTimeout(touchPreviewTimer);
+    touchPreviewTimer = null;
+  }
+  touchPreviewElem.classList.remove('visible');
+  touchPreviewElem.hidden = true;
+  touchPreviewElem.innerHTML = '';
+  touchPreviewNode = null;
+}
+
 // Mini‑map update. Draw small representation of nodes and a viewport rectangle. Save bounds for interaction.
-function updateMinimap(){
-  const mini = document.getElementById('minimap');
-  if (!mini) return;
-  const ctxMini = mini.getContext('2d');
-  const nodes = collectVisible();
-  if (nodes.length === 0) return;
-  // Compute bounding box of all visible nodes
-  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+function computeVisibleBounds(nodes){
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   nodes.forEach(n => {
     if (n.x < minX) minX = n.x;
     if (n.x > maxX) maxX = n.x;
@@ -3046,25 +3695,34 @@ function updateMinimap(){
     if (n.y > maxY) maxY = n.y;
   });
   const margin = 80;
-  minX -= margin; maxX += margin; minY -= margin; maxY += margin;
-  const worldW = maxX - minX, worldH = maxY - minY;
-  const cw = mini.width, ch = mini.height;
-  const scaleFactor = Math.min(cw/worldW, ch/worldH);
-  const offsetXMini = (cw - worldW*scaleFactor)/2;
-  const offsetYMini = (ch - worldH*scaleFactor)/2;
-  // store bounds for interaction
-  miniMapBounds = {minX, minY, scale: scaleFactor, offsetX: offsetXMini, offsetY: offsetYMini};
-  // clear
-  ctxMini.clearRect(0,0,cw,ch);
-  // draw nodes as small coloured dots
+  return {
+    minX: minX - margin,
+    minY: minY - margin,
+    maxX: maxX + margin,
+    maxY: maxY + margin
+  };
+}
+
+function drawMinimapTo(canvasEl, nodes, bounds){
+  if (!canvasEl) return null;
+  const ctxMini = canvasEl.getContext('2d');
+  if (!ctxMini) return null;
+  const { minX, minY, maxX, maxY } = bounds;
+  const worldW = Math.max(1, maxX - minX);
+  const worldH = Math.max(1, maxY - minY);
+  const cw = canvasEl.width;
+  const ch = canvasEl.height;
+  const scaleFactor = Math.min(cw / worldW, ch / worldH);
+  const offsetXMini = (cw - worldW * scaleFactor) / 2;
+  const offsetYMini = (ch - worldH * scaleFactor) / 2;
+  ctxMini.clearRect(0, 0, cw, ch);
   nodes.forEach(n => {
     const cat = nodeCategoryIndex(n);
-    const base = ringColour(cat);
-    ctxMini.fillStyle = base;
+    ctxMini.fillStyle = ringColour(cat);
     const x = offsetXMini + (n.x - minX) * scaleFactor;
     const y = offsetYMini + (n.y - minY) * scaleFactor;
     ctxMini.beginPath();
-    ctxMini.arc(x, y, 3, 0, Math.PI*2);
+    ctxMini.arc(x, y, 3, 0, Math.PI * 2);
     ctxMini.fill();
   });
   if (lastFocusedNode){
@@ -3074,10 +3732,9 @@ function updateMinimap(){
     ctxMini.strokeStyle = accent;
     ctxMini.lineWidth = 2;
     ctxMini.beginPath();
-    ctxMini.arc(x, y, 6, 0, Math.PI*2);
+    ctxMini.arc(x, y, 6, 0, Math.PI * 2);
     ctxMini.stroke();
   }
-  // draw viewport rectangle (current view bounds)
   const tl = screenToWorld(0, 0);
   const br = screenToWorld(canvas.width, canvas.height);
   const vw = br[0] - tl[0];
@@ -3089,33 +3746,149 @@ function updateMinimap(){
   ctxMini.strokeStyle = 'rgba(234,179,8,0.8)';
   ctxMini.lineWidth = 2;
   ctxMini.strokeRect(vx, vy, vwMini, vhMini);
+  return { minX, minY, scale: scaleFactor, offsetX: offsetXMini, offsetY: offsetYMini };
+}
+
+function updateMinimap(){
+  const nodes = collectVisible();
+  const mini = document.getElementById('minimap');
+  if (!nodes.length){
+    if (mini){
+      const ctxMini = mini.getContext('2d');
+      if (ctxMini){ ctxMini.clearRect(0, 0, mini.width, mini.height); }
+    }
+    if (minimapTouchCanvas){
+      const ctxTouch = minimapTouchCanvas.getContext('2d');
+      if (ctxTouch){ ctxTouch.clearRect(0, 0, minimapTouchCanvas.width, minimapTouchCanvas.height); }
+    }
+    miniMapBounds = null;
+    miniMapTouchBounds = null;
+    return;
+  }
+  const bounds = computeVisibleBounds(nodes);
+  miniMapBounds = drawMinimapTo(mini, nodes, bounds);
+  miniMapTouchBounds = drawMinimapTo(minimapTouchCanvas, nodes, bounds);
 }
 
 // Mini‑map interaction: drag on minimap to recenter main view
 let draggingMini = false;
+let activeMiniCanvas = null;
 const minimapCanvas = document.getElementById('minimap');
+
+function pointerPositionFromEvent(event){
+  if (event.touches && event.touches.length){
+    return { clientX: event.touches[0].clientX, clientY: event.touches[0].clientY };
+  }
+  if (event.changedTouches && event.changedTouches.length){
+    return { clientX: event.changedTouches[0].clientX, clientY: event.changedTouches[0].clientY };
+  }
+  return { clientX: event.clientX, clientY: event.clientY };
+}
+
+function beginMinimapDrag(event, canvasEl){
+  const bounds = canvasEl === minimapTouchCanvas ? miniMapTouchBounds : miniMapBounds;
+  if (!bounds) return;
+  draggingMini = true;
+  activeMiniCanvas = canvasEl;
+  handleMiniDrag(event, bounds, canvasEl);
+}
+
+function continueMinimapDrag(event){
+  if (!draggingMini || !activeMiniCanvas) return;
+  const bounds = activeMiniCanvas === minimapTouchCanvas ? miniMapTouchBounds : miniMapBounds;
+  handleMiniDrag(event, bounds, activeMiniCanvas);
+}
+
+function endMinimapDrag(){
+  draggingMini = false;
+  activeMiniCanvas = null;
+}
+
 if (minimapCanvas){
-  minimapCanvas.addEventListener('mousedown', (e) => {
-    draggingMini = true;
-    handleMiniDrag(e);
-  });
-  minimapCanvas.addEventListener('mousemove', (e) => {
-    if (draggingMini) handleMiniDrag(e);
+  minimapCanvas.addEventListener('mousedown', (e) => beginMinimapDrag(e, minimapCanvas));
+  minimapCanvas.addEventListener('mousemove', (e) => continueMinimapDrag(e));
+  minimapCanvas.addEventListener('touchstart', (e) => beginMinimapDrag(e, minimapCanvas), { passive: true });
+  minimapCanvas.addEventListener('touchmove', (e) => {
+    if (!draggingMini || activeMiniCanvas !== minimapCanvas) return;
+    continueMinimapDrag(e);
+    e.preventDefault();
+  }, { passive: false });
+}
+if (minimapTouchCanvas){
+  minimapTouchCanvas.addEventListener('mousedown', (e) => beginMinimapDrag(e, minimapTouchCanvas));
+  minimapTouchCanvas.addEventListener('mousemove', (e) => continueMinimapDrag(e));
+  minimapTouchCanvas.addEventListener('touchstart', (e) => beginMinimapDrag(e, minimapTouchCanvas), { passive: true });
+  minimapTouchCanvas.addEventListener('touchmove', (e) => {
+    if (!draggingMini || activeMiniCanvas !== minimapTouchCanvas) return;
+    continueMinimapDrag(e);
+    e.preventDefault();
+  }, { passive: false });
+}
+window.addEventListener('mouseup', endMinimapDrag);
+window.addEventListener('touchend', endMinimapDrag);
+window.addEventListener('touchcancel', endMinimapDrag);
+
+function handleMiniDrag(event, bounds, canvasEl){
+  if (!bounds || !canvasEl) return;
+  const point = pointerPositionFromEvent(event);
+  if (!point) return;
+  const rect = canvasEl.getBoundingClientRect();
+  const x = point.clientX - rect.left;
+  const y = point.clientY - rect.top;
+  const wx = (x - bounds.offsetX) / bounds.scale + bounds.minX;
+  const wy = (y - bounds.offsetY) / bounds.scale + bounds.minY;
+  offsetX = (canvas.width / 2) / scale - wx;
+  offsetY = (canvas.height / 2) / scale - wy;
+  if (!applyingUrlState){
+    scheduleUrlUpdate();
+  }
+}
+
+function closeMinimapTouchPanel(){
+  if (!minimapTouchPanel) return;
+  minimapTouchPanel.hidden = true;
+  minimapTouchPanel.setAttribute('aria-hidden', 'true');
+  if (minimapTouchToggle){
+    minimapTouchToggle.setAttribute('aria-expanded', 'false');
+  }
+  const restore = minimapTouchReturnFocus || minimapTouchToggle;
+  minimapTouchReturnFocus = null;
+  if (restore && typeof restore.focus === 'function'){
+    restore.focus();
+  }
+}
+
+if (minimapTouchToggle && minimapTouchPanel){
+  minimapTouchToggle.addEventListener('click', () => {
+    if (!minimapTouchPanel.hidden){
+      closeMinimapTouchPanel();
+    } else {
+      minimapTouchReturnFocus = document.activeElement;
+      minimapTouchPanel.hidden = false;
+      minimapTouchPanel.setAttribute('aria-hidden', 'false');
+      minimapTouchToggle.setAttribute('aria-expanded', 'true');
+      updateMinimap();
+      if (minimapTouchClose){
+        requestAnimationFrame(() => minimapTouchClose.focus());
+      }
+    }
   });
 }
-window.addEventListener('mouseup', () => { draggingMini = false; });
-function handleMiniDrag(e){
-  if (!miniMapBounds) return;
-  if (!minimapCanvas) return;
-  const rect = minimapCanvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  // convert mini coords back to world coordinate in centre
-  const wx = (x - miniMapBounds.offsetX)/miniMapBounds.scale + miniMapBounds.minX;
-  const wy = (y - miniMapBounds.offsetY)/miniMapBounds.scale + miniMapBounds.minY;
-  // set offset so that this world point is at the centre of main view
-  offsetX = (canvas.width/2)/scale - wx;
-  offsetY = (canvas.height/2)/scale - wy;
+if (minimapTouchClose){
+  minimapTouchClose.addEventListener('click', () => closeMinimapTouchPanel());
+}
+if (minimapTouchPanel){
+  minimapTouchPanel.addEventListener('click', (event) => {
+    if (event.target === minimapTouchPanel){
+      closeMinimapTouchPanel();
+    }
+  });
+  minimapTouchPanel.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape'){
+      event.preventDefault();
+      closeMinimapTouchPanel();
+    }
+  });
 }
 
 // Sidebar collapse toggle
@@ -3131,75 +3904,243 @@ if (toggleSidebarBtn){
       reopenBtn.style.display = collapsed ? 'block' : 'none';
     }
     toggleSidebarBtn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    if (mobileSidebarOpen){
+      closeMobileSidebar({ restoreFocus: false });
+    }
   };
+}
+
+const sidebarFocusableSelector = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+function getSidebarFocusableElements(){
+  if (!primarySidebarElem) return [];
+  return Array.from(primarySidebarElem.querySelectorAll(sidebarFocusableSelector))
+    .filter(el => el.offsetParent !== null && el.getAttribute('aria-hidden') !== 'true');
+}
+
+function activateSidebarFocusTrap(){
+  if (sidebarFocusTrapHandler || !primarySidebarElem) return;
+  sidebarFocusTrapHandler = (event) => {
+    if (!mobileSidebarOpen) return;
+    if (event.key === 'Tab'){
+      const focusable = getSidebarFocusableElements();
+      if (!focusable.length){
+        event.preventDefault();
+        primarySidebarElem.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey){
+        if (active === first){
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last){
+        event.preventDefault();
+        first.focus();
+      }
+    } else if (event.key === 'Escape'){
+      event.preventDefault();
+      closeMobileSidebar();
+    }
+  };
+  sidebarFocusInHandler = (event) => {
+    if (!mobileSidebarOpen || !primarySidebarElem) return;
+    if (!primarySidebarElem.contains(event.target)){
+      event.stopPropagation();
+      const focusable = getSidebarFocusableElements();
+      const target = focusable[0] || primarySidebarElem;
+      if (target && typeof target.focus === 'function'){
+        target.focus();
+      }
+    }
+  };
+  document.addEventListener('keydown', sidebarFocusTrapHandler, true);
+  document.addEventListener('focusin', sidebarFocusInHandler, true);
+}
+
+function deactivateSidebarFocusTrap(){
+  if (sidebarFocusTrapHandler){
+    document.removeEventListener('keydown', sidebarFocusTrapHandler, true);
+    sidebarFocusTrapHandler = null;
+  }
+  if (sidebarFocusInHandler){
+    document.removeEventListener('focusin', sidebarFocusInHandler, true);
+    sidebarFocusInHandler = null;
+  }
+}
+
+function openMobileSidebar(trigger){
+  if (!appRootElem || !primarySidebarElem) return;
+  appRootElem.classList.add('show-sidebar');
+  appRootElem.classList.remove('collapsed');
+  const reopenBtn = document.getElementById('sidebarReopenBtn');
+  if (reopenBtn) reopenBtn.style.display = 'none';
+  mobileSidebarOpen = true;
+  mobileSidebarReturnFocus = trigger || document.activeElement;
+  if (!primarySidebarElem.hasAttribute('tabindex')){
+    primarySidebarElem.setAttribute('tabindex', '-1');
+  }
+  if (hamburgerBtn){
+    hamburgerBtn.setAttribute('aria-expanded', 'true');
+  }
+  activateSidebarFocusTrap();
+  const focusable = getSidebarFocusableElements();
+  const target = focusable[0] || primarySidebarElem;
+  if (target && typeof target.focus === 'function'){
+    target.focus();
+  }
+}
+
+function closeMobileSidebar(options = {}){
+  if (!appRootElem) return;
+  const wasOpen = mobileSidebarOpen || appRootElem.classList.contains('show-sidebar');
+  appRootElem.classList.remove('show-sidebar');
+  if (hamburgerBtn){
+    hamburgerBtn.setAttribute('aria-expanded', 'false');
+  }
+  if (!wasOpen) return;
+  mobileSidebarOpen = false;
+  deactivateSidebarFocusTrap();
+  const shouldRestore = options.restoreFocus !== false;
+  const restoreTarget = shouldRestore ? (mobileSidebarReturnFocus || hamburgerBtn) : null;
+  mobileSidebarReturnFocus = null;
+  if (restoreTarget && typeof restoreTarget.focus === 'function'){
+    restoreTarget.focus();
+  }
 }
 
 const hamburgerBtn = document.getElementById('hamburgerBtn');
 if (hamburgerBtn){
   hamburgerBtn.addEventListener('click', () => {
-    const appElem = document.querySelector('.app');
-    if (!appElem) return;
-    const open = appElem.classList.toggle('show-sidebar');
-    if (open){
-      appElem.classList.remove('collapsed');
-      const reopenBtn = document.getElementById('sidebarReopenBtn');
-      if (reopenBtn) reopenBtn.style.display = 'none';
+    if (mobileSidebarOpen){
+      closeMobileSidebar();
+    } else {
+      openMobileSidebar(hamburgerBtn);
     }
-    hamburgerBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 }
 
 document.addEventListener('click', (event) => {
-  const appElem = document.querySelector('.app');
-  if (appElem && appElem.classList.contains('show-sidebar')){
-    const aside = document.querySelector('aside.primary');
-    if (aside && !aside.contains(event.target) && event.target !== hamburgerBtn){
-      appElem.classList.remove('show-sidebar');
-      if (hamburgerBtn) hamburgerBtn.setAttribute('aria-expanded', 'false');
-    }
+  if (!mobileSidebarOpen) return;
+  if (primarySidebarElem && !primarySidebarElem.contains(event.target) && event.target !== hamburgerBtn){
+    closeMobileSidebar();
   }
 });
 
 window.addEventListener('resize', () => {
-  const appElem = document.querySelector('.app');
-  if (!appElem) return;
   if (window.innerWidth > 1100){
-    appElem.classList.remove('show-sidebar');
-    if (hamburgerBtn) hamburgerBtn.setAttribute('aria-expanded', 'false');
+    closeMobileSidebar({ restoreFocus: false });
   }
 });
 
 // Help modal toggling
 const helpBtn = document.getElementById('helpBtn');
-if (helpBtn){
-  helpBtn.onclick = () => {
-    const modal = document.getElementById('helpModal');
-    if (modal){ modal.style.display = 'flex'; }
-  };
-}
 const helpCloseBtn = document.getElementById('helpCloseBtn');
+const helpModal = document.getElementById('helpModal');
+const focusableSelector = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+let helpModalReturnFocus = null;
+
+function getFocusableElements(container){
+  if (!container) return [];
+  return Array.from(container.querySelectorAll(focusableSelector));
+}
+
+function openHelpModal(trigger){
+  if (!helpModal) return;
+  helpModal.hidden = false;
+  helpModal.classList.add('open');
+  helpModal.setAttribute('aria-hidden', 'false');
+  helpModalReturnFocus = trigger || document.activeElement;
+  if (appRootElem){ appRootElem.setAttribute('aria-hidden', 'true'); }
+  document.body.classList.add('modal-open');
+  const focusable = getFocusableElements(helpModal);
+  const target = focusable[0] || helpModal;
+  if (target){ target.focus(); }
+}
+
+function closeHelpModal(){
+  if (!helpModal || helpModal.hidden) return;
+  helpModal.classList.remove('open');
+  helpModal.setAttribute('aria-hidden', 'true');
+  helpModal.hidden = true;
+  if (appRootElem){ appRootElem.removeAttribute('aria-hidden'); }
+  document.body.classList.remove('modal-open');
+  const focusTarget = helpModalReturnFocus;
+  helpModalReturnFocus = null;
+  if (focusTarget && typeof focusTarget.focus === 'function'){
+    focusTarget.focus();
+  }
+}
+
+if (helpModal){
+  helpModal.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape'){
+      event.preventDefault();
+      closeHelpModal();
+      return;
+    }
+    if (event.key === 'Tab'){
+      const focusable = getFocusableElements(helpModal).filter(el => el.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey){
+        if (document.activeElement === first){
+          event.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last){
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    }
+  });
+}
+
+if (helpBtn){
+  helpBtn.addEventListener('click', () => openHelpModal(helpBtn));
+}
 if (helpCloseBtn){
-  helpCloseBtn.onclick = () => {
-    const modal = document.getElementById('helpModal');
-    if (modal){ modal.style.display = 'none'; }
-  };
+  helpCloseBtn.addEventListener('click', () => closeHelpModal());
 }
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape'){
     closeContextMenu();
     hideDetailsPopover();
+    closeHelpModal();
   }
 });
 window.addEventListener('keydown', (e) => {
   if (e.key === '?'){
-    const modal = document.getElementById('helpModal');
-    if (!modal) return;
-    modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    e.preventDefault();
+    if (helpModal && helpModal.classList.contains('open')){
+      closeHelpModal();
+    } else {
+      openHelpModal(helpBtn);
+    }
+  }
+});
+window.addEventListener('keydown', (event) => {
+  if ((event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))){
+    const node = lastFocusedNode || currentFocusNode;
+    if (!node) return;
+    event.preventDefault();
+    const [sx, sy] = worldToScreen(node.x, node.y);
+    const rect = canvas.getBoundingClientRect();
+    const pageX = rect.left + sx;
+    const pageY = rect.top + sy;
+    openContextMenu(node, pageX, pageY);
   }
 });
 
 // Initialise filters UI
 updateFiltersUI();
+updateOverviewControls();
 updateSubFiltersUI();
 updateTagFiltersUI();
 renderOutlineTree();
