@@ -1659,12 +1659,172 @@ let touchCandidateNode = null;
 let touchPreviewNode = null;
 let touchPreviewTimer = null;
 let suppressNextClick = false;
+let touchPanActive = false;
+let touchPanStart = null;
+let touchPanOffsetStart = null;
+let lastTouchSample = null;
+let panVelocity = { x: 0, y: 0 };
+let inertiaFrame = null;
+const PAN_VELOCITY_DECAY = 0.92;
+const PAN_VELOCITY_STOP = 0.002;
+let pinching = false;
+let pinchStartDistance = null;
+let pinchStartScale = null;
+let pinchAnchorWorld = null;
 let minimapTouchReturnFocus = null;
 let mobileSidebarOpen = false;
 let mobileSidebarReturnFocus = null;
 let sidebarFocusTrapHandler = null;
 let sidebarFocusInHandler = null;
+function stopInertia(){
+  if (inertiaFrame !== null){
+    cancelAnimationFrame(inertiaFrame);
+    inertiaFrame = null;
+  }
+  panVelocity.x = 0;
+  panVelocity.y = 0;
+}
+function startInertia(){
+  if (inertiaFrame !== null){
+    cancelAnimationFrame(inertiaFrame);
+    inertiaFrame = null;
+  }
+  const initialSpeed = Math.hypot(panVelocity.x, panVelocity.y);
+  if (initialSpeed <= PAN_VELOCITY_STOP){
+    if (!applyingUrlState){
+      scheduleUrlUpdate();
+    }
+    return;
+  }
+  let lastTime = performance.now();
+  function step(now){
+    const dt = Math.max(16, now - lastTime);
+    lastTime = now;
+    offsetX += panVelocity.x * dt;
+    offsetY += panVelocity.y * dt;
+    const decay = Math.pow(PAN_VELOCITY_DECAY, dt / 16);
+    panVelocity.x *= decay;
+    panVelocity.y *= decay;
+    if (Math.hypot(panVelocity.x, panVelocity.y) <= PAN_VELOCITY_STOP){
+      inertiaFrame = null;
+      panVelocity.x = 0;
+      panVelocity.y = 0;
+      if (!applyingUrlState){
+        scheduleUrlUpdate();
+      }
+      return;
+    }
+    inertiaFrame = requestAnimationFrame(step);
+  }
+  inertiaFrame = requestAnimationFrame(step);
+}
+function beginTouchPan(x, y){
+  touchPanActive = true;
+  touchPanStart = { x, y };
+  touchPanOffsetStart = { x: offsetX, y: offsetY };
+  lastTouchSample = { x, y, time: performance.now() };
+  panVelocity.x = 0;
+  panVelocity.y = 0;
+  canvas.classList.add('grabbing');
+}
+function updateTouchPan(x, y){
+  if (!touchPanActive) return;
+  const dx = (x - touchPanStart.x) / scale;
+  const dy = (y - touchPanStart.y) / scale;
+  offsetX = touchPanOffsetStart.x + dx;
+  offsetY = touchPanOffsetStart.y + dy;
+  const now = performance.now();
+  if (lastTouchSample){
+    const dt = Math.max(16, now - lastTouchSample.time);
+    const worldDx = (x - lastTouchSample.x) / scale;
+    const worldDy = (y - lastTouchSample.y) / scale;
+    panVelocity.x = worldDx / dt;
+    panVelocity.y = worldDy / dt;
+  }
+  lastTouchSample = { x, y, time: now };
+}
+function clearTouchPan(){
+  touchPanActive = false;
+  touchPanStart = null;
+  touchPanOffsetStart = null;
+  lastTouchSample = null;
+  canvas.classList.remove('grabbing');
+}
+function beginPinch(event){
+  if (!event.touches || event.touches.length < 2) return;
+  const rect = canvas.getBoundingClientRect();
+  const t1 = event.touches[0];
+  const t2 = event.touches[1];
+  const x1 = t1.clientX - rect.left;
+  const y1 = t1.clientY - rect.top;
+  const x2 = t2.clientX - rect.left;
+  const y2 = t2.clientY - rect.top;
+  pinchStartDistance = Math.hypot(x2 - x1, y2 - y1);
+  pinchStartScale = scale;
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  const [wx, wy] = screenToWorld(cx, cy);
+  pinchAnchorWorld = { x: wx, y: wy };
+  pinching = true;
+  touchCandidateNode = null;
+  touchStartPoint = null;
+  if (touchPressTimer){
+    clearTimeout(touchPressTimer);
+    touchPressTimer = null;
+  }
+  clearTouchPan();
+  stopInertia();
+  canvas.classList.add('grabbing');
+}
+function handlePinchMove(event){
+  if (!pinching || !event.touches || event.touches.length < 2 || !pinchAnchorWorld || !pinchStartDistance){
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const t1 = event.touches[0];
+  const t2 = event.touches[1];
+  const x1 = t1.clientX - rect.left;
+  const y1 = t1.clientY - rect.top;
+  const x2 = t2.clientX - rect.left;
+  const y2 = t2.clientY - rect.top;
+  const distance = Math.hypot(x2 - x1, y2 - y1);
+  if (distance <= 0) return;
+  const rawScale = pinchStartScale * (distance / pinchStartDistance);
+  const targetScale = clamp(rawScale, MIN_ZOOM, MAX_ZOOM);
+  const centerX = (x1 + x2) / 2;
+  const centerY = (y1 + y2) / 2;
+  scale = targetScale;
+  offsetX = centerX / targetScale - pinchAnchorWorld.x;
+  offsetY = centerY / targetScale - pinchAnchorWorld.y;
+}
+function clearPinchState(){
+  pinching = false;
+  pinchStartDistance = null;
+  pinchStartScale = null;
+  pinchAnchorWorld = null;
+}
+function installExtendedTapTargets(elements, padding = 12){
+  elements
+    .filter(Boolean)
+    .forEach((el) => {
+      el.addEventListener('touchend', (event) => {
+        if (!event.changedTouches || !event.changedTouches.length) return;
+        const touch = event.changedTouches[0];
+        const rect = el.getBoundingClientRect();
+        const inside = touch.clientX >= rect.left && touch.clientX <= rect.right && touch.clientY >= rect.top && touch.clientY <= rect.bottom;
+        const withinPadding = touch.clientX >= rect.left - padding && touch.clientX <= rect.right + padding && touch.clientY >= rect.top - padding && touch.clientY <= rect.bottom + padding;
+        if (!inside && withinPadding){
+          event.preventDefault();
+          if (typeof el.focus === 'function'){
+            el.focus({ preventScroll: true });
+          }
+          el.click();
+        }
+      }, { passive: false });
+    });
+}
 canvas.addEventListener('mousedown',e=>{
+  stopInertia();
   const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
   lastMouse=[x,y];
   // Reset movement detection at the start of each mouse press
@@ -1727,12 +1887,12 @@ canvas.addEventListener('mousemove',e=>{
 });
 canvas.addEventListener('touchstart', (e) => {
   closeContextMenu();
+  stopInertia();
   if (e.touches && e.touches.length > 1){
-    clearTimeout(touchPressTimer);
-    touchPressTimer = null;
-    touchCandidateNode = null;
+    beginPinch(e);
     return;
   }
+  clearPinchState();
   const point = pointerPositionFromEvent(e);
   if (!point) return;
   const rect = canvas.getBoundingClientRect();
@@ -1747,17 +1907,37 @@ canvas.addEventListener('touchstart', (e) => {
   if (touchCandidateNode){
     touchPressTimer = setTimeout(() => {
       touchPressTimer = null;
-      showTouchPreview(touchCandidateNode);
+      if (touchCandidateNode){
+        showTouchPreview(touchCandidateNode);
+      }
     }, 280);
+  } else {
+    beginTouchPan(x, y);
   }
-});
+}, { passive: false });
 canvas.addEventListener('touchmove', (e) => {
-  if (!touchStartPoint) return;
+  if (e.touches && e.touches.length > 1){
+    if (!pinching){
+      beginPinch(e);
+    }
+    handlePinchMove(e);
+    e.preventDefault();
+    return;
+  }
+  if (pinching){
+    clearPinchState();
+  }
   const point = pointerPositionFromEvent(e);
   if (!point) return;
   const rect = canvas.getBoundingClientRect();
   const x = point.clientX - rect.left;
   const y = point.clientY - rect.top;
+  if (touchPanActive){
+    updateTouchPan(x, y);
+    e.preventDefault();
+    return;
+  }
+  if (!touchStartPoint) return;
   const dx = Math.abs(x - touchStartPoint.x);
   const dy = Math.abs(y - touchStartPoint.y);
   if (dx > 18 || dy > 18){
@@ -1765,38 +1945,69 @@ canvas.addEventListener('touchmove', (e) => {
       clearTimeout(touchPressTimer);
       touchPressTimer = null;
     }
+    if (!touchPanActive){
+      beginTouchPan(touchStartPoint.x, touchStartPoint.y);
+    }
+    touchCandidateNode = null;
+    updateTouchPan(x, y);
+    suppressNextClick = true;
+    e.preventDefault();
   }
-});
+}, { passive: false });
 canvas.addEventListener('touchend', (e) => {
   if (touchPressTimer){
     clearTimeout(touchPressTimer);
     touchPressTimer = null;
   }
-  if (!touchStartPoint){
-    touchCandidateNode = null;
-    return;
+  if (pinching && (!e.touches || e.touches.length < 2)){
+    clearPinchState();
   }
-  const point = pointerPositionFromEvent(e);
-  if (point && touchCandidateNode){
-    const rect = canvas.getBoundingClientRect();
-    const x = point.clientX - rect.left;
-    const y = point.clientY - rect.top;
-    const dx = Math.abs(x - touchStartPoint.x);
-    const dy = Math.abs(y - touchStartPoint.y);
-    if (dx <= 18 && dy <= 18){
-      showTouchPreview(touchCandidateNode);
+  if (touchPanActive && (!e.touches || e.touches.length === 0)){
+    clearTouchPan();
+    const speed = Math.hypot(panVelocity.x, panVelocity.y);
+    if (speed > PAN_VELOCITY_STOP){
+      startInertia();
+    } else if (!applyingUrlState){
+      scheduleUrlUpdate();
+    }
+    suppressNextClick = true;
+  }
+  if (!touchPanActive && !pinching && touchStartPoint && touchCandidateNode){
+    const point = pointerPositionFromEvent(e);
+    if (point){
+      const rect = canvas.getBoundingClientRect();
+      const x = point.clientX - rect.left;
+      const y = point.clientY - rect.top;
+      const dx = Math.abs(x - touchStartPoint.x);
+      const dy = Math.abs(y - touchStartPoint.y);
+      if (dx <= 18 && dy <= 18){
+        showTouchPreview(touchCandidateNode);
+      }
     }
   }
-  touchCandidateNode = null;
-  touchStartPoint = null;
+  if (!e.touches || e.touches.length === 0){
+    touchCandidateNode = null;
+    touchStartPoint = null;
+  } else if (e.touches.length === 1){
+    const remaining = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const x = remaining.clientX - rect.left;
+    const y = remaining.clientY - rect.top;
+    touchStartPoint = { x, y };
+    touchCandidateNode = hitTestNodeAt(x, y);
+    beginTouchPan(x, y);
+  }
 });
 canvas.addEventListener('touchcancel', () => {
   if (touchPressTimer){
     clearTimeout(touchPressTimer);
     touchPressTimer = null;
   }
+  clearTouchPan();
+  clearPinchState();
   touchCandidateNode = null;
   touchStartPoint = null;
+  suppressNextClick = true;
 });
 canvas.addEventListener('click',e=>{
   closeContextMenu();
@@ -1864,6 +2075,7 @@ canvas.addEventListener('contextmenu', e => {
 canvas.addEventListener('wheel', (e)=>{
   closeContextMenu();
   e.preventDefault();
+  stopInertia();
   const r = canvas.getBoundingClientRect(); const cx=e.clientX-r.left, cy=e.clientY-r.top;
   const [wx,wy] = screenToWorld(cx,cy);
   // Apply a responsive zoom factor so wheels and trackpads reach the desired scale quickly without jumpy steps.
@@ -2512,6 +2724,9 @@ if (fisheyeToggleBtn){
   });
   fisheyeToggleBtn.setAttribute('aria-pressed', fisheyeEnabled ? 'true' : 'false');
 }
+installExtendedTapTargets(Array.from(document.querySelectorAll('.canvas-actions .btn')), 16);
+installExtendedTapTargets(Array.from(document.querySelectorAll('.btn-row .btn')), 12);
+installExtendedTapTargets([minimapTouchToggle, minimapTouchClose], 16);
 const expandBtn = document.getElementById('expandBtn');
 if (expandBtn){
   expandBtn.onclick = () => {
@@ -3813,6 +4028,21 @@ if (minimapCanvas){
     continueMinimapDrag(e);
     e.preventDefault();
   }, { passive: false });
+  const minimapHotMargin = 18;
+  const minimapWrap = minimapCanvas.parentElement;
+  if (minimapWrap){
+    minimapWrap.addEventListener('touchstart', (event) => {
+      if (event.target === minimapCanvas) return;
+      if (!event.touches || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const rect = minimapCanvas.getBoundingClientRect();
+      if (touch.clientX >= rect.left - minimapHotMargin && touch.clientX <= rect.right + minimapHotMargin &&
+          touch.clientY >= rect.top - minimapHotMargin && touch.clientY <= rect.bottom + minimapHotMargin){
+        event.preventDefault();
+        beginMinimapDrag(event, minimapCanvas);
+      }
+    }, { passive: false });
+  }
 }
 if (minimapTouchCanvas){
   minimapTouchCanvas.addEventListener('mousedown', (e) => beginMinimapDrag(e, minimapTouchCanvas));
