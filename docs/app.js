@@ -699,6 +699,8 @@ if (favoritesFeatureEnabled){
 
 // Currently hovered node for tooltip
 let hoverNode = null;
+const sectorHoverAreas = [];
+let hoveredSectorId = null;
 // Store mini‑map scaling information for hit detection
 let miniMapBounds = null;
 let miniMapTouchBounds = null;
@@ -738,6 +740,7 @@ const minimapTouchPanel = document.getElementById('minimapTouchPanel');
 const minimapTouchClose = document.getElementById('minimapTouchClose');
 const minimapTouchCanvas = document.getElementById('minimapTouchCanvas');
 const touchPreviewElem = document.getElementById('touchPreview');
+const sectorLegendElem = document.getElementById('sectorLegend');
 function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
 window.addEventListener('resize', resize); resize();
 
@@ -1076,6 +1079,85 @@ function measureNode(n, measureCtx = ctx){
 // colours
 const ringColour = i => catColours[i % catColours.length];
 
+function buildSectorLegendMetadata(){
+  const macros = root.children || [];
+  const total = macros.length || 1;
+  return macros.map((macro, idx) => {
+    const span = typeof macro.angularSpan === 'number' ? macro.angularSpan : (2 * Math.PI) / total;
+    const angleHome = typeof macro.angleHome === 'number' ? macro.angleHome : ((idx * (2 * Math.PI) / total) - Math.PI / 2);
+    return {
+      id: macro.id,
+      node: macro,
+      name: fallbackText(macro, 'name'),
+      colour: ringColour(typeof macro.ringIndex === 'number' ? macro.ringIndex : idx),
+      startAngle: angleHome - span / 2,
+      endAngle: angleHome + span / 2,
+      angleHome
+    };
+  });
+}
+
+function renderSectorLegend(){
+  if (!sectorLegendElem) return;
+  sectorLegendElem.innerHTML = '';
+  const metadata = buildSectorLegendMetadata();
+  metadata.forEach((sector) => {
+    const listItem = document.createElement('li');
+    listItem.className = 'sector-legend__item';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'sector-legend__chip';
+    button.dataset.sectorId = String(sector.id);
+    const isActive = macroVisibility[sector.id] !== false;
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    if (!isActive){
+      button.classList.add('sector-legend__chip--muted');
+    }
+    button.style.setProperty('--sector-colour', sector.colour);
+    const swatch = document.createElement('span');
+    swatch.className = 'sector-legend__swatch';
+    swatch.style.backgroundColor = sector.colour;
+    const textWrap = document.createElement('span');
+    textWrap.className = 'sector-legend__text';
+    const label = document.createElement('span');
+    label.className = 'sector-legend__label';
+    label.textContent = sector.name;
+    const count = document.createElement('span');
+    count.className = 'sector-legend__count';
+    const branchCount = (sector.node.children || []).filter(child => !child.syntheticOverview).length;
+    const branchLabel = branchCount === 1 ? '1 branch' : `${branchCount} branches`;
+    count.textContent = branchLabel;
+    textWrap.appendChild(label);
+    textWrap.appendChild(count);
+    button.appendChild(swatch);
+    button.appendChild(textWrap);
+    button.title = `Focus ${sector.name}`;
+    button.setAttribute('aria-label', `${sector.name} sector, ${branchLabel}`);
+    button.addEventListener('click', () => {
+      focusNode(sector.node, { animate: true, ensureVisible: true, frameChildren: true });
+    });
+    const highlightSector = () => { hoveredSectorId = sector.id; };
+    const clearSector = () => { if (hoveredSectorId === sector.id) hoveredSectorId = null; };
+    button.addEventListener('mouseenter', highlightSector);
+    button.addEventListener('mouseleave', clearSector);
+    button.addEventListener('focus', highlightSector);
+    button.addEventListener('blur', clearSector);
+    listItem.appendChild(button);
+    sectorLegendElem.appendChild(listItem);
+  });
+}
+
+function refreshSectorLegendStates(){
+  if (!sectorLegendElem) return;
+  const buttons = sectorLegendElem.querySelectorAll('[data-sector-id]');
+  buttons.forEach(button => {
+    const id = Number(button.getAttribute('data-sector-id'));
+    const active = macroVisibility[id] !== false;
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    button.classList.toggle('sector-legend__chip--muted', !active);
+  });
+}
+
 // -----------------------------------------------------------------------------
 // Animation helpers
 // -----------------------------------------------------------------------------
@@ -1263,6 +1345,7 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
   targetCtx.lineCap="round"; targetCtx.lineJoin="round";
   const vis = collectVisible();
   const links = collectLinks();
+  sectorHoverAreas.length = 0;
   const themeStyles = getComputedStyle(document.documentElement);
   const accentColourRaw = themeStyles.getPropertyValue('--accent') || '#ff9b6a';
   const accentColour = accentColourRaw.trim() || '#ff9b6a';
@@ -1536,6 +1619,75 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
       n._toggle = null;
     }
     targetCtx.restore();
+  }
+
+  if (renderScale >= 0.35 && root.children && root.children.length){
+    const themeDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const labelBackground = themeDark ? 'rgba(15,23,42,0.82)' : 'rgba(255,255,255,0.92)';
+    const labelBackgroundHover = themeDark ? 'rgba(30,41,59,0.92)' : 'rgba(241,245,249,0.94)';
+    const labelStroke = themeDark ? 'rgba(148,163,184,0.55)' : 'rgba(148,163,184,0.45)';
+    const textColour = themeDark ? inkColour : '#1d1d35';
+    const macros = root.children;
+    const totalMacros = macros.length || 1;
+    macros.forEach((macro, idx) => {
+      if (macroVisibility[macro.id] === false) return;
+      const angle = typeof macro.angleHome === 'number' ? macro.angleHome : ((idx * (2 * Math.PI) / totalMacros) - Math.PI / 2);
+      const orbitRadius = Math.max(220, Math.hypot(macro.x - root.x, macro.y - root.y) + 110);
+      const targetX = root.x + Math.cos(angle) * orbitRadius;
+      const targetY = root.y + Math.sin(angle) * orbitRadius;
+      const [labelX, labelY] = worldToScreenLocal(targetX, targetY);
+      let fontSize = Math.max(11, Math.min(18, renderScale * 14));
+      const labelText = fallbackText(macro, 'name');
+      targetCtx.save();
+      targetCtx.font = '600 ' + fontSize + 'px Segoe UI, Arial, sans-serif';
+      let metrics = targetCtx.measureText(labelText);
+      if (metrics.width > 260){
+        const shrink = 260 / metrics.width;
+        const adjusted = Math.max(10, fontSize * shrink);
+        if (adjusted !== fontSize){
+          fontSize = adjusted;
+          targetCtx.font = '600 ' + fontSize + 'px Segoe UI, Arial, sans-serif';
+          metrics = targetCtx.measureText(labelText);
+        }
+      }
+      const padX = Math.max(10, Math.min(18, fontSize * 0.9));
+      const padY = Math.max(6, Math.min(12, fontSize * 0.55));
+      const boxWidth = metrics.width + padX * 2;
+      const boxHeight = fontSize + padY * 2;
+      let boxX = labelX - boxWidth / 2;
+      let boxY = labelY - boxHeight / 2;
+      const minX = 12;
+      const minY = 12;
+      const maxX = width - boxWidth - 12;
+      const maxY = height - boxHeight - 12;
+      if (maxX >= minX){
+        boxX = Math.min(Math.max(boxX, minX), maxX);
+      } else {
+        boxX = (width - boxWidth) / 2;
+      }
+      if (maxY >= minY){
+        boxY = Math.min(Math.max(boxY, minY), maxY);
+      } else {
+        boxY = (height - boxHeight) / 2;
+      }
+      const isHovered = hoveredSectorId === macro.id;
+      targetCtx.globalAlpha = isHovered ? 1 : 0.94;
+      targetCtx.fillStyle = isHovered ? labelBackgroundHover : labelBackground;
+      targetCtx.strokeStyle = isHovered ? accentColour : labelStroke;
+      targetCtx.lineWidth = isHovered ? 1.8 : 1.2;
+      const cornerRadius = Math.min(20, boxHeight / 2);
+      roundRect(targetCtx, boxX, boxY, boxWidth, boxHeight, cornerRadius);
+      targetCtx.fill();
+      targetCtx.stroke();
+      targetCtx.fillStyle = textColour;
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(labelText, boxX + boxWidth / 2, boxY + boxHeight / 2 + 0.5);
+      targetCtx.restore();
+      sectorHoverAreas.push({ id: macro.id, node: macro, x: boxX, y: boxY, width: boxWidth, height: boxHeight });
+    });
+  } else if (hoveredSectorId !== null){
+    hoveredSectorId = null;
   }
   targetCtx.restore();
 
@@ -4069,6 +4221,7 @@ function updateFiltersUI(){
       refreshVisibilityCaches();
       updateOutlineTree(lastFocusedNode ? lastFocusedNode.id : root.id);
       draw();
+      refreshSectorLegendStates();
       if (!applyingUrlState){ scheduleUrlUpdate(); }
     };
     const span = document.createElement('span');
@@ -4930,6 +5083,8 @@ window.addEventListener('keydown', (event) => {
 
 // Initialise filters UI
 updateFiltersUI();
+renderSectorLegend();
+refreshSectorLegendStates();
 updateOverviewControls();
 updateSubFiltersUI();
 updateTagFiltersUI();
@@ -5012,6 +5167,7 @@ if (supportsHover){
   canvas.addEventListener('mousemove', (ev) => {
     if (draggingCanvas || dragNode) {
       hideTooltip();
+      hoveredSectorId = null;
       return;
     }
     if (tooltipElem && tooltipElem.style.display !== 'none'){
@@ -5023,6 +5179,21 @@ if (supportsHover){
     const rect = canvas.getBoundingClientRect();
     const x = ev.clientX - rect.left;
     const y = ev.clientY - rect.top;
+    let sectorHit = null;
+    for (let i = sectorHoverAreas.length - 1; i >= 0; i--){
+      const area = sectorHoverAreas[i];
+      if (x >= area.x && x <= area.x + area.width && y >= area.y && y <= area.y + area.height){
+        sectorHit = area;
+        break;
+      }
+    }
+    if (sectorHit){
+      hoveredSectorId = sectorHit.id;
+      hoverNode = sectorHit.node;
+      showTooltip(sectorHit.node, ev.pageX, ev.pageY);
+      return;
+    }
+    hoveredSectorId = null;
     const vis = collectVisible();
     let found = null;
     for (let i = vis.length - 1; i >= 0; i--) {
@@ -5038,7 +5209,7 @@ if (supportsHover){
       hideTooltip();
     }
   });
-  canvas.addEventListener('mouseleave', () => { hideTooltip(); });
+  canvas.addEventListener('mouseleave', () => { hideTooltip(); hoveredSectorId = null; hoverNode = null; });
 }
 
 }
