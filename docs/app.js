@@ -54,7 +54,14 @@ const DATA_STALE_MS = 1000 * 60 * 60 * 24; // 24 hours
 const loadingOverlayElem = document.getElementById('loadingOverlay');
 const dataFreshnessElem = document.getElementById('dataFreshness');
 const toastRegion = document.getElementById('toastRegion');
+const FAVORITES_STORAGE_KEY = 'atlas_favorites_v1';
+const favoritesFeatureEnabled = document.body?.dataset?.featureFavorites === 'on';
+const favoritesListElem = document.getElementById('favoritesList');
+const favoritesEmptyElem = document.getElementById('favoritesEmpty');
+const favoritesCountElem = document.getElementById('favoritesCount');
 let datasetMeta = null;
+let favoriteIds = [];
+const favoriteIdSet = new Set();
 
 function showFatalError(error){
   console.error(error);
@@ -94,6 +101,153 @@ function showToast(message, options = {}){
   toastRegion.appendChild(toast);
   const lifetime = typeof options.duration === 'number' ? options.duration : 4000;
   setTimeout(() => { toast.remove(); }, lifetime);
+}
+
+function loadFavoritesFromStorage(){
+  if (!favoritesFeatureEnabled) return;
+  favoriteIds = [];
+  favoriteIdSet.clear();
+  try {
+    const raw = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY));
+    if (Array.isArray(raw)){
+      raw.forEach((value) => {
+        const id = Number(value);
+        if (Number.isFinite(id) && !favoriteIdSet.has(id)){
+          favoriteIdSet.add(id);
+          favoriteIds.push(id);
+        }
+      });
+    }
+  } catch (error) {
+    favoriteIds = [];
+    favoriteIdSet.clear();
+  }
+}
+
+function persistFavorites(){
+  if (!favoritesFeatureEnabled) return;
+  try {
+    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favoriteIds));
+  } catch (error) {}
+}
+
+function updateFavoriteSelectionHighlight(){
+  if (!favoritesFeatureEnabled || !favoritesListElem) return;
+  const activeId = currentFocusNode ? currentFocusNode.id : null;
+  const entries = favoritesListElem.querySelectorAll('.favorite-entry');
+  entries.forEach(entry => {
+    const entryId = Number(entry.dataset.nodeId);
+    entry.classList.toggle('active', activeId !== null && entryId === activeId);
+  });
+}
+
+function updateFavoritesUI(){
+  if (!favoritesFeatureEnabled || !favoritesListElem) return;
+  favoritesListElem.innerHTML = '';
+  let mutated = false;
+  const validNodes = [];
+  const validIds = [];
+  favoriteIds.forEach(id => {
+    const node = findNodeById(id);
+    if (!node){
+      favoriteIdSet.delete(id);
+      mutated = true;
+      return;
+    }
+    validNodes.push(node);
+    validIds.push(id);
+  });
+  if (mutated){
+    favoriteIds = validIds;
+    persistFavorites();
+  }
+  if (!validNodes.length){
+    if (favoritesEmptyElem){ favoritesEmptyElem.hidden = false; }
+    if (favoritesCountElem){ favoritesCountElem.textContent = '0'; }
+    updateFavoriteSelectionHighlight();
+    return;
+  }
+  if (favoritesEmptyElem){ favoritesEmptyElem.hidden = true; }
+  if (favoritesCountElem){ favoritesCountElem.textContent = String(validNodes.length); }
+  validNodes.forEach(node => {
+    const entry = document.createElement('div');
+    entry.className = 'favorite-entry';
+    entry.dataset.nodeId = String(node.id);
+    entry.setAttribute('role', 'listitem');
+
+    const main = document.createElement('div');
+    main.className = 'favorite-main';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'favorite-link';
+    const label = document.createElement('span');
+    label.textContent = fallbackText(node, 'name');
+    button.appendChild(label);
+    button.addEventListener('click', () => {
+      focusNode(node, { animate: true, ensureVisible: true, exclusive: true, frameChildren: true });
+      triggerNodeFlash(node, 900);
+    });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'favorite-remove';
+    removeBtn.setAttribute('aria-label', `Remove ${fallbackText(node, 'name')} from favorites`);
+    removeBtn.innerHTML = '&times;';
+    removeBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleFavorite(node);
+    });
+
+    main.appendChild(button);
+    main.appendChild(removeBtn);
+    entry.appendChild(main);
+
+    const meta = document.createElement('div');
+    meta.className = 'favorite-meta';
+    meta.textContent = node.parent ? fallbackText(node.parent, 'name') : 'Root';
+    meta.title = meta.textContent;
+    entry.appendChild(meta);
+
+    favoritesListElem.appendChild(entry);
+  });
+  updateFavoriteSelectionHighlight();
+}
+
+function addFavorite(node){
+  if (!favoritesFeatureEnabled || !node) return false;
+  if (favoriteIdSet.has(node.id)) return false;
+  favoriteIdSet.add(node.id);
+  favoriteIds.unshift(node.id);
+  persistFavorites();
+  updateFavoritesUI();
+  if (favoritesListElem){ favoritesListElem.scrollTop = 0; }
+  return true;
+}
+
+function removeFavorite(node){
+  if (!favoritesFeatureEnabled || !node) return false;
+  if (!favoriteIdSet.has(node.id)) return false;
+  favoriteIdSet.delete(node.id);
+  const idx = favoriteIds.indexOf(node.id);
+  if (idx !== -1){ favoriteIds.splice(idx, 1); }
+  persistFavorites();
+  updateFavoritesUI();
+  return true;
+}
+
+function toggleFavorite(node){
+  if (!favoritesFeatureEnabled || !node) return;
+  const already = favoriteIdSet.has(node.id);
+  const changed = already ? removeFavorite(node) : addFavorite(node);
+  if (!changed) return;
+  const name = fallbackText(node, 'name');
+  showToast(`${already ? 'Removed' : 'Added'} “${name}” ${already ? 'from' : 'to'} favorites.`, { title: 'Favorites' });
+  if (currentFocusNode && currentFocusNode.id === node.id){
+    updateBreadcrumb(node);
+  } else {
+    updateFavoriteSelectionHighlight();
+  }
 }
 
 function formatRelativeTime(timestamp){
@@ -507,6 +661,9 @@ try { searchIncludeTags = localStorage.getItem('atlas_search_tags') === '1'; } c
 try { showSyntheticNodes = localStorage.getItem(OVERVIEW_VISIBILITY_KEY) !== 'hidden'; } catch(e) { showSyntheticNodes = true; }
 try { dimSyntheticNodes = localStorage.getItem(OVERVIEW_DIM_KEY) === '1'; } catch(e) { dimSyntheticNodes = false; }
 try { outlineCollapsed = localStorage.getItem(OUTLINE_VISIBILITY_KEY) === '1'; } catch(e) { outlineCollapsed = false; }
+if (favoritesFeatureEnabled){
+  loadFavoritesFromStorage();
+}
 
 // Currently hovered node for tooltip
 let hoverNode = null;
@@ -2261,12 +2418,21 @@ function openContextMenu(node, pageX, pageY){
     { label: 'Show details', handler: (btn) => {
         const rect = btn?.getBoundingClientRect();
         renderDetailsPanel(node, { anchorRect: rect || null, anchor: btn || null, open: true, restoreFocus: btn || null });
-      } },
+      } }
+  ];
+  if (favoritesFeatureEnabled){
+    const isFav = favoriteIdSet.has(node.id);
+    actions.push({
+      label: isFav ? 'Remove from favorites' : 'Add to favorites',
+      handler: () => toggleFavorite(node)
+    });
+  }
+  actions.push(
     { label: 'Copy link', handler: () => {
         const link = buildShareableLink(node);
         queueClipboardWrite(link);
       } }
-  ];
+  );
   actions.forEach(action => {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -2956,6 +3122,7 @@ function updateBreadcrumb(n){
   currentPath.length = 0;
   pathTo(n).forEach(node => currentPath.push(node));
   renderDetailsPanel(n);
+  const focusLabel = fallbackText(n, 'name');
   const segments = [];
   if (currentPath.length <= 5){
     currentPath.forEach(node => segments.push(node));
@@ -2996,8 +3163,25 @@ function updateBreadcrumb(n){
       bc.appendChild(sep);
     }
   });
+  if (favoritesFeatureEnabled){
+    const isFav = favoriteIdSet.has(n.id);
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'favorite-toggle';
+    toggleBtn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
+    const actionLabel = isFav ? 'Remove from favorites' : 'Add to favorites';
+    toggleBtn.setAttribute('aria-label', `${actionLabel}: ${focusLabel}`);
+    toggleBtn.title = actionLabel;
+    toggleBtn.textContent = isFav ? '★' : '☆';
+    toggleBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleFavorite(n);
+    });
+    bc.appendChild(toggleBtn);
+  }
   updateOutlineSelection();
   announceFocus(n);
+  updateFavoriteSelectionHighlight();
   if (!applyingUrlState){
     scheduleUrlUpdate();
   }
@@ -4144,6 +4328,9 @@ updateOverviewControls();
 updateSubFiltersUI();
 updateTagFiltersUI();
 renderOutlineTree();
+if (favoritesFeatureEnabled){
+  updateFavoritesUI();
+}
 updateRecentSearchesUI();
 
 // Sidebar reopen button: when clicked, restore the sidebar and hide the
