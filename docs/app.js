@@ -1888,6 +1888,16 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
   }
 }
 
+let renderPending = false;
+function requestRender(){
+  if (renderPending) return;
+  renderPending = true;
+  requestAnimationFrame(() => {
+    renderPending = false;
+    draw();
+  });
+}
+
 function draw(){
   renderScene(ctx, canvas.width, canvas.height, { scale, offsetX, offsetY });
 }
