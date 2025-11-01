@@ -8,7 +8,7 @@
 <link rel="preload" href="data/atlas.json" as="fetch" crossorigin="anonymous">
 <script src="app.js" defer></script>
 </head>
-<body data-feature-favorites="off">
+<body data-feature-favorites="on">
 <div class="app layout">
   <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation" title="Toggle navigation">☰</button>
   <div class="sidebar-left">
@@ -140,7 +140,14 @@
       <p>Loading atlas data…</p>
     </div>
   </div>
-  <!-- Favorites pane removed (feature disabled globally) -->
+  <aside class="favorites-pane" id="favoritesPane" aria-label="Saved favorites">
+    <header class="favorites-header">
+      <h2>Favorites</h2>
+      <span class="badge" id="favoritesCount" aria-live="polite">0</span>
+    </header>
+    <p class="muted favorites-empty" id="favoritesEmpty">Mark a topic to pin it here for quick access.</p>
+    <div class="favorites-list" id="favoritesList" role="list" aria-live="polite"></div>
+  </aside>
   <div class="sr-only" aria-live="polite" id="focusAnnounce"></div>
 </div>
 
