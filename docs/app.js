@@ -419,8 +419,10 @@ const activePathNodes = new Set();
 const activePathLinks = new Set();
 const currentPath = [];
 const outlineItems = new Map();
+const srOutlineItems = new Map();
 let outlineOrder = [];
 let outlineLastFocusedId = null;
+const srOutlineCollapsed = new Set();
 const RECENT_SEARCH_LIMIT = 8;
 let recentSearches = [];
 let searchInSubtree = false;
@@ -447,6 +449,7 @@ let searchDropdownPinned = true;
 let searchDebounceTimer = null;
 const OUTLINE_VISIBILITY_KEY = 'atlas_outline_collapsed';
 let outlineCollapsed = false;
+const ONBOARDING_SEEN_KEY = 'atlas_onboarding_seen_v1';
 const TAG_RULES = [
   { label: 'Network', patterns: [/network/i, /tcp|udp/i, /osi/i, /dns/i] },
   { label: 'Web', patterns: [/web/i, /http/i, /browser/i, /api/i] },
@@ -690,6 +693,7 @@ document.documentElement.setAttribute('data-theme', initialTheme);
 const outlinePaneElem = document.getElementById('outlinePane');
 const outlineTreeElem = document.getElementById('outlineTree');
 const outlineStatusElem = document.getElementById('outlineStatus');
+const srOutlineTreeElem = document.getElementById('srOutlineTree');
 const contextMenuElem = document.getElementById('contextMenu');
 const focusAnnounceElem = document.getElementById('focusAnnounce');
 const fisheyeToggleBtn = document.getElementById('fisheyeToggleBtn');
@@ -1816,12 +1820,172 @@ let touchCandidateNode = null;
 let touchPreviewNode = null;
 let touchPreviewTimer = null;
 let suppressNextClick = false;
+let touchPanActive = false;
+let touchPanStart = null;
+let touchPanOffsetStart = null;
+let lastTouchSample = null;
+let panVelocity = { x: 0, y: 0 };
+let inertiaFrame = null;
+const PAN_VELOCITY_DECAY = 0.92;
+const PAN_VELOCITY_STOP = 0.002;
+let pinching = false;
+let pinchStartDistance = null;
+let pinchStartScale = null;
+let pinchAnchorWorld = null;
 let minimapTouchReturnFocus = null;
 let mobileSidebarOpen = false;
 let mobileSidebarReturnFocus = null;
 let sidebarFocusTrapHandler = null;
 let sidebarFocusInHandler = null;
+function stopInertia(){
+  if (inertiaFrame !== null){
+    cancelAnimationFrame(inertiaFrame);
+    inertiaFrame = null;
+  }
+  panVelocity.x = 0;
+  panVelocity.y = 0;
+}
+function startInertia(){
+  if (inertiaFrame !== null){
+    cancelAnimationFrame(inertiaFrame);
+    inertiaFrame = null;
+  }
+  const initialSpeed = Math.hypot(panVelocity.x, panVelocity.y);
+  if (initialSpeed <= PAN_VELOCITY_STOP){
+    if (!applyingUrlState){
+      scheduleUrlUpdate();
+    }
+    return;
+  }
+  let lastTime = performance.now();
+  function step(now){
+    const dt = Math.max(16, now - lastTime);
+    lastTime = now;
+    offsetX += panVelocity.x * dt;
+    offsetY += panVelocity.y * dt;
+    const decay = Math.pow(PAN_VELOCITY_DECAY, dt / 16);
+    panVelocity.x *= decay;
+    panVelocity.y *= decay;
+    if (Math.hypot(panVelocity.x, panVelocity.y) <= PAN_VELOCITY_STOP){
+      inertiaFrame = null;
+      panVelocity.x = 0;
+      panVelocity.y = 0;
+      if (!applyingUrlState){
+        scheduleUrlUpdate();
+      }
+      return;
+    }
+    inertiaFrame = requestAnimationFrame(step);
+  }
+  inertiaFrame = requestAnimationFrame(step);
+}
+function beginTouchPan(x, y){
+  touchPanActive = true;
+  touchPanStart = { x, y };
+  touchPanOffsetStart = { x: offsetX, y: offsetY };
+  lastTouchSample = { x, y, time: performance.now() };
+  panVelocity.x = 0;
+  panVelocity.y = 0;
+  canvas.classList.add('grabbing');
+}
+function updateTouchPan(x, y){
+  if (!touchPanActive) return;
+  const dx = (x - touchPanStart.x) / scale;
+  const dy = (y - touchPanStart.y) / scale;
+  offsetX = touchPanOffsetStart.x + dx;
+  offsetY = touchPanOffsetStart.y + dy;
+  const now = performance.now();
+  if (lastTouchSample){
+    const dt = Math.max(16, now - lastTouchSample.time);
+    const worldDx = (x - lastTouchSample.x) / scale;
+    const worldDy = (y - lastTouchSample.y) / scale;
+    panVelocity.x = worldDx / dt;
+    panVelocity.y = worldDy / dt;
+  }
+  lastTouchSample = { x, y, time: now };
+}
+function clearTouchPan(){
+  touchPanActive = false;
+  touchPanStart = null;
+  touchPanOffsetStart = null;
+  lastTouchSample = null;
+  canvas.classList.remove('grabbing');
+}
+function beginPinch(event){
+  if (!event.touches || event.touches.length < 2) return;
+  const rect = canvas.getBoundingClientRect();
+  const t1 = event.touches[0];
+  const t2 = event.touches[1];
+  const x1 = t1.clientX - rect.left;
+  const y1 = t1.clientY - rect.top;
+  const x2 = t2.clientX - rect.left;
+  const y2 = t2.clientY - rect.top;
+  pinchStartDistance = Math.hypot(x2 - x1, y2 - y1);
+  pinchStartScale = scale;
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  const [wx, wy] = screenToWorld(cx, cy);
+  pinchAnchorWorld = { x: wx, y: wy };
+  pinching = true;
+  touchCandidateNode = null;
+  touchStartPoint = null;
+  if (touchPressTimer){
+    clearTimeout(touchPressTimer);
+    touchPressTimer = null;
+  }
+  clearTouchPan();
+  stopInertia();
+  canvas.classList.add('grabbing');
+}
+function handlePinchMove(event){
+  if (!pinching || !event.touches || event.touches.length < 2 || !pinchAnchorWorld || !pinchStartDistance){
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const t1 = event.touches[0];
+  const t2 = event.touches[1];
+  const x1 = t1.clientX - rect.left;
+  const y1 = t1.clientY - rect.top;
+  const x2 = t2.clientX - rect.left;
+  const y2 = t2.clientY - rect.top;
+  const distance = Math.hypot(x2 - x1, y2 - y1);
+  if (distance <= 0) return;
+  const rawScale = pinchStartScale * (distance / pinchStartDistance);
+  const targetScale = clamp(rawScale, MIN_ZOOM, MAX_ZOOM);
+  const centerX = (x1 + x2) / 2;
+  const centerY = (y1 + y2) / 2;
+  scale = targetScale;
+  offsetX = centerX / targetScale - pinchAnchorWorld.x;
+  offsetY = centerY / targetScale - pinchAnchorWorld.y;
+}
+function clearPinchState(){
+  pinching = false;
+  pinchStartDistance = null;
+  pinchStartScale = null;
+  pinchAnchorWorld = null;
+}
+function installExtendedTapTargets(elements, padding = 12){
+  elements
+    .filter(Boolean)
+    .forEach((el) => {
+      el.addEventListener('touchend', (event) => {
+        if (!event.changedTouches || !event.changedTouches.length) return;
+        const touch = event.changedTouches[0];
+        const rect = el.getBoundingClientRect();
+        const inside = touch.clientX >= rect.left && touch.clientX <= rect.right && touch.clientY >= rect.top && touch.clientY <= rect.bottom;
+        const withinPadding = touch.clientX >= rect.left - padding && touch.clientX <= rect.right + padding && touch.clientY >= rect.top - padding && touch.clientY <= rect.bottom + padding;
+        if (!inside && withinPadding){
+          event.preventDefault();
+          if (typeof el.focus === 'function'){
+            el.focus({ preventScroll: true });
+          }
+          el.click();
+        }
+      }, { passive: false });
+    });
+}
 canvas.addEventListener('mousedown',e=>{
+  stopInertia();
   const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
   lastMouse=[x,y];
   // Reset movement detection at the start of each mouse press
@@ -1884,12 +2048,12 @@ canvas.addEventListener('mousemove',e=>{
 });
 canvas.addEventListener('touchstart', (e) => {
   closeContextMenu();
+  stopInertia();
   if (e.touches && e.touches.length > 1){
-    clearTimeout(touchPressTimer);
-    touchPressTimer = null;
-    touchCandidateNode = null;
+    beginPinch(e);
     return;
   }
+  clearPinchState();
   const point = pointerPositionFromEvent(e);
   if (!point) return;
   const rect = canvas.getBoundingClientRect();
@@ -1904,17 +2068,37 @@ canvas.addEventListener('touchstart', (e) => {
   if (touchCandidateNode){
     touchPressTimer = setTimeout(() => {
       touchPressTimer = null;
-      showTouchPreview(touchCandidateNode);
+      if (touchCandidateNode){
+        showTouchPreview(touchCandidateNode);
+      }
     }, 280);
+  } else {
+    beginTouchPan(x, y);
   }
-});
+}, { passive: false });
 canvas.addEventListener('touchmove', (e) => {
-  if (!touchStartPoint) return;
+  if (e.touches && e.touches.length > 1){
+    if (!pinching){
+      beginPinch(e);
+    }
+    handlePinchMove(e);
+    e.preventDefault();
+    return;
+  }
+  if (pinching){
+    clearPinchState();
+  }
   const point = pointerPositionFromEvent(e);
   if (!point) return;
   const rect = canvas.getBoundingClientRect();
   const x = point.clientX - rect.left;
   const y = point.clientY - rect.top;
+  if (touchPanActive){
+    updateTouchPan(x, y);
+    e.preventDefault();
+    return;
+  }
+  if (!touchStartPoint) return;
   const dx = Math.abs(x - touchStartPoint.x);
   const dy = Math.abs(y - touchStartPoint.y);
   if (dx > 18 || dy > 18){
@@ -1922,38 +2106,69 @@ canvas.addEventListener('touchmove', (e) => {
       clearTimeout(touchPressTimer);
       touchPressTimer = null;
     }
+    if (!touchPanActive){
+      beginTouchPan(touchStartPoint.x, touchStartPoint.y);
+    }
+    touchCandidateNode = null;
+    updateTouchPan(x, y);
+    suppressNextClick = true;
+    e.preventDefault();
   }
-});
+}, { passive: false });
 canvas.addEventListener('touchend', (e) => {
   if (touchPressTimer){
     clearTimeout(touchPressTimer);
     touchPressTimer = null;
   }
-  if (!touchStartPoint){
-    touchCandidateNode = null;
-    return;
+  if (pinching && (!e.touches || e.touches.length < 2)){
+    clearPinchState();
   }
-  const point = pointerPositionFromEvent(e);
-  if (point && touchCandidateNode){
-    const rect = canvas.getBoundingClientRect();
-    const x = point.clientX - rect.left;
-    const y = point.clientY - rect.top;
-    const dx = Math.abs(x - touchStartPoint.x);
-    const dy = Math.abs(y - touchStartPoint.y);
-    if (dx <= 18 && dy <= 18){
-      showTouchPreview(touchCandidateNode);
+  if (touchPanActive && (!e.touches || e.touches.length === 0)){
+    clearTouchPan();
+    const speed = Math.hypot(panVelocity.x, panVelocity.y);
+    if (speed > PAN_VELOCITY_STOP){
+      startInertia();
+    } else if (!applyingUrlState){
+      scheduleUrlUpdate();
+    }
+    suppressNextClick = true;
+  }
+  if (!touchPanActive && !pinching && touchStartPoint && touchCandidateNode){
+    const point = pointerPositionFromEvent(e);
+    if (point){
+      const rect = canvas.getBoundingClientRect();
+      const x = point.clientX - rect.left;
+      const y = point.clientY - rect.top;
+      const dx = Math.abs(x - touchStartPoint.x);
+      const dy = Math.abs(y - touchStartPoint.y);
+      if (dx <= 18 && dy <= 18){
+        showTouchPreview(touchCandidateNode);
+      }
     }
   }
-  touchCandidateNode = null;
-  touchStartPoint = null;
+  if (!e.touches || e.touches.length === 0){
+    touchCandidateNode = null;
+    touchStartPoint = null;
+  } else if (e.touches.length === 1){
+    const remaining = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const x = remaining.clientX - rect.left;
+    const y = remaining.clientY - rect.top;
+    touchStartPoint = { x, y };
+    touchCandidateNode = hitTestNodeAt(x, y);
+    beginTouchPan(x, y);
+  }
 });
 canvas.addEventListener('touchcancel', () => {
   if (touchPressTimer){
     clearTimeout(touchPressTimer);
     touchPressTimer = null;
   }
+  clearTouchPan();
+  clearPinchState();
   touchCandidateNode = null;
   touchStartPoint = null;
+  suppressNextClick = true;
 });
 canvas.addEventListener('click',e=>{
   closeContextMenu();
@@ -2021,6 +2236,7 @@ canvas.addEventListener('contextmenu', e => {
 canvas.addEventListener('wheel', (e)=>{
   closeContextMenu();
   e.preventDefault();
+  stopInertia();
   const r = canvas.getBoundingClientRect(); const cx=e.clientX-r.left, cy=e.clientY-r.top;
   const [wx,wy] = screenToWorld(cx,cy);
   // Apply a responsive zoom factor so wheels and trackpads reach the desired scale quickly without jumpy steps.
@@ -2678,6 +2894,9 @@ if (fisheyeToggleBtn){
   });
   fisheyeToggleBtn.setAttribute('aria-pressed', fisheyeEnabled ? 'true' : 'false');
 }
+installExtendedTapTargets(Array.from(document.querySelectorAll('.canvas-actions .btn')), 16);
+installExtendedTapTargets(Array.from(document.querySelectorAll('.btn-row .btn')), 12);
+installExtendedTapTargets([minimapTouchToggle, minimapTouchClose], 16);
 const expandBtn = document.getElementById('expandBtn');
 if (expandBtn){
   expandBtn.onclick = () => {
@@ -2812,35 +3031,42 @@ const png2Btn = document.getElementById('png2');
 if (png2Btn){ png2Btn.onclick = () => exportPNG(2); }
 const png4Btn = document.getElementById('png4');
 if (png4Btn){ png4Btn.onclick = () => exportPNG(4); }
-window.addEventListener('keydown', e=>{
-  const active = document.activeElement;
-  const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
-  const key = e.key;
-  if (isTyping && key !== '?' && key !== 'Escape'){ return; }
-  const step = 60/scale;
-  const lower = key.toLowerCase();
-  let cameraChanged = false;
-  if (lower==='w'){ offsetY += step; cameraChanged = true; e.preventDefault(); }
-  else if (lower==='s'){ offsetY -= step; cameraChanged = true; e.preventDefault(); }
-  else if (lower==='a'){ offsetX += step; cameraChanged = true; e.preventDefault(); }
-  else if (lower==='d'){ offsetX -= step; cameraChanged = true; e.preventDefault(); }
-  else if (e.shiftKey && lower==='j'){ e.preventDefault(); for (let i=0;i<5;i++){ focusSiblingNode(1); } }
-  else if (e.shiftKey && lower==='k'){ e.preventDefault(); for (let i=0;i<5;i++){ focusSiblingNode(-1); } }
-  else if (lower==='h'){ e.preventDefault(); focusParentNode(); }
-  else if (lower==='l'){ e.preventDefault(); focusFirstChild(); }
-  else if (lower==='j'){ e.preventDefault(); focusSiblingNode(1); }
-  else if (lower==='k'){ e.preventDefault(); focusSiblingNode(-1); }
-  else if (key==='ArrowUp'){ e.preventDefault(); focusParentNode(); }
-  else if (key==='ArrowDown'){ e.preventDefault(); focusFirstChild(); }
-  else if (key==='ArrowLeft'){ e.preventDefault(); focusSiblingNode(-1); }
-  else if (key==='ArrowRight'){ e.preventDefault(); focusSiblingNode(1); }
-  else if (key==='+'){ animateZoom(clamp(scale*1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
-  else if (key==='-'){ animateZoom(clamp(scale/1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
-  else if (key==='Enter' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true, frameChildren: true }); }
-  else if (lower==='f' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true }); }
-  else if (key === 'Backspace'){ e.preventDefault(); const v = viewStack.pop(); if (v){ restoreView(v); } }
-  if (cameraChanged && !applyingUrlState){ scheduleUrlUpdate(); }
-});
+  window.addEventListener('keydown', e=>{
+    const active = document.activeElement;
+    const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+    const key = e.key;
+    if (isTyping && key !== '?' && key !== 'Escape'){ return; }
+    if (e.defaultPrevented) return;
+    const step = 60/scale;
+    const lower = key.toLowerCase();
+    const hierarchicalModifier = e.ctrlKey || e.metaKey;
+    const shouldPanWithArrows = !hierarchicalModifier && !e.altKey;
+    let cameraChanged = false;
+    if (lower==='w'){ offsetY += step; cameraChanged = true; e.preventDefault(); }
+    else if (lower==='s'){ offsetY -= step; cameraChanged = true; e.preventDefault(); }
+    else if (lower==='a'){ offsetX += step; cameraChanged = true; e.preventDefault(); }
+    else if (lower==='d'){ offsetX -= step; cameraChanged = true; e.preventDefault(); }
+    else if (key==='ArrowUp' && shouldPanWithArrows){ e.preventDefault(); offsetY += step; cameraChanged = true; }
+    else if (key==='ArrowDown' && shouldPanWithArrows){ e.preventDefault(); offsetY -= step; cameraChanged = true; }
+    else if (key==='ArrowLeft' && shouldPanWithArrows){ e.preventDefault(); offsetX += step; cameraChanged = true; }
+    else if (key==='ArrowRight' && shouldPanWithArrows){ e.preventDefault(); offsetX -= step; cameraChanged = true; }
+    else if (e.shiftKey && lower==='j'){ e.preventDefault(); for (let i=0;i<5;i++){ focusSiblingNode(1); } }
+    else if (e.shiftKey && lower==='k'){ e.preventDefault(); for (let i=0;i<5;i++){ focusSiblingNode(-1); } }
+    else if (lower==='h'){ e.preventDefault(); focusParentNode(); }
+    else if (lower==='l'){ e.preventDefault(); focusFirstChild(); }
+    else if (lower==='j'){ e.preventDefault(); focusSiblingNode(1); }
+    else if (lower==='k'){ e.preventDefault(); focusSiblingNode(-1); }
+    else if (hierarchicalModifier && key==='ArrowUp'){ e.preventDefault(); focusParentNode(); }
+    else if (hierarchicalModifier && key==='ArrowDown'){ e.preventDefault(); focusFirstChild(); }
+    else if (hierarchicalModifier && key==='ArrowLeft'){ e.preventDefault(); focusSiblingNode(-1); }
+    else if (hierarchicalModifier && key==='ArrowRight'){ e.preventDefault(); focusSiblingNode(1); }
+    else if (key==='+' || (key==='=' && e.shiftKey)){ e.preventDefault(); animateZoom(clamp(scale*1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
+    else if (key==='-' || key==='_'){ e.preventDefault(); animateZoom(clamp(scale/1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
+    else if (key==='Enter' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true, frameChildren: true }); }
+    else if (lower==='f' && currentFocusNode){ focusNode(currentFocusNode, { animate: true, ensureVisible: true }); }
+    else if (key === 'Backspace'){ e.preventDefault(); const v = viewStack.pop(); if (v){ restoreView(v); } }
+    if (cameraChanged && !applyingUrlState){ scheduleUrlUpdate(); }
+  });
 function focusTo(n, targetScale=1, animated=true){
   const desiredX = (canvas.width/2)/targetScale - n.x;
   const desiredY = (canvas.height/2)/targetScale - n.y;
@@ -3381,6 +3607,7 @@ function renderOutlineTree(){
   const previousFocus = outlineLastFocusedId || (lastFocusedNode ? lastFocusedNode.id : root.id);
   outlineTreeElem.innerHTML = '';
   outlineItems.clear();
+  srOutlineItems.clear();
   outlineOrder = [];
   const build = (node, depth) => {
     if (node.syntheticOverview && !showSyntheticNodes) return null;
@@ -3461,6 +3688,7 @@ function renderOutlineTree(){
     return li;
   };
   outlineTreeElem.appendChild(build(root, 0));
+  renderScreenReaderOutline();
   outlineLastFocusedId = outlineItems.has(previousFocus) ? previousFocus : (lastFocusedNode ? lastFocusedNode.id : root.id);
   updateOutlineSelection();
 }
@@ -3485,6 +3713,100 @@ function updateOutlineSelection(){
       row.focus();
     }
   }
+  updateScreenReaderOutlineSelection();
+}
+
+function renderScreenReaderOutline(){
+  if (!srOutlineTreeElem) return;
+  srOutlineTreeElem.innerHTML = '';
+  srOutlineItems.clear();
+  const tree = document.createElement('ul');
+  tree.setAttribute('role', 'tree');
+  tree.className = 'sr-outline-list';
+  srOutlineTreeElem.appendChild(tree);
+  const build = (node, depth) => {
+    if (node.syntheticOverview && !showSyntheticNodes) return null;
+    const li = document.createElement('li');
+    li.setAttribute('role', 'treeitem');
+    li.dataset.nodeId = String(node.id);
+    li.setAttribute('aria-level', String(depth + 1));
+    const row = document.createElement('div');
+    row.className = 'sr-outline-row';
+    const hasChildren = node.children && node.children.length > 0;
+    if (hasChildren){
+      const groupId = `sr-outline-children-${node.id}`;
+      const collapsed = srOutlineCollapsed.has(node.id);
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'sr-outline-toggle';
+      toggle.setAttribute('aria-controls', groupId);
+      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      toggle.textContent = collapsed ? 'Expand' : 'Collapse';
+      toggle.addEventListener('click', () => {
+        if (srOutlineCollapsed.has(node.id)){
+          srOutlineCollapsed.delete(node.id);
+        } else {
+          srOutlineCollapsed.add(node.id);
+        }
+        renderScreenReaderOutline();
+        updateScreenReaderOutlineSelection();
+      });
+      row.appendChild(toggle);
+      li.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      const group = document.createElement('ul');
+      group.setAttribute('role', 'group');
+      group.id = groupId;
+      group.hidden = collapsed;
+      node.children.forEach(child => {
+        const childItem = build(child, depth + 1);
+        if (childItem){ group.appendChild(childItem); }
+      });
+      li.appendChild(row);
+      li.appendChild(group);
+    } else {
+      const spacer = document.createElement('span');
+      spacer.className = 'sr-outline-toggle sr-outline-toggle--spacer';
+      spacer.setAttribute('aria-hidden', 'true');
+      spacer.textContent = '•';
+      row.appendChild(spacer);
+      li.setAttribute('aria-expanded', 'false');
+      li.appendChild(row);
+    }
+    const label = document.createElement('span');
+    label.className = 'sr-outline-label';
+    label.textContent = fallbackText(node, 'name');
+    row.appendChild(label);
+    const focusBtn = document.createElement('button');
+    focusBtn.type = 'button';
+    focusBtn.className = 'sr-outline-focus';
+    focusBtn.textContent = 'Focus in map';
+    focusBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      srOutlineCollapsed.delete(node.id);
+      let ancestor = node.parent;
+      while (ancestor){
+        srOutlineCollapsed.delete(ancestor.id);
+        ancestor = ancestor.parent;
+      }
+      outlineLastFocusedId = node.id;
+      focusNode(node, { animate: true, ensureVisible: true });
+    });
+    row.appendChild(focusBtn);
+    srOutlineItems.set(node.id, li);
+    return li;
+  };
+  const rootItem = build(root, 0);
+  if (rootItem){
+    tree.appendChild(rootItem);
+  }
+}
+
+function updateScreenReaderOutlineSelection(){
+  if (!srOutlineItems || srOutlineItems.size === 0) return;
+  const focusId = lastFocusedNode ? lastFocusedNode.id : root.id;
+  srOutlineItems.forEach((item, id) => {
+    item.setAttribute('aria-current', id === focusId ? 'true' : 'false');
+  });
 }
 
 function announceFocus(node){
@@ -3997,6 +4319,21 @@ if (minimapCanvas){
     continueMinimapDrag(e);
     e.preventDefault();
   }, { passive: false });
+  const minimapHotMargin = 18;
+  const minimapWrap = minimapCanvas.parentElement;
+  if (minimapWrap){
+    minimapWrap.addEventListener('touchstart', (event) => {
+      if (event.target === minimapCanvas) return;
+      if (!event.touches || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const rect = minimapCanvas.getBoundingClientRect();
+      if (touch.clientX >= rect.left - minimapHotMargin && touch.clientX <= rect.right + minimapHotMargin &&
+          touch.clientY >= rect.top - minimapHotMargin && touch.clientY <= rect.bottom + minimapHotMargin){
+        event.preventDefault();
+        beginMinimapDrag(event, minimapCanvas);
+      }
+    }, { passive: false });
+  }
 }
 if (minimapTouchCanvas){
   minimapTouchCanvas.addEventListener('mousedown', (e) => beginMinimapDrag(e, minimapTouchCanvas));
@@ -4224,8 +4561,24 @@ window.addEventListener('resize', () => {
 const helpBtn = document.getElementById('helpBtn');
 const helpCloseBtn = document.getElementById('helpCloseBtn');
 const helpModal = document.getElementById('helpModal');
+const onboardingModal = document.getElementById('onboardingModal');
+const onboardingSkipBtn = document.getElementById('onboardingSkipBtn');
+const onboardingShortcutsBtn = document.getElementById('onboardingShortcutsBtn');
 const focusableSelector = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 let helpModalReturnFocus = null;
+let onboardingReturnFocus = null;
+
+function syncBodyModalState(){
+  const helpOpen = !!(helpModal && helpModal.classList.contains('open'));
+  const onboardingOpen = !!(onboardingModal && onboardingModal.classList.contains('open'));
+  if (document.body){
+    if (helpOpen || onboardingOpen){
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+  }
+}
 
 function getFocusableElements(container){
   if (!container) return [];
@@ -4239,7 +4592,7 @@ function openHelpModal(trigger){
   helpModal.setAttribute('aria-hidden', 'false');
   helpModalReturnFocus = trigger || document.activeElement;
   if (appRootElem){ appRootElem.setAttribute('aria-hidden', 'true'); }
-  document.body.classList.add('modal-open');
+  syncBodyModalState();
   const focusable = getFocusableElements(helpModal);
   const target = focusable[0] || helpModal;
   if (target){ target.focus(); }
@@ -4250,13 +4603,66 @@ function closeHelpModal(){
   helpModal.classList.remove('open');
   helpModal.setAttribute('aria-hidden', 'true');
   helpModal.hidden = true;
-  if (appRootElem){ appRootElem.removeAttribute('aria-hidden'); }
-  document.body.classList.remove('modal-open');
+  const onboardingOpen = onboardingModal && onboardingModal.classList.contains('open');
+  if (appRootElem && !onboardingOpen){ appRootElem.removeAttribute('aria-hidden'); }
+  syncBodyModalState();
   const focusTarget = helpModalReturnFocus;
   helpModalReturnFocus = null;
   if (focusTarget && typeof focusTarget.focus === 'function'){
     focusTarget.focus();
   }
+}
+
+function markOnboardingSeen(){
+  try { localStorage.setItem(ONBOARDING_SEEN_KEY, '1'); } catch(e) {}
+}
+
+function openOnboardingModal(trigger){
+  if (!onboardingModal) return;
+  onboardingModal.hidden = false;
+  onboardingModal.classList.add('open');
+  onboardingModal.setAttribute('aria-hidden', 'false');
+  onboardingReturnFocus = trigger || document.activeElement;
+  if (appRootElem){ appRootElem.setAttribute('aria-hidden', 'true'); }
+  syncBodyModalState();
+  const focusable = getFocusableElements(onboardingModal);
+  const target = focusable[0] || onboardingModal;
+  if (target){ target.focus(); }
+}
+
+function closeOnboardingModal(options = {}){
+  if (!onboardingModal || onboardingModal.hidden) return;
+  const { persistSeen = false, restoreFocus = true } = options;
+  onboardingModal.classList.remove('open');
+  onboardingModal.setAttribute('aria-hidden', 'true');
+  onboardingModal.hidden = true;
+  if (persistSeen){ markOnboardingSeen(); }
+  const helpOpen = helpModal && helpModal.classList.contains('open');
+  if (appRootElem && !helpOpen){ appRootElem.removeAttribute('aria-hidden'); }
+  syncBodyModalState();
+  const focusTarget = onboardingReturnFocus;
+  onboardingReturnFocus = null;
+  if (restoreFocus && focusTarget && typeof focusTarget.focus === 'function'){
+    focusTarget.focus();
+  }
+}
+
+function shouldShowOnboarding(){
+  try {
+    return localStorage.getItem(ONBOARDING_SEEN_KEY) !== '1';
+  } catch(e) {
+    return true;
+  }
+}
+
+function maybeShowOnboardingCoachmark(){
+  if (!onboardingModal) return;
+  if (!shouldShowOnboarding()) return;
+  setTimeout(() => {
+    if (onboardingModal.classList.contains('open')) return;
+    if (helpModal && helpModal.classList.contains('open')) return;
+    openOnboardingModal(helpBtn);
+  }, 600);
 }
 
 if (helpModal){
@@ -4292,16 +4698,51 @@ if (helpBtn){
 if (helpCloseBtn){
   helpCloseBtn.addEventListener('click', () => closeHelpModal());
 }
+if (onboardingSkipBtn){
+  onboardingSkipBtn.addEventListener('click', () => closeOnboardingModal({ persistSeen: true }));
+}
+if (onboardingShortcutsBtn){
+  onboardingShortcutsBtn.addEventListener('click', () => {
+    closeOnboardingModal({ persistSeen: true, restoreFocus: false });
+    openHelpModal(onboardingShortcutsBtn);
+  });
+}
+if (onboardingModal){
+  onboardingModal.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape'){
+      event.preventDefault();
+      closeOnboardingModal({ persistSeen: true });
+      return;
+    }
+    if (event.key === 'Tab'){
+      const focusable = getFocusableElements(onboardingModal).filter(el => el.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey){
+        if (document.activeElement === first){
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (document.activeElement === last){
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  });
+}
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape'){
     closeContextMenu();
     hideDetailsPopover();
     closeHelpModal();
+    closeOnboardingModal({ persistSeen: true });
   }
 });
 window.addEventListener('keydown', (e) => {
   if (e.key === '?'){
     e.preventDefault();
+    closeOnboardingModal({ persistSeen: true, restoreFocus: false });
     if (helpModal && helpModal.classList.contains('open')){
       closeHelpModal();
     } else {
@@ -4332,6 +4773,7 @@ if (favoritesFeatureEnabled){
   updateFavoritesUI();
 }
 updateRecentSearchesUI();
+maybeShowOnboardingCoachmark();
 
 // Sidebar reopen button: when clicked, restore the sidebar and hide the
 // overlay.  Also update the main toggle arrow to reflect the state.
