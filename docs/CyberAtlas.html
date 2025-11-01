@@ -1,0 +1,2260 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Cybersecurity Atlas</title>
+<style>
+  :root{
+    /*
+      Custom colour palette inspired by fr33s0ul.tech: a dark terminal‑like
+      background with a red accent.  These values were selected based on
+      observations of the blog’s header and overall colour scheme【197086332769172†screenshot】.
+    */
+    --bg:#0e1012;
+    --panel:#0f1519;
+    --ink:#d3d7df;
+    --muted:#8c99a6;
+    --accent:#c75c5c;
+    --edge:#27303b;
+    --edge-soft:rgba(39,48,59,0.4);
+    --chip:#11161a;
+    --chip-stroke:#2a343e;
+    --stroke:#3e4955;
+    --box:#0f1519;
+    --ok:#22c55e;
+    --warn:#eab308;
+  }
+  [data-theme="light"]{
+    /* Light theme colours derived from the dark palette for consistency */
+    --bg:#f7f7f9;
+    --panel:#ffffff;
+    --ink:#0e1012;
+    --muted:#6b7280;
+    --accent:#e06666; /* lighter red accent */
+    --edge:#d1d5db;
+    --edge-soft:rgba(0,0,0,0.12);
+    --chip:#ffffff;
+    --chip-stroke:#e5e7eb;
+    --stroke:#4b5563;
+    --box:#ffffff;
+  }
+  html,body{margin:0;height:100%;color:var(--ink);background:var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .app{display:grid;grid-template-columns:320px 1fr;height:100%}
+  aside{background:var(--panel);border-right:1px solid var(--edge);padding:14px 14px 18px;overflow:auto}
+  /* dark scrollbar */
+  aside::-webkit-scrollbar{width:8px;height:8px;background:var(--panel)}
+  aside::-webkit-scrollbar-thumb{background:var(--edge);border-radius:4px}
+  aside::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+  h1{margin:2px 0 4px;font-size:18px}
+  .muted{color:var(--muted);font-size:12px}
+  .row{margin-top:8px}
+  /* Arrange the control buttons in a single row with spacing.  This
+     allows the sidebar toggle button to be pushed to the far right via
+     margin-left:auto on #toggleSidebarBtn. */
+  .btn-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
+  }
+  .btn{display:inline-block;background:var(--panel);border:1px solid var(--edge);color:var(--ink);padding:7px 9px;border-radius:8px;cursor:pointer;font-size:13px;margin:5px 5px 0 0}
+  .btn:hover{border-color:var(--accent)}
+  .btn:active{transform:translateY(1px)}
+  .pill{display:inline-block;border:1px solid var(--edge);border-radius:999px;padding:6px 10px;font-size:12px;margin:5px 5px 0 0;background:var(--panel);cursor:pointer}
+  input[type="search"]{width:100%;padding:10px 12px;border-radius:10px;background:var(--panel);color:var(--ink);border:1px solid var(--edge);outline:none}
+  #results{max-height:240px;overflow:auto;margin-top:6px}
+  .hit{padding:6px 8px;border:1px solid var(--edge);border-radius:8px;background:var(--panel);margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+  .hit:hover{border-color:var(--accent)}
+  .canvas-wrap{position:relative;height:100%;background:var(--bg)}
+  canvas{width:100%;height:100%;display:block;background:var(--bg);cursor:grab}
+  canvas.grabbing{cursor:grabbing}
+  .key{display:inline-block;border:1px solid var(--edge);padding:1px 6px;border-radius:4px;margin:0 2px;font-size:11px;color:var(--muted)}
+
+  /* Sidebar collapsed state: hide sidebar and let canvas fill full width */
+  .app.collapsed aside{
+    width:0;
+    padding:0;
+    border:none;
+    overflow:hidden;
+  }
+  .app.collapsed .canvas-wrap{
+    grid-column:1 / -1;
+  }
+
+  /* Position the sidebar toggle button inline with the other controls.  The
+     button aligns to the right end of the control row via automatic
+     left margin.  We remove fixed positioning so it does not overlap
+     content. */
+  #toggleSidebarBtn {
+    position:static;
+    margin-left:6px;
+    background:var(--panel);
+    border:1px solid var(--edge);
+    color:var(--ink);
+    padding:6px 8px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+
+  /* Sidebar reopen button: hidden by default and shown only when the
+     sidebar is collapsed.  It floats along the left edge and invites
+     users to restore the sidebar. */
+  #sidebarReopenBtn {
+    display:none;
+    position:fixed;
+    left:0;
+    top:50%;
+    transform:translate(-50%, -50%);
+    background:var(--panel);
+    border:1px solid var(--edge);
+    color:var(--ink);
+    padding:6px 8px;
+    border-radius:0 4px 4px 0;
+    cursor:pointer;
+    z-index:3000;
+  }
+  .app.collapsed #sidebarReopenBtn{
+    display:block;
+  }
+  /* Tooltip styling */
+  #tooltip{
+    position:fixed;
+    pointer-events:auto;
+    background:var(--panel);
+    color:var(--ink);
+    padding:6px 10px;
+    border:1px solid var(--edge);
+    border-radius:6px;
+    font-size:12px;
+    z-index:1000;
+    display:none;
+    white-space:nowrap;
+  }
+  /* Mini‑map styling */
+  #minimap{
+    position:absolute;
+    bottom:12px;
+    right:12px;
+    width:180px;
+    height:180px;
+    background:var(--panel);
+    border:1px solid var(--edge);
+    border-radius:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+    cursor:crosshair;
+  }
+  /* Modal for help dialog */
+  .modal{
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    align-items:center;
+    justify-content:center;
+    z-index:2000;
+  }
+  .modal-content{
+    background:var(--panel);
+    color:var(--ink);
+    padding:20px 24px;
+    border:1px solid var(--edge);
+    border-radius:10px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.4);
+    max-width:500px;
+    width:90%;
+  }
+  .modal-content h2{margin-top:0;font-size:20px;margin-bottom:10px;}
+  .modal-content ul{list-style-type:none;padding-left:0;margin-bottom:16px;}
+  .modal-content li{margin-bottom:6px;font-size:14px;}
+
+  /* Style for motion slider label */
+  #motionContainer label{
+    display:block;
+    font-size:12px;
+    margin-bottom:4px;
+    color:var(--muted);
+  }
+  #motionContainer input[type="range"]{
+    width:100%;
+    cursor:pointer;
+  }
+
+  /* Subcategory pill styling */
+  .sub-pill{
+    display:inline-block;
+    border:1px solid var(--edge);
+    border-radius:999px;
+    padding:5px 8px;
+    font-size:11px;
+    background:var(--panel);
+    margin:4px 4px 0 0;
+    cursor:pointer;
+  }
+  .sub-pill:hover{
+    border-color:var(--accent);
+  }
+
+  /* The real‑time alert card styles have been removed along with the feature. */
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <h1>Cybersecurity Atlas</h1>
+    <div class="muted">Wheel = zoom • drag = pan • click to expand/collapse • <span class="key">WASD</span>/<span class="key">←↑→↓</span> pan • <span class="key">+</span>/<span class="key">-</span> zoom • <span class="key">Enter</span> toggle • <span class="key">F</span> focus</div>
+    <div class="row"><input id="q" type="search" placeholder="Search (e.g., ATT&CK, KQL) — Enter to jump"/></div>
+    <div id="results"></div>
+    <!-- Control row with buttons arranged inline.  The btn-row class
+         enables flexbox layout, allowing the sidebar toggle to be
+         pushed to the far right with auto margin. -->
+    <div class="row btn-row">
+      <button class="btn" id="backBtn">Back</button>
+      <button class="btn" id="centerBtn">Center</button>
+      <button class="btn" id="expandBtn">Expand All</button>
+      <button class="btn" id="collapseBtn">Collapse All</button>
+      <button class="btn" id="themeBtn">Light</button>
+      <!-- Collapse sidebar toggle and keyboard help -->
+      <button class="btn" id="toggleSidebarBtn" title="Collapse/Expand sidebar" style="margin-left:auto;">⟨</button>
+      <button class="btn" id="helpBtn" title="Keyboard shortcuts">?</button>
+    </div>
+
+    <!-- Breadcrumb trail to show the current focused path -->
+    <div id="breadcrumb" class="row"></div>
+
+    <!-- Filters section to toggle entire macro buckets on/off -->
+    <div class="row muted">Filters</div>
+    <div id="filters" class="row"></div>
+
+    <!-- Favourites section for quick access to starred nodes -->
+    <div class="row muted">Favorites</div>
+    <div id="favorites" class="row"></div>
+    <div class="row muted">Macro buckets</div>
+    <div id="bucketTags" class="row"></div>
+    <div class="row muted">Export</div>
+    <div class="row btn-row">
+      <button class="btn" id="png1">PNG 1×</button>
+      <button class="btn" id="png2">2×</button>
+      <button class="btn" id="png4">4×</button>
+    </div>
+    <!-- Subcategory quick links -->
+    <div class="row muted">Subcategories</div>
+    <div id="subFilters" class="row"></div>
+
+    <!-- Real‑time alerts removed: this section has been omitted to simplify the UI and reduce load. -->
+  </aside>
+  <!-- Reopen button appears when the sidebar is collapsed.  It floats on the
+       left edge of the viewport as a small arrow. -->
+  <button id="sidebarReopenBtn" title="Show sidebar">⟩</button>
+  <div class="canvas-wrap">
+    <canvas id="c"></canvas>
+    <!-- Overview minimap in bottom‑right corner -->
+    <canvas id="minimap" width="200" height="200"></canvas>
+    <!-- Tooltip for node details and favourite toggle -->
+    <div id="tooltip"></div>
+  </div>
+</div>
+
+<!-- Modal overlay for keyboard shortcuts help -->
+<div id="helpModal" class="modal">
+  <div class="modal-content">
+    <h2>Keyboard Shortcuts</h2>
+    <ul>
+      <li><strong>WASD / Arrow keys:</strong> Pan the view</li>
+      <li><strong>+</strong> / <strong>-</strong>: Zoom in/out</li>
+      <li><strong>Enter:</strong> Expand or collapse the selected node</li>
+      <li><strong>F:</strong> Focus the current search result</li>
+      <li><strong>Backspace:</strong> Return to the previous view</li>
+      <li><strong>?</strong>: Show this help dialog</li>
+    </ul>
+    <button id="helpCloseBtn" class="btn">Close</button>
+  </div>
+</div>
+
+<script>
+/*
+TUNABLES (easy to tweak)
+----------------------------------------
+PHYSICS
+  SPRING_K            = 0.07      // link spring stiffness
+  // Increase the repulsion strength and damping so that clusters separate
+  // more decisively while still settling quickly.  Larger repulsion
+  // encourages children to push away from each other and the higher
+  // damping ensures movement decays promptly.  These values were tuned
+  // specifically to reduce overlap in deep branches with long labels.
+  REPULSION_K         = 700       // stronger repulsion to push nodes apart quickly
+  DAMPING             = 0.92      // slightly higher damping so movement stops quickly
+  COLLISION_PADDING   = 14        // extra padding added to collision radius
+  POLAR_K             = 0.015     // radial "soft pin" for depth‑1 nodes
+  GRAVITY_TO_PARENT_K = 0.005     // mild pull toward parent (helps settling)
+
+LINK DISTANCES (pixels)
+  L0_L1 = 160                     // root ↔ depth‑1
+  // Increase link distances for successive depths to give more room
+  // to deeper levels.  This, combined with larger dynamic radii in
+  // layoutChildren(), reduces the chance that long labels overlap.
+  L1_L2 = 220                     // depth‑1 ↔ depth‑2
+  DEPTH_STEP = 60                 // +60 per depth after 2
+
+RING & RADIAL
+  R1_RADIUS = 160                 // nominal radius for depth‑1 ring (further reduced to tighten initial layout)
+  R1_SPREAD = 0                   // additional spread per bucket (kept 0; we use equal radius)
+
+CAMERA
+  MIN_ZOOM = 0.40
+  MAX_ZOOM = 2.50
+  // Decrease pan and zoom easing durations.  Shorter easing times make
+  // navigation feel more responsive, which is especially important on
+  // mobile devices where long animations can feel sluggish.
+  // Shorter durations for panning and wheel zooming improve the
+  // responsiveness of navigation.  A 100 ms easing feels snappy on
+  // desktop and mobile, making it easier to reposition and zoom
+  // quickly without feeling sluggish.
+  PAN_EASE_MS = 60               // shorter pan/zoom duration for faster navigation
+  WHEEL_EASE_MS = 60             // shorter zoom easing for snappier scrolls
+
+VISUAL
+  BOX_PAD   = 12                 // inner padding for normal nodes
+  CHIP_PADX = 14                 // horizontal padding for first‑ring "chips"
+  CHIP_RAD  = 18                 // corner radius for chips
+*/
+
+// ----------------------------------------------------------------------------
+// DATA (kept intact). Same as your v11 dataset; we only wrap under 7 buckets.
+// ----------------------------------------------------------------------------
+const data = /* v11 dataset, unchanged labels */ (function(){return {
+  "name": "InfoSec Universe — Ultimate Map",
+  "children": [
+    {"name":"Core Foundations","children":[
+      {"name":"Networking","children":[
+        {"name":"Layers: OSI / TCP/IP"},
+        {"name":"Protocols: HTTP(S), DNS, SMTP, SSH, SNMP, SMB, RDP • HTTP/3 (QUIC) • DoH/DoT"},
+        {"name":"Subnetting (IPv4/IPv6) / VLANs / VPN / SD-WAN"},
+        {"name":"Routing: OSPF, BGP"},
+        {"name":"TLS/PKI basics"},
+        {"name":"Capture/Analyze: tcpdump, Wireshark, Zeek"}]},
+      {"name":"Operating Systems","children":[
+        {"name":"Linux (priv-esc, systemd, journald, iptables/nftables, SELinux, AppArmor)"},
+        {"name":"Windows (AD, Sysinternals, ETW, Event Logs)"},
+        {"name":"macOS (launchd, codesign, Gatekeeper, SIP (System Integrity Protection))"}]},
+      {"name":"Scripting & Automation","children":[
+        {"name":"Python (requests, asyncio, pandas)"},
+        {"name":"Bash/PowerShell"},
+        {"name":"API/REST/GraphQL"},
+        {"name":"Regex/JQ/JMESPath"},
+        {"name":"Git/GitHub/GitLab"}]},
+      {"name":"Compute & Virtualization","children":[
+        {"name":"Docker/Containers"},
+        {"name":"Kubernetes basics"},
+        {"name":"Hypervisors: VMware/VirtualBox/Hyper-V"}]},
+      {"name":"Security Mindsets","children":[
+        {"name":"CIA Triad • Parkerian Hexad"},
+        {"name":"Assume Breach & Defense-in-Depth"},
+        {"name":"Threat Modeling (STRIDE, PASTA)"},
+        {"name":"Kill Chain / ATT&CK / D3FEND"}]}]},
+    {"name":"GRC & Standards","children":[
+      {"name":"Frameworks","children":[
+        {"name":"ISO 27001/2 (ISMS)"},
+        {"name":"NIST CSF 2.0 • SP 800-53 • 800-171"},
+        {"name":"SOC 2 • PCI DSS 4.0 • HIPAA • HITRUST"},
+        {"name":"CIS Controls • COBIT • ITIL"},
+        {"name":"EU NIS2"},{"name":"DORA (EU)"},{"name":"CMMC 2.0 (DoD)"}]},
+      {"name":"Privacy & Law","children":[
+        {"name":"GDPR • UK GDPR • DPA 2018"},
+        {"name":"eIDAS • ePrivacy"},
+        {"name":"DPIA/PIA • Records of Processing Activities (RoPA)"},
+        {"name":"Data Retention/Classification"},
+        {"name":"CCPA/CPRA (California)"}]},
+      {"name":"Risk Management","children":[
+        {"name":"Registers • Likelihood × Impact • Inherent/Residual"},
+        {"name":"Assessment (Qual/Quant; FAIR)"},
+        {"name":"Treatment: Avoid/Reduce/Transfer/Accept"},
+        {"name":"KRIs/KPIs • Audit Readiness"}]},
+      {"name":"Policy Suite","children":[
+        {"name":"Acceptable Use, Access Control, BYOD"},
+        {"name":"Vulnerability Mgmt, Patch, Change, Backup"},
+        {"name":"Incident Response, DR/BCP"},
+        {"name":"Secure SDLC, Third-Party, Data Protection"},
+        {"name":"Security Awareness & Training (phishing simulations, annual training)"}]}]},
+    {"name":"Identity & Access","children":[
+      {"name":"Directories & Federation","children":[
+        {"name":"AD/Entra ID (Azure AD) • Hybrid"},
+        {"name":"Okta • Ping • Keycloak • AD FS (legacy)"},
+        {"name":"Break-glass/Emergency Accounts (temporary MFA-exempt access with monitoring)"},
+        {"name":"SSO: SAML/OIDC/OAuth2"},
+        {"name":"Kerberos/NTLM • LDAP"},
+        {"name":"Provisioning: SCIM (System for Cross-domain Identity Management)"}]},
+      {"name":"AuthZ Models","children":[
+        {"name":"RBAC/ABAC/ReBAC"},
+        {"name":"Least Privilege • JIT/JEA"},
+        {"name":"Segregation of Duties (SoD)"}]},
+      {"name":"Secrets & PAM","children":[
+        {"name":"PAM: CyberArk, BeyondTrust, Delinea"},
+        {"name":"Vault/Secrets Mgmt: HashiCorp, SOPS"},
+        {"name":"MFA/Passkeys • Phish-Resistant MFA"},
+        {"name":"Privileged Session Management (PSM) session recording"}]}]},
+    {"name":"Network Security","children":[
+      {"name":"Edge & Segmentation","children":[
+        {"name":"Firewalls: pfSense/OPNsense, iptables/nftables, VyOS; commercial: Palo Alto, Fortinet, Check Point, Cisco ASA (legacy) / FTD"},
+        {"name":"NGFW/WAF/IPS/IDS: Suricata, Snort, ModSecurity"},
+        {"name":"Reverse proxies/LB: Nginx, HAProxy"},
+        {"name":"Secure Web Gateway/ZTNA/CASB (SSE stack; optional RBI)"},
+        {"name":"VPN: OpenVPN/WireGuard, IPsec/SSL"},
+        {"name":"DDoS: RTBH/Anycast • BGP Flowspec • Scrubbing"},
+        {"name":"Micro/Macro Segmentation"},
+        {"name":"Network Access Control (NAC: 802.1X, Cisco ISE, Aruba ClearPass)"}]},
+      {"name":"DNS & TLS","children":[
+        {"name":"DNSSEC • DoH/DoT • RPZ • BIND/Unbound/PowerDNS • Let's Encrypt/ACME/Certbot"},
+        {"name":"PKI • mTLS • Cert Lifecycle • ACME/Smallstep"},
+        {"name":"Email Auth: SPF, DKIM, DMARC, MTA-STS, TLS-RPT, BIMI, ARC"}]},
+      {"name":"Telemetry","children":[
+        {"name":"NetFlow/IPFIX/sFlow • softflowd/pmacct"},
+        {"name":"Zeek/Suricata (IDS & JSON telemetry) • PCAP • tcpdump"},
+        {"name":"Syslog/syslog-ng • RADIUS/TACACS+"},
+        {"name":"JA3/JA4 TLS fingerprints"},
+        {"name":"Windows Event Forwarding (WEF)/WinRM • NXLog/Winlogbeat"}]}]},
+    {"name":"Endpoint & Email Security","children":[
+      {"name":"Endpoint","children":[
+        {"name":"EDR/XDR Platforms: Microsoft Defender for Endpoint, CrowdStrike Falcon, Cortex XDR, SentinelOne"},
+        {"name":"Anti-Virus/NGAV • File Integrity Monitoring (AIDE, Tripwire, Wazuh)"},
+        {"name":"App Control & Hardening: WDAC/AppLocker • ASR rules • Exploit Protection"},
+        {"name":"MDM/MAM: Intune, JAMF • Hardening Baselines • open-source: MicroMDM"},
+        {"name":"USB/Removable Media Controls • Device Control"},
+        {"name":"Endpoint Telemetry & IR (Open-Source): Wazuh (HIDS), OSQuery (telemetry), Velociraptor (DFIR)"}]},
+      {"name":"Email & Collaboration","children":[
+        {"name":"Secure Email Gateway (SEG): MailScanner/SpamAssassin, Postfix/Exim; Dovecot (IMAP); plus Mimecast, Proofpoint, Microsoft Defender for Office 365 (EOP, Safe Links/Attachments)"},
+        {"name":"Phishing Sim • BEC (Business Email Compromise) controls • Time-of-click URL rewriting"},
+        {"name":"DLP • Sensitivity Labels • Retention"}]}]},
+    {"name":"Cloud Security","children":[
+      {"name":"AWS","children":[
+        {"name":"IAM, SCPs, Organizations"},
+        {"name":"GuardDuty, Security Hub, Detective"},
+        {"name":"CloudTrail, Config, VPC Flow Logs"},
+        {"name":"EC2 IMDSv2 enforced (account default; token required; hop limit 2)"},
+        {"name":"S3 Block Public Access (org + account)"},
+        {"name":"KMS, Secrets Manager, SSM Parameter Store"},
+        {"name":"WAF, Shield, ALB/NLB, PrivateLink"},
+        {"name":"EKS/ECS, ECR • Image Scanning"}]},
+      {"name":"Azure","children":[
+        {"name":"Entra ID, PIM • Defender for Cloud"},
+        {"name":"Sentinel • Log Analytics"},
+        {"name":"Key Vault, Managed Identities"},
+        {"name":"Storage Accounts, Private Endpoints"},
+        {"name":"WAF/AppGW/Azure Front Door"},
+        {"name":"Azure Virtual Desktop (AVD) • Intune"}]},
+      {"name":"GCP","children":[
+        {"name":"Org Policies, IAM, Workload Identity"},
+        {"name":"Security Command Center • Cloud Armor"},
+        {"name":"Cloud Logging/Monitoring • KMS • IAP"}]},
+      {"name":"Cloud-Native","children":[
+        {"name":"Shared Responsibility • Landing Zones"},
+        {"name":"CSPM/CWPP/CNAPP: Prisma, Wiz, Defender; open-source: Cloud Custodian, Prowler, ScoutSuite, Checkov, tfsec, Terrascan, KICS, Kubescape, Falco, kube-bench, kube-hunter"},
+        {"name":"K8s: RBAC, PSA (Pod Security Admission)/OPA/Gatekeeper, Kyverno • Pod Security Standards (baseline/restricted)"},
+        {"name":"Service Mesh: Istio/Linkerd • mTLS"},
+        {"name":"Serverless: IAM, VPC egress, Secrets"},
+        {"name":"DSPM (Data Security Posture Mgmt)"},
+        {"name":"ASPM (Application Security Posture Mgmt)"},
+        {"name":"SSPM (SaaS Security Posture Management)"}]}]},
+    {"name":"AppSec & DevSecOps","children":[
+      {"name":"Secure SDLC","children":[
+        {"name":"Requirements/Threat Modeling"},
+        {"name":"Code Reviews • Secure Patterns"},
+        {"name":"SAST/DAST/IAST/SCA: ZAP, Semgrep, Bandit, Gosec, Brakeman, Nikto (legacy/signature-based); SCA: OSV‑Scanner, Dependency‑Check, Trivy, Syft • CodeQL"},
+        {"name":"SBOM • Supply Chain (SLSA) • SPDX • CycloneDX • Sigstore/cosign • in-toto"},
+        {"name":"Secrets Scanning: Gitleaks, TruffleHog, GitGuardian"}]},
+      {"name":"API & Web","children":[
+        {"name":"OWASP ASVS • Top 10 • API Top 10"},
+        {"name":"AuthN/Z (JWT, OAuth2, OIDC)"},
+        {"name":"GraphQL: restrict/disable introspection in prod • depth/complexity limits • schema allow-lists • role-based access"},
+        {"name":"Rate limiting • WAF • Client-side protections (CSP, Trusted Types) • Bot mgmt"},
+        {"name":"Runtime in-app protection (RASP)"},
+        {"name":"JWT BCP: short expiries, audience/issuer checks, key rotation; avoid “none”/weak algs"}]},
+      {"name":"Container & IAC","children":[
+        {"name":"IaC: Terraform/CloudFormation; scanning: Checkov, tfsec, Terrascan, KICS; Policy as Code (OPA/Conftest, Sentinel)"},
+        {"name":"Image Scanning & SBOM: Trivy, Grype, Syft, Snyk"},
+        {"name":"Runtime: Admission, Policy, Falco, OPA, Kyverno, kube-bench, kube-hunter • Tetragon (eBPF) • seccomp • AppArmor/SELinux • SecurityContext (runAsNonRoot, drop caps)"}]},
+      {"name":"DevOps Tooling","children":[
+        {"name":"CI/CD: GitHub Actions, GitLab, Jenkins, Argo CD, Spinnaker"},
+        {"name":"Artifact: Nexus, Artifactory, Harbor/Docker Registry"},
+        {"name":"Monitoring: Prometheus, Grafana, Loki, VictoriaMetrics"},
+        {"name":"Tracing: Jaeger, Zipkin, OpenTelemetry"}]}]},
+    {"name":"Detection Engineering & SOC","children":[
+      {"name":"Detection Engineering","children":[
+        {"name":"SIEM: Elastic (ELK) • OpenSearch • Wazuh • Graylog • Splunk • Microsoft Sentinel; Query languages: KQL (Microsoft Sentinel), SPL (Splunk) (Splunk), KQL (Elastic), EQL (Elastic), PPL (OpenSearch) (OpenSearch) • Sigma"},
+        {"name":"Alerting & Correlation: Kibana Alerting/Detection Rules, OpenSearch Alerting, ElastAlert2 (legacy), Falco, Sigma correlations"},
+        {"name":"Threat Rules: ATT&CK mapping, D3FEND"},
+        {"name":"Deception: Honeypots, Honeytokens"},
+        {"name":"Security data lake & schemas: OCSF • OpenTelemetry logs • object storage (Parquet/Delta)"},
+        {"name":"Purple Teaming & Adversary Emulation: CALDERA • Atomic Red Team • PurpleSharp — validate & tune detections"}]},
+      {"name":"SOC Operations","children":[
+        {"name":"Tier1/Tier2/Tier3 Roles"},
+        {"name":"Ticketing & Escalation"},
+        {"name":"Shift Handover & Documentation"},
+        {"name":"SOAR: Cortex XSOAR • Splunk SOAR • Tines • Shuffle"}]},
+      {"name":"Incident Response","children":[
+        {"name":"Preparation, Identification, Containment • playbooks"},
+        {"name":"Eradication, Recovery, Lessons Learned • BCP/DR"},
+        {"name":"Forensics & Evidence Handling: TheHive, Cortex, Velociraptor"}]}]},
+    {"name":"Threat Intel & Hunting","children":[
+      {"name":"CTI","children":[
+        {"name":"STIX/TAXII • MISP • OpenCTI • Yeti • AIL"},
+        {"name":"Intel Cycle: Direction, Collection, Processing, Analysis, Dissemination"},
+        {"name":"Actor profiling • TTPs • Campaigns"}]},
+      {"name":"Hunting","children":[
+        {"name":"Hypothesis-driven • ATT&CK mapping"},
+        {"name":"Windows: Sysmon/ETW, Sysinternals • Linux: Auditd/eBPF"},
+        {"name":"Anomaly baselines • Beaconing • Living‑off‑the‑Land • Sigma/YARA"},
+        {"name":"Tooling: Jupyter notebooks, Kusto, SigmaHQ, OSQuery • Atomic Red Team • CALDERA • PurpleSharp • Fleet (osquery manager)"}]}]},
+    {"name":"Offensive Security","children":[
+      {"name":"Recon & OSINT","children":[
+        {"name":"Subdomains/DNS: Amass, Subfinder, Assetfinder • ASN • Cert Transparency"},
+        {"name":"Tech stack & Fingerprinting: WhatWeb, Wappalyzer • Leak search: Dehashed, HaveIBeenPwned"},
+        {"name":"OSINT: Shodan, Censys, FOFA, Spiderfoot • Social & Physical Recon"}]},
+      {"name":"Exploitation","children":[
+        {"name":"Web: SSRF, IDOR, RCE, SQLi, XXE, XSS, CSRF"},
+        {"name":"AD: Kerberoast/AS-REP, ACL Abuse, DCSync"},
+        {"name":"Phishing/Pretext: Social‑Engineer Toolkit, GoPhish • Initial Access"},
+        {"name":"Exploit Dev • BOF • ROP • Shellcode • Metasploit, pwntools"}]},
+      {"name":"Post-Ex & Lateral","children":[
+        {"name":"Credential Dumping • Pass-the-Hash/Ticket"},
+        {"name":"C2: Cobalt Strike, Sliver, Mythic"},
+        {"name":"OPSEC & Evasion • LOLBAS/GTFOBins"}]},
+      {"name":"Wireless/IoT/Physical","children":[
+        {"name":"Wi‑Fi: WEP/WPA/WPA3 • WPS • Evil Twin • Aircrack‑ng • Kismet"},
+        {"name":"BLE/Zigbee/Z‑Wave • SDR (HackRF, RTL‑SDR)"},
+        {"name":"BadUSB/Dropboxes (Rubber Ducky) • Locks/Badges"}]}]},
+    {"name":"OT/ICS & Mobile/IoT","children":[
+      {"name":"OT/ICS","children":[
+        {"name":"Protocols: Modbus, DNP3, IEC 60870‑5‑104, OPC‑UA, BACnet, MQTT"},
+        {"name":"Zones/Conduits • Purdue Model • Segmentation"},
+        {"name":"Safety • Availability • Patch windows (maintenance) • Discovery: GRASSMARLIN"}]},
+      {"name":"Mobile/IoT","children":[
+        {"name":"Mobile: iOS/Android security • MDM • App vetting"},
+        {"name":"IoT: Firmware analysis (Binwalk/QEMU), SBOM, Secure Boot, TUF"}]}]},
+    {"name":"Crypto & Protocols","children":[
+      {"name":"Crypto","children":[
+        {"name":"Symmetric/Asymmetric • Hashing • MACs (OpenSSL, Libsodium, OpenPGP)"},
+        {"name":"TLS, PFS, Key Exchange • PKI • SSH/Libssh"},
+        {"name":"FPE/Tokenization • HSM/KMS • Secret sharing (Shamir/SOPS/age)"},
+        {"name":"PQC: FIPS 203 (ML-KEM/Kyber), FIPS 204 (ML-DSA/Dilithium), FIPS 205 (SLH-DSA/SPHINCS+) — migration planning • FIPS 206 (FALCON)"}]},
+      {"name":"Identity Protocols","children":[
+        {"name":"OAuth2/OIDC (PAR, JAR, DPoP) • SAML • FIDO2/Passkeys"},
+        {"name":"JWT/JWS/JWE"}]}]},
+    {"name":"AI / Quantum / Emerging Security Domains","children":[
+      {"name":"AI Security","children":[
+        {"name":"Adversarial ML (evasion, poisoning)"},
+        {"name":"LLM Red Teaming & Jailbreak Testing"},
+        {"name":"Model Extraction & Data Poisoning"},
+        {"name":"Model Watermarking & Provenance"},
+        {"name":"AI Governance & Model Risk Mgmt (NIST AI RMF)"}]},
+      {"name":"Quantum Security","children":[
+        {"name":"Post-Quantum Cryptography (Kyber, Dilithium, FALCON, SPHINCS+)"},
+        {"name":"Quantum Key Distribution (QKD)"},
+        {"name":"Post-Quantum Migration Planning"},
+        {"name":"Quantum-Resistant Algorithms (FIPS 203–206)"}]},
+      {"name":"Cyber-Physical Convergence","children":[
+        {"name":"ICS + AI Security Integration"},
+        {"name":"OT Threat Modeling (ISA/IEC 62443 + AI)"},
+        {"name":"Autonomous Systems Safety (AVs, Robotics)"},
+        {"name":"Digital Twins & Sensor Integrity"}]}]},
+    {"name":"Data Protection","children":[
+      {"name":"Classification & Controls","children":[
+        {"name":"Labels/Policies • DLP (Endpoint, Network, Cloud)"},
+        {"name":"Encryption at Rest/In Transit • Key Mgmt (Veracrypt, LUKS/dm‑crypt, SOPS)"},
+        {"name":"Backups/Retention: restic, Borg, Duplicity • DRM"}]},
+      {"name":"Privacy Engineering","children":[
+        {"name":"PII/PHI/PCI • Minimisation & Consent management"},
+        {"name":"Anonymisation/Pseudonymisation • Differential Privacy"},
+        {"name":"Federated/Local processing (Edge) • Homomorphic encryption & MPC"},
+        {"name":"Zero-Knowledge Proofs (verification without revealing data)"}]}]},
+    {"name":"Metrics, Reporting & Blueprints","children":[
+      {"name":"KPIs/KRIs","children":[
+        {"name":"Coverage, Dwell Time, Alert Volumes"},
+        {"name":"Patch SLAs, Phish Rates, Control Efficacy"}]},
+      {"name":"Exec Reporting","children":[
+        {"name":"Dashboards • Risk Heatmaps"},
+        {"name":"Board Packs • Audit Trails"}]},
+      {"name":"Reference Architectures","children":[
+        {"name":"Zero Trust • SASE • ZTNA"},
+        {"name":"Identity-Centric Security"},
+        {"name":"Cloud Landing Zones"},
+        {"name":"Secure SDLC & DevSecOps"}]}]},
+    {"name":"Careers & Learning","children":[
+      {"name":"Paths","children":[
+        {"name":"SOC (Tier1→Tier3) • Detection Eng • IR/DFIR"},
+        {"name":"Threat Intel/Hunter • AppSec • Cloud Sec"},
+        {"name":"GRC/Risk/Privacy • Red Team/Pentest"}]},
+      {"name":"Certs (Examples)","children":[
+        {"name":"CompTIA: Sec+, CySA+, Pentest+"},
+        {"name":"SANS/GIAC: GCIH, GCIA, GCFA, GCTI"},
+        {"name":"OffSec: OSCP/OSWE/OSEP/OSED (OSCE³)"},
+        {"name":"Azure/AWS/GCP Security, CISM/CISA/CISSP"}]},
+      {"name":"Labs & CTFs","children":[
+        {"name":"TryHackMe • HackTheBox • RangeForce"},
+        {"name":"DetectionLab • Blue Team Labs • SigmaHQ"},
+        {"name":"Malware Traffic Analysis • FLARE-VM"}]}]},
+    {"name":"Toolbox (Examples)","children":[
+      {"name":"SIEM/XDR","children":[
+        {"name":"Microsoft Sentinel • Defender XDR • Security Onion/Wazuh"},
+        {"name":"Splunk • Elastic • OpenSearch/Graylog • QRadar"},
+        {"name":"CrowdStrike • Cortex XDR • SentinelOne"}]},
+      {"name":"Vuln & Config","children":[
+        {"name":"OpenVAS/GVM, Lynis, CIS‑CAT • Prowler • ScoutSuite • Nessus/Qualys/Rapid7"},
+        {"name":"WSUS/MECM (SCCM) • Intune • SUSE Manager / Red Hat Satellite"}]},
+      {"name":"Web & API Testing","children":[
+        {"name":"Burp Suite • OWASP ZAP • Postman"},
+        {"name":"Nuclei • ffuf • dirsearch • SQLMap"}]},
+      {"name":"AD & Lateral","children":[
+        {"name":"BloodHound • Rubeus • Mimikatz • SharpHound"},
+        {"name":"CrackMapExec • Responder • Impacket"}]},
+      {"name":"Forensics & Malware","children":[
+        {"name":"Volatility3, Velociraptor, KAPE, Autopsy, Brim, Wireshark"},
+        {"name":"Ghidra, IDA Free, CAPA, YARA"}]},
+      {"name":"Cloud & K8s","children":[
+        {"name":"Wiz • Prisma • Defender for Cloud • Prowler • ScoutSuite"},
+        {"name":"Kubebench/Kubeaudit • Trivy • Falco • Kubescape • kube‑hunter • Regula"}]}]},
+    {"name":"AI in Security","children":[
+      {"name":"Use Cases","children":[
+        {"name":"Triage assistance • Threat summarisation"},
+        {"name":"Alert dedup • Entity linking • Playbook assist"},
+        {"name":"Risk text analysis • Policy QA"}]},
+      {"name":"Risks & Controls","children":[
+        {"name":"Model/Prompt Injection • Data leakage"},
+        {"name":"Eval/Red-Teaming • Guardrails"},
+        {"name":"Adversarial ML attacks (evasion, poisoning)"}]}]},
+    {"name":"RF/SDR & Satellite","children":[
+      {"name":"SDR Labs & Tools","children":[
+        {"name":"GNU Radio • USRP/HackRF • RTL‑SDR • SDRangel"},
+        {"name":"Protocol fuzzing & replay"},
+        {"name":"Rogue downlink/backhaul"},
+        {"name":"Encryption overlays"},
+        {"name":"Ground stations & antennas"}]},
+      {"name":"GNSS & RF Resilience","children":[
+        {"name":"Spoofing/jamming detection"},
+        {"name":"Multi‑constellation (GPS, GLONASS, Galileo, BeiDou)"},
+        {"name":"Inertial backups & ground‑station detection"},
+        {"name":"Resilience & fallback comms (HF/Mesh)"}]}]},
+    {"name":"Blockchain / Web3 Security","children":[
+      {"name":"Smart contract auditing (Solidity/EVM)"},
+      {"name":"Wallet & key security (HSMs, MPC wallets)"},
+      {"name":"DeFi risks (oracle manipulation, flash loans)"},
+      {"name":"Smart contract vulns: reentrancy, integer overflow/underflow, access control"},
+      {"name":"Security tooling: Slither, Mythril, Echidna, Foundry/Forge"},
+      {"name":"Audit practices: formal verification, fuzzing, time-locked upgrades"}]
+    }
+  ]};})();
+
+// -----------------------------------------------------------------------------
+// Enrich second‑level categories with a synthetic overview leaf.  In the
+// original v11 canvas, some categories displayed additional details.  To
+// preserve that behaviour in the radial map, we append a new child to each
+// second‑level category summarising its immediate children.  For example,
+// the category "Detection Engineering" gains an "Overview: SIEM…, Alerting…,"
+// leaf.  This ensures that high‑level context lives within the hierarchy
+// itself and can be viewed like any other leaf.
+function addDetailNodesForDataset(node, depth=0) {
+  if (node.children) {
+    node.children.forEach(ch => addDetailNodesForDataset(ch, depth+1));
+    // Depth 2 corresponds to second‑level categories (root → macro → category)
+    if (depth === 2 && node.children.length > 0) {
+      const summary = node.children.map(c => c.name).join(', ');
+      node.children.push({ name: 'Overview: ' + summary });
+    }
+  }
+}
+addDetailNodesForDataset(data);
+
+// ----------------------------------------------------------------------------
+// L1 “macro bucket” wrapper nodes (same names as your edited draft).
+// We *wrap* existing root categories; originals keep their names (unchanged).
+// ----------------------------------------------------------------------------
+const macroGroups = {
+  "Foundations & Standards": ["Core Foundations","GRC & Standards"],
+  "Identity, Crypto & Blockchain": ["Identity & Access","Crypto & Protocols","Blockchain / Web3 Security"],
+  "Network, Cloud & OT/IoT": ["Network Security","Cloud Security","OT/ICS & Mobile/IoT","RF/SDR & Satellite"],
+  "Endpoints & Data": ["Endpoint & Email Security","Data Protection"],
+  "App & Emerging Security": ["AppSec & DevSecOps","AI / Quantum / Emerging Security Domains","AI in Security"],
+  "Operations, Threat & OffSec": ["Detection Engineering & SOC","Threat Intel & Hunting","Offensive Security"],
+  "Guidance & Resources": ["Metrics, Reporting & Blueprints","Careers & Learning","Toolbox (Examples)"]
+};
+
+// category colours (pastel on dark)
+// Updated category palette to complement the blog’s dark theme.  Each colour
+// provides a distinct pastel accent while maintaining harmony with the
+// crimson accent used on fr33s0ul.tech.
+const catColours = [
+  "#c75c5c", // red accent (primary)
+  "#4caf50", // green
+  "#00bcd4", // cyan
+  "#ffc107", // amber
+  "#9c27b0", // purple
+  "#03a9f4", // blue
+  "#ff9800"  // orange
+];
+
+// ----------------------------------------------------------------------------
+// Build tree nodes
+// ----------------------------------------------------------------------------
+let nextId = 0;
+function mkNode(d, depth=0){
+  const n = {
+    id: ++nextId,
+    name: d.name,
+    depth,
+    x: 0, y: 0, vx:0, vy:0,
+    open: true,
+    parent: null,
+    children: [],
+    isMacro:false,
+    angleHome:0, // for depth‑1
+    ringIndex:0,
+    match:false,
+    appear:1 // 0..1 for fade/scale on spawn
+  };
+  if (d.children) n.children = d.children.map(ch => (mkNode(ch, depth+1)));
+  n.children.forEach(c=>c.parent=n);
+  return n;
+}
+const rawRoot = mkNode(data,0);
+
+// Wrap under 7 macro buckets
+function wrapIntoMacros(root){
+  const byName = new Map(root.children.map(c=>[c.name,c]));
+  const newChildren = [];
+  Object.entries(macroGroups).forEach(([group, list], i)=>{
+    // Macro buckets are initially collapsed (open:false) so that second-level categories are hidden by default.
+    const g = {id:++nextId, name:group, depth:1, x:0,y:0,vx:0,vy:0,open:false,parent:root,children:[],isMacro:true, angleHome:0, ringIndex:i, match:false,appear:1};
+    list.forEach(nm=>{
+      const kid = byName.get(nm);
+      if (kid){ kid.parent=g; reDepth(kid,2); g.children.push(kid); byName.delete(nm); }
+    });
+    if (g.children.length>0) newChildren.push(g);
+  });
+  // any leftover root children stay as additional macro groups of one
+  for (const [nm, child] of byName){
+    const g = {id:++nextId,name:nm,depth:1,x:0,y:0,vx:0,vy:0,open:false,parent:root,children:[child],isMacro:true,angleHome:0,ringIndex:newChildren.length,match:false,appear:1};
+    child.parent=g; reDepth(child,2);
+    newChildren.push(g);
+  }
+  root.children = newChildren;
+  // After wrapping, assign angular spans to the macros and recursively assign
+  // angles to all nodes.  This ensures each subtree is allocated a distinct
+  // sector based on its position in the macro list.  The root receives the
+  // full 360° span; each macro receives an equal fraction of that span.  The
+  // assignAngles function defined below will further subdivide each macro's
+  // span among its children.  Without this call, angleHome values remain
+  // undefined and layoutChildren would fall back to default angles.
+  root.angularSpan = Math.PI * 2;
+  // Set a dummy angleHome for the root (not used for placement but needed for recursion)
+  root.angleHome = 0;
+  const N = root.children.length;
+  root.children.forEach((macro,i) => {
+    macro.angularSpan = (2 * Math.PI) / N;
+    // Place macros evenly around the circle, starting from the top (-π/2).  Each
+    // macro's angleHome is the centre of its assigned sector.  We subtract π/2
+    // so that the first macro starts at the top of the circle.
+    macro.angleHome = (i * (2 * Math.PI) / N) - Math.PI / 2;
+  });
+  // Recursively assign angles to all descendants.  We call this outside the
+  // macro loop to ensure the root is visited.
+  root.children.forEach((macro) => {
+    assignAngles(macro);
+  });
+}
+
+// Recursively assign angleHome and angularSpan to a node's descendants.  Each
+// child receives a sub‑sector of its parent's angularSpan, divided equally
+// among siblings.  The child's angleHome is set to the centre of its
+// allocated sector.  This function should be called after macros are created
+// to compute all angleHome/angularSpan properties used by layoutChildren.
+function assignAngles(node){
+  if (!node.children || node.children.length === 0) return;
+  const m = node.children.length;
+  const totalSpan = node.angularSpan || (2 * Math.PI);
+  node.children.forEach((child, idx) => {
+    // Each child receives an equal share of the parent's span
+    const span = totalSpan / m;
+    child.angularSpan = span;
+    // Centre of child's sector: start at parent's start angle minus half the
+    // parent's span, then add half the child's span and index*span
+    const startAngle = (node.angleHome || 0) - (totalSpan / 2);
+    child.angleHome = startAngle + (idx + 0.5) * span;
+    // Recurse further down the tree
+    assignAngles(child);
+  });
+}
+function reDepth(n,d){ n.depth=d; n.children.forEach(c=>reDepth(c,d+1)); }
+wrapIntoMacros(rawRoot);
+const root = rawRoot;
+
+// Set a custom root title for the map.  This updates both the data model
+// and the UI breadcrumbs.  Without this override, the root would retain its
+// original "InfoSec Universe — Ultimate Map" label from the dataset.  The
+// chosen name "Cybersecurity Atlas" better reflects the content and ties
+// into the blog theme.
+root.name = "Cybersecurity Atlas";
+
+// Only open the root and first‑level macro buckets on initial load.  Keeping
+// deeper levels collapsed reduces empty space and prevents very long
+// connectors from dominating the initial view.  Users can expand
+// deeper branches interactively.
+walk(root, n=>{ n.open = (n.depth < 2); });
+
+// ----------------------------------------------------------------------------
+// Additional state for filters, favourites, breadcrumb and mini‑map
+// Each top-level macro bucket visibility can be toggled on/off via the Filters UI.
+const macroVisibility = {};
+root.children.forEach(n => { macroVisibility[n.id] = true; });
+
+// Favourites persist in localStorage under the key 'infosec_favorites'. They are an array of node IDs.
+let favourites = [];
+try { favourites = JSON.parse(localStorage.getItem('infosec_favourites')) || []; } catch(e) { favourites = []; }
+
+// Currently hovered node for tooltip
+let hoverNode = null;
+// Store mini‑map scaling information for hit detection
+let miniMapBounds = null;
+
+// ----------------------------------------------------------------------------
+// Canvas & UI
+// ----------------------------------------------------------------------------
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
+window.addEventListener('resize', resize); resize();
+
+// Camera
+let offsetX=0, offsetY=0, scale=1;
+const MIN_ZOOM=0.40, MAX_ZOOM=2.50;
+
+function worldToScreen(wx,wy){ return [(wx+offsetX)*scale,(wy+offsetY)*scale]; }
+function screenToWorld(sx,sy){ return [sx/scale - offsetX, sy/scale - offsetY]; }
+
+// ----------------------------------------------------------------------------
+// Helpers
+// ----------------------------------------------------------------------------
+function walk(n,fn){ fn(n); n.children.forEach(c=>walk(c,fn)); }
+function visible(n){
+  // A node is visible if all its ancestors are expanded, and its top-level macro bucket is not filtered out.
+  if (!n.parent) return true;
+  // Check macro visibility: find first-level macro ancestor (child of root)
+  let top = n;
+  while (top.parent && top.parent !== root){ top = top.parent; }
+  if (top.parent === root && !macroVisibility[top.id]) return false;
+  if (!n.parent.open) return false;
+  return visible(n.parent);
+}
+function pathTo(n){ const p=[]; let cur=n; while(cur){ p.push(cur); cur=cur.parent; } return p.reverse(); }
+function collectVisible(){ const arr=[]; walk(root,n=>{ if(visible(n)) arr.push(n); }); return arr; }
+function collectLinks(){ const L=[]; walk(root,n=>{ if(!visible(n)) return; n.children.forEach(c=>{ if(visible(c)) L.push([n,c]); }); }); return L; }
+
+function textLinesFor(n, maxWidth, isChip){
+  // wrap by measuring.  We support two modes: simple space‑based wrapping
+  // for normal labels, and bullet‑based splitting for labels containing
+  // the "\u2022" (•) character.  Bullet splitting helps break up long
+  // lists of items into separate lines, improving readability of
+  // overview nodes and other leaves with many comma/semicolon separated
+  // entries.
+  ctx.save();
+  ctx.font = (isChip? 14: 14) + "px Segoe UI, Arial, sans-serif";
+  const lines = [];
+  // Helper to push a word array into lines, wrapping at maxWidth
+  function wrapWords(wordsArray){
+    let cur="";
+    for (const w of wordsArray){
+      const t = cur ? cur + " " + w : w;
+      if (ctx.measureText(t).width <= maxWidth || cur === ""){
+        cur = t;
+      } else {
+        lines.push(cur);
+        cur = w;
+      }
+    }
+    if (cur) lines.push(cur);
+  }
+  const name = n.name || "";
+  /*
+    For non‑chip nodes, attempt to break very long labels into logical
+    segments.  If the label contains a colon, split after the first
+    colon to separate an "Overview" prefix.  Then split the remainder
+    on common delimiters such as bullets (•) and slashes (/).  Each
+    resulting segment is treated as its own line and prefixed with a
+    bullet where appropriate.  This reduces the width of overview
+    labels and makes long lists easier to scan.  If none of these
+    delimiters are present or the name is short, fall back to simple
+    whitespace wrapping.
+  */
+  if (!isChip && name.length > 35){
+    let segments = [];
+    let text = name;
+    // Split off a prefix ending with the first colon, if present
+    const colonIdx = text.indexOf(":");
+    if (colonIdx !== -1){
+      segments.push(text.slice(0, colonIdx+1).trim());
+      text = text.slice(colonIdx+1).trim();
+    }
+    // Split on bullet or slash delimiters
+    if (/\u2022|\//.test(text)){
+      const parts = text.split(/\s*[\u2022\/]+\s*/);
+      parts.forEach((part, idx) =>{
+        // Prefix bullets for all but the first segment if a prefix exists
+        const prefixNeeded = (idx > 0 || segments.length>0);
+        const prefix = prefixNeeded ? "\u2022 " : "";
+        segments.push(prefix + part.trim());
+      });
+    } else {
+      segments.push(text);
+    }
+    segments.forEach(seg =>{
+      const words = seg.split(/\s+/);
+      wrapWords(words);
+    });
+  } else if (!isChip && name.includes("\u2022")){
+    // If there are bullets but the label isn’t long, split on bullets only
+    const parts = name.split(/\s*\u2022\s*/);
+    parts.forEach((seg, idx) => {
+      const prefix = idx === 0 ? "" : "\u2022 ";
+      wrapWords((prefix + seg).trim().split(/\s+/));
+    });
+  } else {
+    // Simple wrap on whitespace
+    wrapWords(name.split(/\s+/));
+  }
+  ctx.restore();
+  return lines.slice(0, Math.max(1, lines.length));
+}
+function measureNode(n){
+  const isChip = n.depth===1;
+  // Reduce the maximum line width for normal nodes to encourage
+  // additional wrapping.  Narrower boxes make dense leaf lists easier
+  // to read on both desktop and mobile screens.
+  const maxW = isChip? Infinity : 280;
+  const padX = isChip? 14 : 12;
+  const padY = isChip? 8 : 10;
+  const lines = textLinesFor(n, maxW, isChip);
+  const w = (function(){
+    ctx.font = (isChip? 14: 14) + "px Segoe UI, Arial, sans-serif";
+    const lw = Math.max(...lines.map(l=>ctx.measureText(l).width));
+    // For normal nodes, restrict the width to a range to avoid overly
+    // long boxes.  The minimum width is 140 and maximum is 320.  This
+    // interacts with maxW above to produce comfortably sized labels.
+    return isChip? (lw + padX*2) : Math.max(140, Math.min(320, lw + padX*2));
+  })();
+  const h = (isChip? 34 : (lines.length*18 + padY*2));
+  return {w,h,lines,isChip};
+}
+
+// colours
+const ringColour = i => catColours[i % catColours.length];
+
+// -----------------------------------------------------------------------------
+// Animation helpers
+// -----------------------------------------------------------------------------
+// Pulsing counter for hover animation.  It increments continuously in the
+// rendering loop and is used to create a subtle breathing effect on the
+// hovered node.
+let hoverPulse = 0;
+
+// Lighten a colour by a given percentage (0–1).  Accepts hex codes, rgb(),
+// or rgba() strings.  It returns an rgba string.  When passed an rgba
+// string, the alpha channel is preserved.  For hex and rgb strings, alpha
+// defaults to 1.  Lightening moves each channel towards 255 by the
+// specified amount.  When percent is 0, the original colour is returned.
+function lightenColor(col, percent){
+  if (!col) return col;
+  let r=0,g=0,b=0,a=1;
+  // Normalize colour to rgba components
+  if (col.startsWith('#')){
+    const hex = col.replace('#','');
+    const n = parseInt(hex,16);
+    if (hex.length===6){
+      r = (n>>16)&255; g = (n>>8)&255; b = n&255;
+    } else if (hex.length===3){
+      r = ((n>>8)&15)*17; g = ((n>>4)&15)*17; b = (n&15)*17;
+    }
+  } else if (col.startsWith('rgba')){
+    const parts = col.replace(/rgba\(|\)/g,'').split(',');
+    r = parseFloat(parts[0]); g = parseFloat(parts[1]); b = parseFloat(parts[2]); a = parseFloat(parts[3]);
+  } else if (col.startsWith('rgb')){
+    const parts = col.replace(/rgb\(|\)/g,'').split(',');
+    r = parseFloat(parts[0]); g = parseFloat(parts[1]); b = parseFloat(parts[2]); a = 1;
+  } else {
+    // If unknown format, return original colour
+    return col;
+  }
+  const pr = Math.min(255, Math.round(r + (255 - r) * percent));
+  const pg = Math.min(255, Math.round(g + (255 - g) * percent));
+  const pb = Math.min(255, Math.round(b + (255 - b) * percent));
+  return `rgba(${pr},${pg},${pb},${a})`;
+}
+
+// ----------------------------------------------------------------------------
+// Layout init: place macro buckets evenly around the root (radial)
+// ----------------------------------------------------------------------------
+const TWO_PI = Math.PI*2;
+function placeInitial(){
+  root.x = 0; root.y = 0;
+  const N = root.children.length;
+  // Use a smaller initial radius for macro buckets to reduce empty space
+  // around the root.  This value is kept in sync with the dynamic
+  // macro orbit radius used in tick().
+  const R = 160;
+  root.children.forEach((n,i)=>{
+    const ang = (i * TWO_PI / N) - Math.PI/2;
+    n.angleHome = ang; n.ringIndex=i;
+    n.x = R * Math.cos(ang);
+    n.y = R * Math.sin(ang);
+  });
+  walk(root, n=>{
+    if (n.depth>=2){
+      const p = n.parent;
+      const d = linkDistance(p,n);
+      const jitter = (Math.random()-0.5)*40;
+      const ang = Math.atan2(p.y, p.x) + (Math.random()-0.5)*0.8;
+      n.x = p.x + (d + jitter)*Math.cos(ang);
+      n.y = p.y + (d + jitter)*Math.sin(ang);
+    }
+  });
+}
+placeInitial();
+
+// center camera on root
+function centerOnRoot(animated=true){ focusTo(root, scale, animated); }
+
+// ----------------------------------------------------------------------------
+// Physics
+// ----------------------------------------------------------------------------
+// Base values for the physics constants.  These are used as starting points
+// and scaled by the motion slider to adjust the feel of the layout on demand.
+const BASE_SPRING_K = 0.07;
+const BASE_REPULSION_K = 500;
+const BASE_DAMPING = 0.90;
+
+// Use let for physics constants so they can be updated via the motion slider.
+// They start with the base values but can be changed at runtime.
+let SPRING_K = BASE_SPRING_K;
+let REPULSION_K = BASE_REPULSION_K;
+let DAMPING = BASE_DAMPING;
+// Collision padding remains constant; reduce to allow nodes to nestle closer
+const COLLISION_PADDING = 12;
+const POLAR_K = 0.015;
+const GRAVITY_TO_PARENT_K = 0.005;
+
+function linkDistance(a,b){
+  const d = b.depth;
+  // Use shorter base distances to keep branches tight and minimise
+  // excessive empty space.  The first two levels stay roomy while deeper
+  // branches step out in smaller increments.  See TUNABLES comment above.
+  // Tune link distances to keep branches tight without creating long dangling lines.
+  // Shallower levels remain roomy while deeper levels step out more gently.
+  // Shorter link distances to keep branches compact.  The shallow
+  // levels remain roomy while deeper levels step out in small increments.
+  if (d === 1) return 120;            // root to macro
+  if (d === 2) return 150;            // macro to category
+  // Deeper levels: add 30px per depth to avoid long dangling edges
+  return 120 + (d - 2) * 30;
+}
+
+function tick(dt){
+  const nodes = collectVisible();
+  const links = collectLinks();
+  nodes.forEach(n=>{ n.fx=0; n.fy=0; });
+  for (const [a,b] of links){
+    const dx = b.x - a.x, dy = b.y - a.y;
+    let dist = Math.hypot(dx,dy) || 0.0001;
+    const L = linkDistance(a,b);
+    const f = SPRING_K * (dist - L);
+    const nx = dx/dist, ny=dy/dist;
+    const fx = f*nx, fy=f*ny;
+    b.fx -= fx; b.fy -= fy;
+    a.fx += fx; a.fy += fy;
+    b.fx += GRAVITY_TO_PARENT_K * (a.x - b.x);
+    b.fy += GRAVITY_TO_PARENT_K * (a.y - b.y);
+  }
+  const N = root.children.length;
+  root.children.forEach((n,i)=>{
+    if (!visible(n)) return;
+    // Reduce macro orbit radius further to tighten the initial layout.
+    // A smaller radius brings first‑level categories closer to the root
+    // and eliminates large empty areas at the centre, while still
+    // preventing overlaps between macro chips.
+    const R = 200;
+    const tx = root.x + R*Math.cos(n.angleHome);
+    const ty = root.y + R*Math.sin(n.angleHome);
+    n.fx += POLAR_K * (tx - n.x);
+    n.fy += POLAR_K * (ty - n.y);
+  });
+  for (let i=0;i<nodes.length;i++){
+    for (let j=i+1;j<nodes.length;j++){
+      const a = nodes[i], b = nodes[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      let dist2 = dx*dx + dy*dy;
+      if (dist2===0){ dist2 = 0.01; }
+      const dist = Math.sqrt(dist2);
+      const ma = measureNode(a), mb = measureNode(b);
+      // Use a larger portion of the label width to compute collision radius to increase spacing.
+      const ra = (ma.w * 0.8 + COLLISION_PADDING);
+      const rb = (mb.w * 0.8 + COLLISION_PADDING);
+      const rep = REPULSION_K * ((ra+rb)/2) / dist2;
+      const nx = dx/dist, ny = dy/dist;
+      a.fx -= rep*nx; a.fy -= rep*ny;
+      b.fx += rep*nx; b.fy += rep*ny;
+      const overlap = (ra+rb) - dist;
+      if (overlap>0){
+        const push = overlap*0.20;
+        a.fx -= push*nx; a.fy -= push*ny;
+        b.fx += push*nx; b.fy += push*ny;
+      }
+    }
+  }
+  nodes.forEach(n=>{
+    n.vx = (n.vx + n.fx*dt) * DAMPING;
+    n.vy = (n.vy + n.fy*dt) * DAMPING;
+    if (!n.isDragging){
+      n.x += n.vx*dt;
+      n.y += n.vy*dt;
+    } else {
+      n.vx*=0.4; n.vy*=0.4;
+    }
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Drawing
+// ----------------------------------------------------------------------------
+function nodeCategoryIndex(n){
+  let cur=n; while(cur.parent && cur.parent!==root) cur=cur.parent; return cur.parent? cur.ringIndex : 0;
+}
+function draw(){
+  ctx.save();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.lineCap="round"; ctx.lineJoin="round";
+  const vis = collectVisible();
+  const links = collectLinks();
+  for (const [a,b] of links){
+    const [x1,y1] = worldToScreen(a.x,a.y);
+    const [x2,y2] = worldToScreen(b.x,b.y);
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--edge-soft');
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    const mx = (x1+x2)/2;
+    ctx.bezierCurveTo(mx,y1,mx,y2,x2,y2);
+    ctx.stroke();
+  }
+  // Increment pulsing counter for hover animation.  This creates a subtle
+  // breathing effect on the hovered node when drawing frames.
+  hoverPulse += 0.1;
+  if (hoverPulse > Math.PI * 2) hoverPulse -= Math.PI * 2;
+  for (const n of vis){
+    const {w,h,lines,isChip} = measureNode(n);
+    const [sx,sy] = worldToScreen(n.x,n.y);
+    const cat = nodeCategoryIndex(n);
+    let fill, stroke, text;
+    const themeDark = document.documentElement.getAttribute('data-theme')!=='light';
+    if (n===root){
+      fill = themeDark? "#111827" : "#ffffff";
+      stroke = themeDark? "#334155" : "#cbd5e1";
+      text = getComputedStyle(document.documentElement).getPropertyValue('--ink');
+    } else if (n.depth===1){
+      const base = ringColour(cat);
+      const rgb = hexToRgb(base);
+      const tint = themeDark? `rgba(${rgb.r},${rgb.g},${rgb.b},0.22)` : `rgba(${rgb.r},${rgb.g},${rgb.b},0.18)`;
+      fill = tint;
+      stroke = themeDark? "rgba(255,255,255,0.12)" : "#c9d4ea";
+      text = getComputedStyle(document.documentElement).getPropertyValue('--ink');
+    } else {
+      const base = ringColour(cat);
+      const rgb = hexToRgb(base);
+      if (themeDark){
+        fill = `rgba(${rgb.r},${rgb.g},${rgb.b},0.08)`;
+        stroke = `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`;
+      } else {
+        fill = `rgba(${rgb.r},${rgb.g},${rgb.b},0.12)`;
+        stroke = `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`;
+      }
+      text = getComputedStyle(document.documentElement).getPropertyValue('--ink');
+    }
+    // If this node is hovered, apply a subtle pulse animation: scale up and
+    // lighten the fill and stroke slightly.  The star of the show is the
+    // accent colour as stroke to draw the eye.  The pulsation uses the
+    // hoverPulse counter to compute a small scaling factor between 1.0 and 1.05.
+    let pulseScale = 1;
+    if (n === hoverNode){
+      // On hover, lighten the node slightly and apply the accent colour
+      // to the stroke, but avoid oscillating scale.  A single fixed
+      // enlargement (1.04×) keeps the node legible without causing
+      // continuous breathing motions or sudden zooming effects.
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+      fill = lightenColor(fill, 0.15);
+      stroke = accent || stroke;
+      pulseScale = 1.04;
+    }
+    // Set shadow if this node matches the search term
+    if (n.match){
+      ctx.shadowColor = "rgba(234,179,8,0.6)";
+      ctx.shadowBlur = 24*scale;
+    } else {
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+    }
+    // Compute scaled width and height for pulsing effect
+    const ww = w * scale * pulseScale;
+    const hh = h * scale * pulseScale;
+    const rx = (isChip? 18*scale : 12*scale) * pulseScale;
+    const x = sx - ww/2;
+    const y = sy - hh/2;
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = (n===root? 2.2: 1.4) * scale;
+    roundRect(ctx,x,y,ww,hh,rx);
+    ctx.fill(); ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.fillStyle = text;
+    ctx.font = (isChip? 14*scale*pulseScale : 14*scale*pulseScale) + "px Segoe UI, Arial, sans-serif";
+    ctx.textBaseline="middle";
+    if (isChip){
+      ctx.textAlign="center";
+      ctx.fillText(n.name, sx, sy);
+    } else {
+      ctx.textAlign="left";
+      let ty = y + 10*scale*pulseScale + 9;
+      for (const L of lines){
+        ctx.fillText(L, x + 12*scale*pulseScale, ty);
+        ty += 18*scale*pulseScale;
+      }
+    }
+    // Update hit box to reflect the scaled rectangle for accurate interaction
+    n._hit = {x,y,w:ww,h:hh, sx,sy};
+  }
+  ctx.restore();
+
+  // Update the overview minimap after drawing
+  if (typeof updateMinimap === 'function') {
+    updateMinimap();
+  }
+}
+function roundRect(ctx,x,y,w,h,r){
+  const rr = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr,y);
+  ctx.lineTo(x+w-rr,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
+  ctx.lineTo(x+w,y+h-rr);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+  ctx.lineTo(x+rr,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
+  ctx.lineTo(x,y+rr);
+  ctx.quadraticCurveTo(x,y,x+rr,y);
+  ctx.closePath();
+}
+function hexToRgb(hex){ const h=hex.replace('#',''); const n=parseInt(h,16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Layout helper: position the children of a node using the precomputed
+// angleHome values.  Each node stores an angleHome (its polar orientation
+// relative to its parent) and an angularSpan (the size of the sector
+// allocated to its subtree).  This helper computes a suitable radial
+// distance based on the combined widths of the children and the link
+// distance, then positions each child along its angleHome.  Because the
+// angles are assigned hierarchically during initialisation, subtrees will
+// expand in non‑overlapping sectors reminiscent of a mycelium or root
+// structure.
+function layoutChildren(n){
+  if (!n.children || n.children.length === 0) return;
+  const m = n.children.length;
+  // Base link distance between parent and a child. Use the first child as a
+  // representative sample. This sets the minimum radius for the ring.
+  // Base link distance between parent and a child. Use the first child as a
+  // representative sample. This sets the minimum radius for the ring.
+  const base = linkDistance(n, n.children[0]);
+  // Compute total width of children to approximate the necessary arc length. A
+  // larger total width results in a slightly increased radius to reduce
+  // immediate overlaps.  We divide by 2π to approximate circumference and
+  // add a small padding.
+  // Compute widths of children to derive a dynamic radius.  We sum all
+  // widths and track the maximum width.  The average width will later
+  // determine how much arc length each child needs.
+  let sumWidths = 0, maxWidth = 0;
+  n.children.forEach(ch => {
+    const metrics = measureNode(ch);
+    sumWidths += metrics.w;
+    if (metrics.w > maxWidth) maxWidth = metrics.w;
+  });
+  // Use the maximum width among children rather than the average to
+  // derive a more generous ring radius.  Wider labels require more arc
+  // length to remain readable.  We also take into account the number
+  // of children relative to the allocated angular span to ensure that
+  // crowded sectors get pushed outward.  The constants here have been
+  // increased to further separate final leaves and avoid overlap.
+  const avgWidth = sumWidths / m;
+  const span = n.angularSpan || (2 * Math.PI);
+  // Dynamic radius: based on the maximum width and number of children.
+  // Increase the ring radius further for nodes with many children.  The
+  // maximum width multiplied by the number of children, divided by the
+  // angular span, provides a baseline for the arc length.  We add a
+  // generous constant to push crowded clusters outward.  These values can
+  // be tuned based on the dataset; larger constants yield more spacing
+  // and reduce label overlap at the cost of a larger overall map.
+  // Compute ring radius based on the total label width of all children.
+  // The arc length of the sector (r * span) must be at least the sum of
+  // child widths to avoid overlap.  We therefore divide the total
+  // widths by the angular span to approximate a suitable radius, then
+  // add a constant to provide padding.  This scales dynamically with
+  // both the number of children and their label lengths.
+  // Compute a generous ring radius.  We divide the total width by the
+  // available angular span to approximate the required circumference
+  // for placing all children without overlap, then multiply by a
+  // factor to further separate large clusters.  An extra constant
+  // padding ensures breathing space even for small groups.  These
+  // values have been increased to spread out the final leaves and
+  // accommodate very long labels.
+  // Increase the dynamic radius multiplier and padding to further
+  // separate children with long labels.  A higher multiplier on the
+  // total widths and a larger constant push crowded clusters farther
+  // outwards.  This change improves readability for deep branches.
+  // Adjust the additional radius so that long labels still get breathing
+  // space but the connecting lines are not excessively long.  A lower
+  // multiplier and smaller padding shorten edges, especially for
+  // overview leaves.  The constant is tuned based on typical label
+  // widths in the data set.
+  // Dynamically scale the additional radius based on the total widths
+  // relative to the available angular span.  A smaller multiplier on
+  // sumWidths produces a tighter ring, while a moderate constant
+  // provides baseline spacing.  This reduces excessively long
+  // connectors when navigating deep branches.
+  // Compute a tighter additional radius for this level.  A smaller
+  // multiplier on sumWidths and a lower constant shorten edges and
+  // keep deep leaves closer to their ancestors.  These values were
+  // tuned to balance readability and compactness on both desktop and
+  // mobile devices.
+  // Compute a compact additional radius.  A smaller multiplier on the
+  // total width and a lower constant shorten edges and keep deep leaves
+  // closer to their ancestors.  These values were tuned to minimise
+  // long connectors when navigating deep branches.
+  // Compute a compact additional radius.  We bound the dynamic radius to
+  // prevent very long connectors when child labels are exceptionally wide.
+  // A smaller multiplier on the total width and a lower constant shorten
+  // edges; the radius is capped at three times the base link distance.
+  const calcAdd = (sumWidths / span) * 0.05 + 20;
+  // Cap the additional radius at 2.5× the base link distance to avoid
+  // extremely long connectors for wide clusters.
+  const additionalRadius = Math.min(calcAdd, base * 2.5);
+  // Reduce the depth factor even further so successive levels stay close
+  // to their parent.  A smaller value keeps the tree tight while still
+  // giving each generation its own ring.
+  const depthFactor = 20;
+  // Compute the base radial distance for the first ring.  This is the
+  // distance used when all children can fit comfortably on a single
+  // circle.  We omit the additional radius here and instead
+  // distribute it across rings below.  The depth factor pushes each
+  // level outward, while the link distance sets a minimum separation
+  // from the parent.
+  const distanceBase = base + (n.depth * depthFactor);
+
+  /*
+    If a node has many children, placing them all on a single ring can
+    produce overlapping labels.  To mitigate this, we spread siblings
+    across multiple concentric rings.  Each ring hosts up to a fixed
+    number of children (maxPerRing).  Outer rings get progressively
+    larger radii so their arc length increases and labels have more
+    room to breathe.
+
+    We choose a modest default of six children per ring; if there are
+    fewer children, they all occupy the first ring.  The number of
+    rings is computed from the total number of children.  A ring
+    spacing equal to the depth factor pushes each additional ring
+    outward by a fixed distance, keeping siblings on separate
+    orbits.  These constants can be tuned to taste: larger
+    maxPerRing values reduce the number of rings but increase
+    crowding; larger ringSpacing values create more separation
+    between rings.
+  */
+  const maxPerRing = 8;
+  const rings = Math.ceil(m / maxPerRing);
+
+  // Position each child according to its assigned angleHome and ring.
+  n.children.forEach((ch, idx) => {
+    const ringIndex = Math.floor(idx / maxPerRing);
+    // Distribute the additional radius evenly across the number of rings.
+    // The first ring uses 1/rings of the additional radius, the second
+    // ring uses 2/rings, etc.  This yields shorter connectors and
+    // avoids unnecessary extra spacing between rings.
+    const radius = distanceBase + additionalRadius * ((ringIndex + 1) / rings);
+    const angle = (typeof ch.angleHome === 'number') ? ch.angleHome : Math.atan2(ch.y - n.y, ch.x - n.x);
+    ch.x = n.x + radius * Math.cos(angle);
+    ch.y = n.y + radius * Math.sin(angle);
+    // Reset velocity so children don't drift during physics relaxation
+    ch.vx = 0;
+    ch.vy = 0;
+  });
+  // Recursively lay out open children to propagate the radial spacing deeper
+  // into the tree.  Without this recursion, grandchildren retain positions
+  // from previous layouts, which can cause asymmetric expansion.  By
+  // repositioning open subtrees here, each level fans out within its
+  // allocated sector, yielding a symmetrical, mycelium-like pattern.
+  n.children.forEach(ch => {
+    if (ch.open && ch.children && ch.children.length > 0) {
+      layoutChildren(ch);
+    }
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Interaction (pan/zoom/drag, click toggle, wheel smooth zoom)
+// ----------------------------------------------------------------------------
+// Track dragging state. When dragging a node or panning the canvas, we set these flags.
+let draggingCanvas=false, dragNode=null, dragStart=[0,0], grabStart=[0,0], lastMouse=[0,0];
+// To prevent inadvertent expansion on drag, record whether the pointer moved beyond a small
+// threshold while a button is held. If true, the click handler will skip toggling.
+let movedDuringDrag = false;
+// Track if a node drag just occurred so that the subsequent click event can be suppressed.
+let justDraggedNode = false;
+// Record the mouse position at the beginning of a potential drag (mousedown)
+let mouseDownScreen = [0,0];
+// Track which node (if any) was pressed on mousedown. This allows us to
+// distinguish between clicking a node (to expand/collapse) and dragging it.  The
+// click handler will only toggle the node if the mouse went down and up on
+// the same node without significant movement.
+let downNode = null;
+canvas.addEventListener('mousedown',e=>{
+  const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
+  lastMouse=[x,y];
+  // Reset movement detection at the start of each mouse press
+  movedDuringDrag = false;
+  mouseDownScreen=[x,y];
+  const vis = collectVisible();
+  let target=null;
+  // find the node under the pointer
+  for (let i=vis.length-1;i>=0;i--){ const n=vis[i]; const h=n._hit; if (!h) continue; if (x>=h.x && x<=h.x+h.w && y>=h.y && y<=h.y+h.h){ target=n; break; } }
+  if (target){
+    dragNode=target; target.isDragging=true;
+    const [wx,wy] = screenToWorld(x,y);
+    target._grabDx = target.x - wx; target._grabDy = target.y - wy;
+    // remember which node was initially pressed; used to distinguish click vs drag
+    downNode = target;
+  } else {
+    draggingCanvas=true; dragStart=[x,y]; grabStart=[offsetX,offsetY]; canvas.classList.add('grabbing');
+    downNode = null;
+  }
+});
+window.addEventListener('mouseup',()=>{
+  // On mouseup, end any drag operations. If a node was being dragged and
+  // the pointer moved significantly (movedDuringDrag), set justDraggedNode
+  // so that the subsequent click does not toggle the node. Otherwise,
+  // leave justDraggedNode=false so a simple click toggles as expected.
+  if (dragNode){
+    dragNode.isDragging = false;
+    dragNode = null;
+    if (movedDuringDrag){
+      justDraggedNode = true;
+    }
+  }
+  draggingCanvas = false;
+  canvas.classList.remove('grabbing');
+  // Do not reset movedDuringDrag here; the click handler will do that on a true click.
+});
+canvas.addEventListener('mousemove',e=>{
+  const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
+  if (draggingCanvas){
+    const dx=(x - dragStart[0]) / scale, dy=(y - dragStart[1]) / scale;
+    offsetX = grabStart[0] + dx; offsetY = grabStart[1] + dy;
+    // flag as moved when panning beyond a small threshold
+    if (!movedDuringDrag){
+      const mdx = x - mouseDownScreen[0];
+      const mdy = y - mouseDownScreen[1];
+      // Use a larger threshold to reduce accidental toggles on minor movement when panning
+      // Increase threshold to reduce accidental toggles on small pointer movements
+      if (Math.abs(mdx) > 6 || Math.abs(mdy) > 6) movedDuringDrag = true;
+    }
+  } else if (dragNode){
+    const [wx,wy] = screenToWorld(x,y);
+    dragNode.x = wx + dragNode._grabDx;
+    dragNode.y = wy + dragNode._grabDy;
+    // flag as moved when dragging node beyond a small threshold
+    if (!movedDuringDrag){
+      const mdx = x - mouseDownScreen[0];
+      const mdy = y - mouseDownScreen[1];
+      // Use a larger threshold to reduce accidental toggles on minor movement
+      // Increase threshold to reduce accidental toggles on small pointer movements
+      if (Math.abs(mdx) > 6 || Math.abs(mdy) > 6) movedDuringDrag = true;
+    }
+  }
+});
+canvas.addEventListener('click',e=>{
+  // Determine which node (if any) the mouse is over on click
+  const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
+  let target=null;
+  const vis = collectVisible();
+  for (let i=vis.length-1;i>=0;i--){
+    const n=vis[i]; const h=n._hit; if (!h) continue;
+    if (x>=h.x && x<=h.x+h.w && y>=h.y && y<=h.y+h.h){ target=n; break; }
+  }
+  // Determine if the pointer moved significantly since the press. Use the stored mouseDownScreen to avoid relying on mousemove events (which may not fire in all drag simulations).
+  const dxMove = x - mouseDownScreen[0];
+  const dyMove = y - mouseDownScreen[1];
+  // Increase the movement threshold to better distinguish between a
+  // deliberate click and a slight pointer wobble.  A higher threshold
+  // makes it easier to expand/collapse nodes on touchpads where the
+  // cursor may move a few pixels during a click.
+  // Increase the movement threshold further to ensure clicks on
+  // first‑level categories are interpreted as clicks even on
+  // touchpads with jitter.  A threshold of 12px allows for minor
+  // pointer drift.
+  const moved = Math.abs(dxMove) > 12 || Math.abs(dyMove) > 12;
+  // If a node drag just occurred, skip toggling entirely to prevent accidental expansion
+  if (justDraggedNode){
+    justDraggedNode = false;
+  } else {
+    // Toggle only if there was no significant movement and the click started and ended on the same node
+    if (!moved && downNode && target && target === downNode){
+      toggleNode(target,true);
+      // Center the view on the clicked node without animation to avoid
+      // jarring jumps.  After focusing, let the layout relax briefly
+      // before freezing to avoid long drifts.
+      focusTo(target, scale, false);
+      kickPhysics();
+    }
+  }
+  // Always reset state
+  downNode = null;
+  movedDuringDrag = false;
+});
+canvas.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  const r = canvas.getBoundingClientRect(); const cx=e.clientX-r.left, cy=e.clientY-r.top;
+  const [wx,wy] = screenToWorld(cx,cy);
+  // Use a more aggressive zoom factor to make zooming out/in quicker.  A
+  // larger factor reduces the number of scrolls needed to reach the
+  // desired scale.  The easing duration is set by WHEEL_EASE_MS.
+  // Use a more aggressive zoom factor to make zooming faster and reduce
+  // the number of scrolls needed.  A smaller factor on zoom out and a
+  // larger factor on zoom in help reach the desired scale quickly.
+  // Use a more aggressive zoom factor to improve responsiveness when
+  // scrolling on laptop trackpads or mobile devices.  A smaller
+  // factor on zoom out (deltaY>0) causes a larger decrease in scale,
+  // while a larger factor on zoom in speeds up zooming in.  This
+  // reduces the number of scrolls required to reach the desired
+  // magnification.
+  // Use a moderate zoom factor.  Smaller changes per scroll give finer control
+  // while still allowing quick zooming.  Values closer to 1 minimise abrupt
+  // jumps on sensitive trackpads.
+  const factor = (e.deltaY > 0 ? 0.85 : 1.15);
+  const targetScale = clamp(scale * factor, MIN_ZOOM, MAX_ZOOM);
+  animateZoom(targetScale, wx, wy, WHEEL_EASE_MS);
+}, { passive: false });
+function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+function animateZoom(targetScale, anchorWx, anchorWy, ms){
+  const startScale = scale;
+  const startOffX = offsetX, startOffY = offsetY;
+  const startTime = performance.now();
+  const ease = t=> t<.5 ? 2*t*t : -1+(4-2*t)*t;
+  function step(now){
+    const t = Math.min(1,(now-startTime)/ms);
+    const s = startScale + (targetScale-startScale)*ease(t);
+    const [cx,cy] = worldToScreen(anchorWx,anchorWy);
+    offsetX = (cx/s) - anchorWx; offsetY = (cy/s) - anchorWy; scale=s;
+    if (t<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function toggleNode(n, animated){
+  if (n.children.length===0) return;
+  const opening = !n.open;
+  n.open = opening;
+  if (opening){
+    // Automatically open the immediate children when a node is expanded.
+    // Without this, children remain collapsed and the user must click
+    // each child individually, which makes exploration cumbersome.  We
+    // leave deeper descendants closed so users can drill down as desired.
+    n.children.forEach(ch => { ch.open = true; });
+    /*
+      When opening a node, we need to reallocate angular sectors for the
+      newly visible subtree.  Without doing so, children and deeper
+      descendants retain their previous angleHome values and can overlap
+      each other or extend into neighbouring sectors.  By calling
+      assignAngles(n), each child receives an equal share of its
+      parent's angularSpan and gets a fresh angleHome value.  After
+      assigning angles, layoutChildren(n) positions all open
+      descendants using those angles.  This ensures a tidy, symmetric
+      expansion every time and prevents entangled leaves.
+    */
+    assignAngles(n);
+    layoutChildren(n);
+    // Initialise appearance state for the children so they fade in
+    n.children.forEach(ch => {
+      ch.appear = 0;
+    });
+    // Animate the appearance quickly for a snappy feel (180 ms)
+    const t0 = performance.now();
+    (function anim(time){
+      const t = Math.min(1,(time - t0) / 180);
+      n.children.forEach(ch => ch.appear = t);
+      if (t < 1 && n.open) requestAnimationFrame(anim);
+    })(t0);
+    // Let physics run briefly to settle the new layout, then freeze
+    kickPhysics();
+  }
+}
+const qElem = document.getElementById('q'), resultsElem = document.getElementById('results');
+let currentFocusNode=null;
+let viewStack=[];
+function snapshotView(){
+  const openMap={}; walk(root,n=>openMap[n.id]=n.open);
+  return {offsetX,offsetY,scale, openMap};
+}
+function restoreView(v){
+  offsetX=v.offsetX; offsetY=v.offsetY; scale=v.scale;
+  walk(root,n=>{ n.open = !!v.openMap[n.id]; });
+}
+qElem.addEventListener('input', ()=>{
+  const term = qElem.value.trim().toLowerCase();
+  resultsElem.innerHTML="";
+  let first=null;
+  walk(root,n=>{
+    n.match = !!term && n.name.toLowerCase().includes(term);
+    if (n.match && !first) first=n;
+  });
+  if (term){
+    const list=[]; walk(root,n=>{ if(n.match) list.push(n); });
+    list.slice(0,60).forEach(n=>{
+      const div=document.createElement('div'); div.className='hit'; div.textContent=n.name;
+      div.onclick=()=>jumpToMatch(n);
+      resultsElem.appendChild(div);
+    });
+    currentFocusNode = first || null;
+  } else {
+    currentFocusNode = null;
+  }
+});
+qElem.addEventListener('keydown', (e)=>{
+  if (e.key==='Enter'){
+    if (currentFocusNode){ jumpToMatch(currentFocusNode); }
+  }
+});
+function openPathOnly(n){
+  walk(root,x=>{ x.open=false; });
+  const pathNodes = pathTo(n);
+  // Mark nodes along the path as open
+  pathNodes.forEach(x=> x.open=true);
+  // Radially lay out children of each node along the opened path.  This
+  // minimises overlap when jumping directly to a deep node via search.
+  pathNodes.forEach(x => {
+    if (x.children && x.children.length>0) {
+      // Reassign angular spans for this node and all descendants.  This
+      // ensures that any previously hidden children get fresh angles
+      // allocated in the parent's sector before positioning.  Without
+      // updating angles, newly opened branches may overlap old layouts.
+      assignAngles(x);
+      layoutChildren(x);
+    }
+  });
+
+  // After laying out the opened path, allow physics to run briefly to
+  // settle the arrangement, then freeze.  This avoids jitter while
+  // preserving the new configuration.
+  kickPhysics();
+}
+function jumpToMatch(n){
+  viewStack.push(snapshotView());
+  openPathOnly(n);
+  // Instantly centre on the target without animation to avoid a jarring
+  // jump.  Use the current zoom level so the scale remains unchanged.
+  focusTo(n, scale, false);
+  // Allow the layout to relax after jumping to a search result, then freeze.
+  kickPhysics();
+}
+document.getElementById('backBtn').onclick=()=>{
+  const v=viewStack.pop(); if (!v) return;
+  restoreView(v);
+};
+document.getElementById('centerBtn').onclick=()=>centerOnRoot(true);
+document.getElementById('expandBtn').onclick=()=>{
+  // Expand every node in the tree
+  walk(root, n => { n.open = true; });
+  // Reassign angles for all descendants starting from macros.  Although angles
+  // were precomputed during initialisation, calling assignAngles again ensures
+  // that any dynamic changes (e.g. after altering the number of visible macro
+  // buckets) are reflected across the tree.  We only need to process the
+  // direct children of the root because assignAngles recurses downwards.
+  root.children.forEach(macro => assignAngles(macro));
+  // After expanding everything and recalculating angles, reposition every
+  // node's children according to their assigned angles.  This produces a
+  // uniformly spaced, mycelium‑like layout across the entire map.
+  walk(root,n=>{
+    if (n.open && n.children && n.children.length>0) layoutChildren(n);
+  });
+
+  // After expanding and repositioning every node, allow the layout to
+  // settle briefly before freezing to eliminate post‑expansion drift.
+  kickPhysics(1500);
+};
+// Collapse All handled below with layout and physics adjustments
+// Freeze the layout after collapsing to keep macros stable
+document.getElementById('collapseBtn').onclick=()=>{
+  walk(root,n=>{ if(n!==root) n.open=false; });
+  // After collapsing, recalculate positions of first ring for consistency
+  root.children.forEach(macro => assignAngles(macro));
+  root.children.forEach(macro => layoutChildren(macro));
+  kickPhysics();
+};
+const themeBtnElem = document.getElementById('themeBtn');
+themeBtnElem.onclick=()=>{
+  const html=document.documentElement;
+  const light = html.getAttribute('data-theme')==='light';
+  html.setAttribute('data-theme', light? 'dark':'light');
+  themeBtnElem.textContent = light? 'Light':'Dark';
+};
+const bucketTagsElem = document.getElementById('bucketTags');
+root.children.forEach((n,i)=>{
+  const s=document.createElement('span'); s.className='pill'; s.textContent=n.name;
+  s.style.borderColor = ringColour(i);
+  s.onclick=()=>focusTo(n, 1.05, true);
+  bucketTagsElem.appendChild(s);
+});
+function exportPNG(mult){
+  const w=canvas.width*mult, h=canvas.height*mult;
+  const off = document.createElement('canvas'); off.width=w; off.height=h;
+  const octx = off.getContext('2d');
+  const old = {scale, offsetX, offsetY};
+  const targetScale = scale*mult;
+  octx.save();
+  const saveCtx=ctx, saveCanvas=canvas;
+  (function swap(){
+    canvas.width=w; canvas.height=h;
+    scale = targetScale;
+    draw();
+    octx.drawImage(canvas, 0, 0);
+    canvas.width = saveCanvas.clientWidth; canvas.height = saveCanvas.clientHeight;
+    scale = old.scale;
+    draw();
+  })();
+  const a=document.createElement('a'); a.href=off.toDataURL('image/png'); a.download='infosec_universe_'+mult+'x.png'; a.click();
+}
+document.getElementById('png1').onclick=()=>exportPNG(1);
+document.getElementById('png2').onclick=()=>exportPNG(2);
+document.getElementById('png4').onclick=()=>exportPNG(4);
+window.addEventListener('keydown', e=>{
+  const step = 60/scale;
+  if (e.key==='ArrowUp' || e.key==='w') offsetY += step;
+  if (e.key==='ArrowDown' || e.key==='s') offsetY -= step;
+  if (e.key==='ArrowLeft' || e.key==='a') offsetX += step;
+  if (e.key==='ArrowRight' || e.key==='d') offsetX -= step;
+  if (e.key==='+'){ animateZoom(clamp(scale*1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
+  if (e.key==='-'){ animateZoom(clamp(scale/1.1,MIN_ZOOM,MAX_ZOOM), 0,0, 240); }
+  if (e.key==='Enter' && currentFocusNode){ toggleNode(currentFocusNode,true); }
+  if (e.key.toLowerCase()==='f' && currentFocusNode){ focusTo(currentFocusNode, scale, true); }
+  // Backspace goes to previous view (same as Back button)
+  if (e.key === 'Backspace'){
+    const v = viewStack.pop();
+    if (v){
+      restoreView(v);
+      // Update breadcrumb for the current focused node (pick first visible if no focus)
+      let n = null;
+      if (currentFocusNode && visible(currentFocusNode)) {
+        n = currentFocusNode;
+      } else {
+        // find the first visible macro bucket or root as fallback
+        const vis = collectVisible();
+        n = vis.length > 0 ? vis[0] : root;
+      }
+      updateBreadcrumb(n);
+    }
+  }
+});
+function focusTo(n, targetScale=1, animated=true){
+  const desiredX = (canvas.width/2)/targetScale - n.x;
+  const desiredY = (canvas.height/2)/targetScale - n.y;
+  if (!animated){ offsetX=desiredX; offsetY=desiredY; scale=targetScale; return; }
+  const sx0=offsetX, sy0=offsetY, sc0=scale;
+  const dx=desiredX-sx0, dy=desiredY-sy0, ds=targetScale-sc0;
+  const t0=performance.now();
+  const ease = t=> t<.5? 2*t*t : -1+(4-2*t)*t;
+  (function anim(ts){
+    const t = Math.min(1,(ts-t0)/240);
+    offsetX = sx0 + dx*ease(t);
+    offsetY = sy0 + dy*ease(t);
+    scale   = sc0 + ds*ease(t);
+    if (t<1) requestAnimationFrame(anim);
+  })(t0);
+}
+let lastTime = performance.now();
+// Physics can be toggled on/off via the Freeze button.  When disabled,
+// tick() is skipped so node positions remain fixed.  This is useful for
+// reading and presenting static layouts.
+let physicsEnabled = true;
+
+// Automatically enable and disable physics for a short period.  When the
+// graph needs to rearrange (e.g. after expanding a node or performing a
+// search), call kickPhysics(ms).  It enables physics immediately and then
+// disables it again after the specified duration (default 1000 ms).  This
+// keeps the layout fluid for a moment while settling into place, then
+// freezes it so there is no continued drift during reading.
+function kickPhysics(ms = 800){
+  physicsEnabled = true;
+  if (kickPhysics.timer) clearTimeout(kickPhysics.timer);
+  kickPhysics.timer = setTimeout(() => {
+    physicsEnabled = false;
+  }, ms);
+}
+function loop(now){
+  const dt = Math.min(0.05, (now-lastTime)/1000); lastTime=now;
+  if (physicsEnabled){
+    tick(dt);
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+setTimeout(()=>{
+  // Assign fresh angular spans and positions for the initial view.  This
+  // ensures macro buckets are evenly spaced around the root when only
+  // the first level is open.  Without this call, angleHome values
+  // inherited from previous layouts may place macros off‑screen.
+  root.children.forEach(macro => assignAngles(macro));
+  root.children.forEach(macro => layoutChildren(macro));
+  centerOnRoot(true);
+  // Kick physics on initial load so the partially expanded map settles,
+  // then freeze.  Shorter duration improves responsiveness on initial
+  // render.
+  kickPhysics(1200);
+}, 0);
+
+// ----------------------------------------------------------------------------
+// UI helpers: breadcrumb, filters, favourites, tooltip, minimap, help modal, sidebar collapse
+// ----------------------------------------------------------------------------
+
+// Finds a node by its id. We'll use this when rendering favourites from stored IDs.
+function findNodeById(id){ let found=null; walk(root,n=>{ if(n.id===id) found=n; }); return found; }
+
+// Update breadcrumb trail based on a node's path
+function updateBreadcrumb(n){
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = '';
+  if (!n) return;
+  const path = pathTo(n);
+  path.forEach((node, idx) => {
+    const span = document.createElement('span');
+    span.textContent = node.name;
+    span.style.cursor = 'pointer';
+    span.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+    span.style.marginRight = '6px';
+    span.onclick = () => { focusTo(node, scale, true); updateBreadcrumb(node); };
+    bc.appendChild(span);
+    if (idx < path.length -1){
+      const sep = document.createElement('span');
+      sep.textContent = '›';
+      sep.style.marginRight = '6px';
+      sep.style.color = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+      bc.appendChild(sep);
+    }
+  });
+  // Add a favourite star at the end of the breadcrumb to toggle this node
+  const star = document.createElement('span');
+  star.textContent = favourites.indexOf(n.id) >= 0 ? '★' : '☆';
+  star.style.marginLeft = '4px';
+  star.style.cursor = 'pointer';
+  star.style.fontSize = '16px';
+  star.onclick = (ev) => { ev.stopPropagation(); toggleFavourite(n); updateBreadcrumb(n); };
+  bc.appendChild(star);
+}
+
+// Render Filters UI for macro buckets
+function updateFiltersUI(){
+  const filtersElem = document.getElementById('filters');
+  if (!filtersElem) return;
+  filtersElem.innerHTML = '';
+  root.children.forEach(n => {
+    const label = document.createElement('label');
+    label.style.display = 'block';
+    label.style.fontSize = '12px';
+    label.style.cursor = 'pointer';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = macroVisibility[n.id];
+    cb.style.marginRight = '6px';
+    cb.onchange = () => { macroVisibility[n.id] = cb.checked; };
+    const span = document.createElement('span');
+    span.textContent = n.name;
+    label.appendChild(cb);
+    label.appendChild(span);
+    filtersElem.appendChild(label);
+  });
+}
+
+// Save favourites to localStorage
+function saveFavourites(){
+  try { localStorage.setItem('infosec_favourites', JSON.stringify(favourites)); } catch(e) {}
+}
+
+// Toggle favourite state for a node
+function toggleFavourite(n){
+  const idx = favourites.indexOf(n.id);
+  if (idx >= 0){ favourites.splice(idx, 1); } else { favourites.push(n.id); }
+  saveFavourites(); updateFavouritesUI();
+}
+
+// Render favourites list
+function updateFavouritesUI(){
+  const favElem = document.getElementById('favorites');
+  if (!favElem) return;
+  favElem.innerHTML = '';
+  favourites.forEach(id => {
+    const node = findNodeById(id);
+    if (!node) return;
+    const div = document.createElement('div');
+    div.textContent = node.name;
+    div.className = 'hit';
+    div.style.fontSize = '12px';
+    div.style.background = 'var(--panel)';
+    // When clicking a favourite, expand the path to the node first so that it
+    // becomes visible. Then focus and update the breadcrumb. Without
+    // openPathOnly, nodes might remain collapsed and the favourite would
+    // seemingly do nothing on refresh.
+    div.onclick = () => {
+      openPathOnly(node);
+      // Instantly centre on the favourite without animation so that
+      // returning to a saved node does not cause a jump.  Retain the
+      // current zoom level.
+      focusTo(node, scale, false);
+      updateBreadcrumb(node);
+      // Kick physics briefly to settle the layout and then freeze.
+      kickPhysics();
+    };
+    favElem.appendChild(div);
+  });
+}
+
+// Render subcategory quick links (depth‑2 categories).  These pills make it
+// easy to jump directly to common subdomains without typing in the search
+// field.  Clicking a pill expands just that branch and recentres the view.
+function updateSubFiltersUI(){
+  const subElem = document.getElementById('subFilters');
+  if (!subElem) return;
+  subElem.innerHTML = '';
+  // Iterate over each macro bucket and its immediate children (depth‑2 categories)
+  root.children.forEach((macro) => {
+    macro.children.forEach((child) => {
+      const pill = document.createElement('span');
+      pill.className = 'sub-pill';
+      // Colour the pill border according to its macro bucket for orientation
+      pill.style.borderColor = ringColour(macro.ringIndex);
+      pill.textContent = child.name;
+      pill.onclick = () => {
+        openPathOnly(child);
+        // Instantly centre on the subcategory without animation to avoid
+        // a zoom or jump effect.  Keep the current scale so the view
+        // remains consistent.
+        focusTo(child, scale, false);
+        updateBreadcrumb(child);
+        // Kick physics briefly after jumping to a subcategory so the layout
+        // settles quickly and freezes.
+        kickPhysics();
+      };
+      subElem.appendChild(pill);
+    });
+  });
+}
+
+// Real‑time alert feed.  Fetches the latest CVEs from a public API via a
+// permissive proxy.  If the request fails (likely due to CORS or network
+// restrictions), falls back to a static sample list.  Each alert shows the
+// CVE identifier and a truncated summary.  Users can click the refresh
+// button to reload the feed.
+// Removed real‑time alert feed: function stub replaced with no‑op.
+function fetchRealTimeFeed(){
+  // Intentionally empty. Real‑time alerts have been removed.
+}
+
+// Tooltip handling: show/hide
+const tooltipElem = document.getElementById('tooltip');
+function showTooltip(n, pageX, pageY){
+  if (!tooltipElem || !n) return;
+  // Clear previous content
+  tooltipElem.innerHTML = '';
+  tooltipElem.style.display = 'block';
+  // Node name (bold)
+  const title = document.createElement('div');
+  title.textContent = n.name;
+  title.style.fontWeight = '600';
+  title.style.marginBottom = '4px';
+  tooltipElem.appendChild(title);
+  // Full path (excluding root for brevity)
+  const pathNodes = pathTo(n).slice(1); // skip root
+  if (pathNodes.length > 1){
+    const pathDiv = document.createElement('div');
+    pathDiv.style.color = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+    pathDiv.style.fontSize = '11px';
+    pathDiv.style.marginBottom = '4px';
+    pathDiv.textContent = pathNodes.map(node => node.name).join(' › ');
+    tooltipElem.appendChild(pathDiv);
+  }
+  // Children count
+  if (n.children && n.children.length > 0){
+    const countDiv = document.createElement('div');
+    countDiv.style.fontSize = '11px';
+    countDiv.style.color = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+    countDiv.textContent = `${n.children.length} child${n.children.length===1?'':'ren'}`;
+    tooltipElem.appendChild(countDiv);
+  }
+  // Favourite star toggler within tooltip
+  const starDiv = document.createElement('span');
+  starDiv.textContent = favourites.indexOf(n.id) >= 0 ? '★' : '☆';
+  starDiv.style.cursor = 'pointer';
+  starDiv.style.marginLeft = '8px';
+  starDiv.style.fontSize = '14px';
+  starDiv.onclick = (ev) => {
+    ev.stopPropagation();
+    toggleFavourite(n);
+    // Update star in tooltip and breadcrumb after toggling
+    starDiv.textContent = favourites.indexOf(n.id) >= 0 ? '★' : '☆';
+    updateBreadcrumb(n);
+  };
+  // Append star to title line
+  title.appendChild(starDiv);
+  // Position tooltip near the cursor, offset to avoid covering the pointer
+  tooltipElem.style.left = (pageX + 12) + 'px';
+  tooltipElem.style.top = (pageY + 12) + 'px';
+}
+function hideTooltip(){ if (tooltipElem) tooltipElem.style.display = 'none'; }
+
+// Mini‑map update. Draw small representation of nodes and a viewport rectangle. Save bounds for interaction.
+function updateMinimap(){
+  const mini = document.getElementById('minimap');
+  if (!mini) return;
+  const ctxMini = mini.getContext('2d');
+  const nodes = collectVisible();
+  if (nodes.length === 0) return;
+  // Compute bounding box of all visible nodes
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  nodes.forEach(n => {
+    if (n.x < minX) minX = n.x;
+    if (n.x > maxX) maxX = n.x;
+    if (n.y < minY) minY = n.y;
+    if (n.y > maxY) maxY = n.y;
+  });
+  const margin = 80;
+  minX -= margin; maxX += margin; minY -= margin; maxY += margin;
+  const worldW = maxX - minX, worldH = maxY - minY;
+  const cw = mini.width, ch = mini.height;
+  const scaleFactor = Math.min(cw/worldW, ch/worldH);
+  const offsetXMini = (cw - worldW*scaleFactor)/2;
+  const offsetYMini = (ch - worldH*scaleFactor)/2;
+  // store bounds for interaction
+  miniMapBounds = {minX, minY, scale: scaleFactor, offsetX: offsetXMini, offsetY: offsetYMini};
+  // clear
+  ctxMini.clearRect(0,0,cw,ch);
+  // draw nodes as small coloured dots
+  nodes.forEach(n => {
+    const cat = nodeCategoryIndex(n);
+    const base = ringColour(cat);
+    ctxMini.fillStyle = base;
+    const x = offsetXMini + (n.x - minX) * scaleFactor;
+    const y = offsetYMini + (n.y - minY) * scaleFactor;
+    ctxMini.beginPath();
+    ctxMini.arc(x, y, 3, 0, Math.PI*2);
+    ctxMini.fill();
+  });
+  // draw viewport rectangle (current view bounds)
+  const tl = screenToWorld(0, 0);
+  const br = screenToWorld(canvas.width, canvas.height);
+  const vw = br[0] - tl[0];
+  const vh = br[1] - tl[1];
+  const vx = offsetXMini + (tl[0] - minX) * scaleFactor;
+  const vy = offsetYMini + (tl[1] - minY) * scaleFactor;
+  const vwMini = vw * scaleFactor;
+  const vhMini = vh * scaleFactor;
+  ctxMini.strokeStyle = 'rgba(234,179,8,0.8)';
+  ctxMini.lineWidth = 2;
+  ctxMini.strokeRect(vx, vy, vwMini, vhMini);
+}
+
+// Mini‑map interaction: drag on minimap to recenter main view
+let draggingMini = false;
+document.getElementById('minimap').addEventListener('mousedown', (e) => {
+  draggingMini = true;
+  handleMiniDrag(e);
+});
+document.getElementById('minimap').addEventListener('mousemove', (e) => {
+  if (draggingMini) handleMiniDrag(e);
+});
+window.addEventListener('mouseup', () => { draggingMini = false; });
+function handleMiniDrag(e){
+  if (!miniMapBounds) return;
+  const rect = document.getElementById('minimap').getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  // convert mini coords back to world coordinate in centre
+  const wx = (x - miniMapBounds.offsetX)/miniMapBounds.scale + miniMapBounds.minX;
+  const wy = (y - miniMapBounds.offsetY)/miniMapBounds.scale + miniMapBounds.minY;
+  // set offset so that this world point is at the centre of main view
+  offsetX = (canvas.width/2)/scale - wx;
+  offsetY = (canvas.height/2)/scale - wy;
+}
+
+// Sidebar collapse toggle
+document.getElementById('toggleSidebarBtn').onclick = () => {
+  const appElem = document.querySelector('.app');
+  appElem.classList.toggle('collapsed');
+  // Update the toggle button arrow to indicate the current state and
+  // show/hide the reopen overlay accordingly.
+  const btn = document.getElementById('toggleSidebarBtn');
+  const reopenBtn = document.getElementById('sidebarReopenBtn');
+  if (appElem.classList.contains('collapsed')){
+    btn.textContent = '›';
+    if (reopenBtn) {
+      reopenBtn.style.display = 'block';
+      reopenBtn.textContent = '⟩';
+    }
+  } else {
+    btn.textContent = '⟨';
+    if (reopenBtn) {
+      reopenBtn.style.display = 'none';
+      reopenBtn.textContent = '⟩';
+    }
+  }
+};
+
+// Help modal toggling
+document.getElementById('helpBtn').onclick = () => {
+  const modal = document.getElementById('helpModal');
+  modal.style.display = 'flex';
+};
+document.getElementById('helpCloseBtn').onclick = () => {
+  document.getElementById('helpModal').style.display = 'none';
+};
+window.addEventListener('keydown', (e) => {
+  if (e.key === '?'){
+    const modal = document.getElementById('helpModal');
+    modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+  }
+});
+
+// Initialise filters and favourites UI
+updateFiltersUI();
+updateFavouritesUI();
+updateSubFiltersUI();
+
+// Sidebar reopen button: when clicked, restore the sidebar and hide the
+// overlay.  Also update the main toggle arrow to reflect the state.
+const reopenButton = document.getElementById('sidebarReopenBtn');
+if (reopenButton){
+  reopenButton.onclick = () => {
+    const appElem = document.querySelector('.app');
+    if (appElem) appElem.classList.remove('collapsed');
+    const toggleBtn = document.getElementById('toggleSidebarBtn');
+    if (toggleBtn){ toggleBtn.textContent = '⟨'; }
+    reopenButton.style.display = 'none';
+  };
+}
+
+// Update breadcrumb on first load (root)
+updateBreadcrumb(root);
+
+// Real‑time alerts removed: no initialization required
+// const realtimeBtn = document.getElementById('realtimeRefreshBtn');
+// if (realtimeBtn){ realtimeBtn.onclick = () => fetchRealTimeFeed(); }
+// fetchRealTimeFeed();
+
+// -----------------------------------------------------------------------------
+// Motion control UI removed
+//
+// The force-directed graph now runs with fixed physics constants (SPRING_K,
+// REPULSION_K, DAMPING, etc.).  If you wish to customise motion behaviour,
+// adjust these constants near the top of this script.  Removing the slider
+// simplifies the interface while retaining the breathing animation on expand.
+
+// -----------------------------------------------------------------------------
+// Initial layout: fully expanded tree repositioning
+//
+// Because we set every node to open by default (via walk(root, n => { n.open = true; })),
+// the children retain whatever positions they had when initially created.  Without
+// recalculating angles and re‑laying out each subtree, the expanded map looks
+// cluttered and asymmetric.  Here we schedule a one‑time recalculation of
+// angular spans for all macros and radial positions for all open nodes.  This
+// produces the same mycelium‑style symmetry as when clicking “Expand All”.
+setTimeout(() => {
+  try {
+    // Reassign angles for all top‑level macro buckets.  Each macro gets an
+    // equal portion of the full circle.  assignAngles will recurse down and
+    // subdivide its sector among its children, so deeper levels inherit
+    // appropriate angleHome values.
+    root.children.forEach((macro) => {
+      assignAngles(macro);
+    });
+    // Radially lay out every open node’s children according to their
+    // angleHome.  This ensures the fully expanded tree starts in a neat,
+    // non‑overlapping configuration.  Without this call, many nodes remain
+    // clumped together near their parent from the initial random placement.
+    walk(root, n => {
+      if (n.open && n.children && n.children.length > 0) {
+        layoutChildren(n);
+      }
+    });
+  } catch(e) {
+    console.error('Initial layout error', e);
+  }
+}, 0);
+
+// Track hovered node and show tooltip
+canvas.addEventListener('mousemove', (ev) => {
+  if (draggingCanvas || dragNode) {
+    hideTooltip();
+    return;
+  }
+  // If pointer is over the tooltip itself, keep showing and do not update hoverNode
+  if (tooltipElem && tooltipElem.style.display !== 'none'){
+    const tr = tooltipElem.getBoundingClientRect();
+    if (ev.clientX >= tr.left && ev.clientX <= tr.right && ev.clientY >= tr.top && ev.clientY <= tr.bottom) {
+      return;
+    }
+  }
+  const rect = canvas.getBoundingClientRect();
+  const x = ev.clientX - rect.left;
+  const y = ev.clientY - rect.top;
+  const vis = collectVisible();
+  let found = null;
+  for (let i = vis.length - 1; i >= 0; i--) {
+    const n = vis[i]; const h = n._hit;
+    if (!h) continue;
+    if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h){ found = n; break; }
+  }
+  if (found){
+    hoverNode = found;
+    showTooltip(found, ev.pageX, ev.pageY);
+  } else {
+    hoverNode = null;
+    hideTooltip();
+  }
+});
+canvas.addEventListener('mouseleave', () => { hideTooltip(); });
+
+// When clicking on a node, also update breadcrumb
+// (we wrap the existing click handler: after toggling open, update breadcrumb)
+const originalClickHandler = canvas.onclick;
+canvas.addEventListener('click', (e) => {
+  // this listener runs after the default click handler toggles nodes
+  // find node if clicked and update breadcrumb
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const vis = collectVisible();
+  let target = null;
+  for (let i=vis.length-1;i>=0;i--){ const n=vis[i]; const h=n._hit; if(!h) continue; if(x>=h.x && x<=h.x+h.w && y>=h.y && y<=h.y+h.h){ target=n; break; } }
+  if (target){ updateBreadcrumb(target); }
+});
+
+// When focusing to a node (bucket tags or search), ensure breadcrumb is updated
+// We wrap focusTo to update breadcrumb automatically when called with a node
+const oldFocusTo = focusTo;
+focusTo = function(n, targetScale=1, animated=true){
+  oldFocusTo(n, targetScale, animated);
+  updateBreadcrumb(n);
+};
+</script>
+</body>
+</html>
