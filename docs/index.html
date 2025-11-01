@@ -8,7 +8,7 @@
 <link rel="preload" href="data/atlas.json" as="fetch" crossorigin="anonymous">
 <script src="app.js" defer></script>
 </head>
-<body data-feature-favorites="off">
+<body data-feature-favorites="on">
 <div class="app layout">
   <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation" title="Toggle navigation">☰</button>
   <div class="sidebar-left">
@@ -21,11 +21,15 @@
         <ul class="tree-list" id="outlineTree"></ul>
       </div>
       <div class="sr-only" aria-live="polite" id="outlineStatus"></div>
+      <section id="srOutline" class="sr-only" aria-label="Screen reader outline">
+        <h3>Screen reader outline</h3>
+        <div id="srOutlineTree"></div>
+      </section>
     </aside>
     <aside class="primary">
       <h1>Cybersecurity Atlas</h1>
       <div id="dataFreshness" class="muted" aria-live="polite"></div>
-      <div class="muted">Wheel = zoom • drag = pan • click to focus • use toggle ⊕/⊖ to expand • <span class="key">WASD</span> pan • <span class="key">←↑→↓</span> navigate • <span class="key">+</span>/<span class="key">-</span> zoom • <span class="key">Enter</span> toggle • <span class="key">F</span> refocus</div>
+      <div class="muted" id="canvasKeyboardHint">Wheel = zoom • drag = pan • click to focus • use toggle ⊕/⊖ to expand • <span class="key">WASD</span> or <span class="key">←↑→↓</span> pan • <span class="key">+</span>/<span class="key">-</span> zoom • <span class="key">H/J/K/L</span> navigate • <span class="key">Ctrl</span> + <span class="key">←↑→↓</span> navigate • <span class="key">Enter</span> toggle • <span class="key">F</span> refocus</div>
       <div class="row search-wrapper">
         <input id="q" type="search" placeholder="Search the atlas" autocomplete="off" aria-label="Search topics" />
         <div id="results" role="listbox" aria-label="Search suggestions" aria-expanded="false"></div>
@@ -59,7 +63,7 @@
         <button class="btn" id="toggleSidebarBtn" title="Collapse sidebar" style="margin-left:auto;">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <button class="btn" id="helpBtn" title="Keyboard shortcuts">
+        <button class="btn" id="helpBtn" title="Keyboard shortcuts" aria-haspopup="dialog" aria-controls="helpModal">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.09 9a3 3 0 1 1 5.91 1c0 2-3 2-3 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
       </div>
@@ -68,10 +72,17 @@
       <div id="breadcrumb" class="row"></div>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Filters</span></div>
-      <div id="filters" class="row"></div>
+      <div class="row helper-row">
+        <p class="helper-text" id="macroFilterHelp">Toggle macro buckets to hide large slices of the map while exploring. Your selections are remembered on this device.</p>
+        <button class="btn-link" id="clearFiltersBtn" type="button" aria-describedby="macroFilterHelp">Clear filters</button>
+      </div>
+      <div id="filters" class="row filter-list" aria-describedby="macroFilterHelp"></div>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M2 17l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Macro buckets</span></div>
       <div id="bucketTags" class="row"></div>
+
+      <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 7v5l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Sector legend</span></div>
+      <ul id="sectorLegend" class="sector-legend" aria-label="Macro sector legend"></ul>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35 10.45 20.03C5.4 15.36 2 12.27 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.77-3.4 6.86-8.45 11.54L12 21.35Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Synthetic overview nodes</span></div>
       <div id="overviewToggleRow" class="row"></div>
@@ -98,7 +109,10 @@
       <div id="subFilters" class="row"></div>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6-6 6 6M6 15l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Tags</span></div>
-      <div id="tagFilters" class="tag-list" aria-label="Tag filters"></div>
+      <div class="row helper-row">
+        <p class="helper-text" id="tagFilterHelp">Mix and match tags to spotlight related topics. Checked tags stay active the next time you open the atlas.</p>
+      </div>
+      <div id="tagFilters" class="tag-list filter-list" aria-label="Tag filters" aria-describedby="tagFilterHelp"></div>
     </aside>
   </div>
   <!-- Reopen button appears when the sidebar is collapsed.  It floats on the
@@ -115,7 +129,7 @@
         <span>Lens</span>
       </button>
     </div>
-    <canvas id="c"></canvas>
+    <canvas id="c" tabindex="0" role="application" aria-label="Interactive atlas canvas" aria-describedby="canvasKeyboardHint"></canvas>
     <!-- Overview minimap in bottom‑right corner -->
     <canvas id="minimap" width="200" height="200" role="img" aria-label="Atlas minimap"></canvas>
     <button class="btn minimap-touch-toggle" id="minimapTouchToggle" type="button" aria-expanded="false">Touch minimap</button>
@@ -136,7 +150,14 @@
       <p>Loading atlas data…</p>
     </div>
   </div>
-  <!-- Favorites pane removed (feature disabled globally) -->
+  <aside class="favorites-pane" id="favoritesPane" aria-label="Saved favorites">
+    <header class="favorites-header">
+      <h2>Favorites</h2>
+      <span class="badge" id="favoritesCount" aria-live="polite">0</span>
+    </header>
+    <p class="muted favorites-empty" id="favoritesEmpty">Mark a topic to pin it here for quick access.</p>
+    <div class="favorites-list" id="favoritesList" role="list" aria-live="polite"></div>
+  </aside>
   <div class="sr-only" aria-live="polite" id="focusAnnounce"></div>
 </div>
 
@@ -145,8 +166,9 @@
   <div class="modal-content" tabindex="-1">
     <h2 id="helpModalTitle">Keyboard Shortcuts</h2>
     <ul id="helpModalBody">
-      <li><strong>← ↑ → ↓:</strong> Navigate the hierarchy (parent / child / siblings)</li>
-      <li><strong>WASD:</strong> Pan the camera</li>
+      <li><strong>← ↑ → ↓ or WASD:</strong> Pan the canvas</li>
+      <li><strong>Ctrl + ← ↑ → ↓:</strong> Navigate the hierarchy (parent / child / siblings)</li>
+      <li><strong>H / J / K / L:</strong> Navigate the hierarchy (left / next / previous / right)</li>
       <li><strong>+</strong> / <strong>-</strong>: Zoom in/out</li>
       <li><strong>Enter:</strong> Expand or collapse the focused node</li>
       <li><strong>F:</strong> Refocus the current selection</li>
@@ -160,6 +182,22 @@
 </div>
 
 <div id="toastRegion" class="toast-region" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<div id="onboardingModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" aria-describedby="onboardingBody" hidden>
+  <div class="modal-content" tabindex="-1">
+    <h2 id="onboardingTitle">Welcome to the Cybersecurity Atlas</h2>
+    <p id="onboardingBody">Use drag or the arrow keys to pan, scroll or the <strong>+</strong>/<strong>-</strong> keys to zoom, and the control + arrow keys or H/J/K/L to move between related topics. Press <strong>?</strong> any time to open the full shortcut sheet.</p>
+    <ul>
+      <li>Click any node to focus it and reveal its neighbors.</li>
+      <li>Use the outline or screen reader list to jump directly to topics.</li>
+      <li>Press <strong>F</strong> to refocus the current selection if you get lost.</li>
+    </ul>
+    <div class="modal-actions">
+      <button id="onboardingSkipBtn" class="btn">Dismiss</button>
+      <button id="onboardingShortcutsBtn" class="btn">View shortcuts</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
