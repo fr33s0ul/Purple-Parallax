@@ -1872,6 +1872,9 @@ if (collapseBtn){
     root.children.forEach(macro => layoutChildren(macro));
     updateOutlineTree(root.id);
     kickPhysics();
+    if (!applyingUrlState){
+      updateUrlFromState();
+    }
     updateBreadcrumb(root);
   };
 }
