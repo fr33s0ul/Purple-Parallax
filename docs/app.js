@@ -378,10 +378,10 @@ try {
   const dataUrl = new URL(`./data/${datasetFile}`, document.baseURI);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
-  const response = await fetch(dataUrl.href, { cache: 'no-store', signal: controller.signal });
+  const response = await fetch(dataUrl, { cache: 'no-store', signal: controller.signal });
   clearTimeout(timeout);
   if (!response.ok) {
-    throw new Error(`Failed to fetch data/${datasetFile}: ${response.status}`);
+    throw new Error(`Failed to fetch ${dataUrl.pathname}: ${response.status}`);
   }
   const master = await response.json();
   data = JSON.parse(JSON.stringify(master));
