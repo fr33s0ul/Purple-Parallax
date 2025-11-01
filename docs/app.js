@@ -271,6 +271,8 @@ const RECENT_SEARCH_LIMIT = 8;
 let recentSearches = [];
 let searchInSubtree = false;
 let searchIncludeTags = false;
+const MACRO_VISIBILITY_STORAGE_KEY = 'atlas_macro_filters_v1';
+const TAG_FILTER_STORAGE_KEY = 'atlas_tag_filters_v1';
 let fisheyeEnabled = false;
 let applyingUrlState = false;
 let contextMenuNode = null;
@@ -285,12 +287,13 @@ const OVERVIEW_VISIBILITY_KEY = 'atlas_overview_visibility';
 const OVERVIEW_DIM_KEY = 'atlas_overview_dim';
 let showSyntheticNodes = true;
 let dimSyntheticNodes = false;
-const SEARCH_DEBOUNCE_MS = 200;
+const SEARCH_BATCH_SIZE = 240;
 const SEARCH_PAGE_SIZE = 8;
 let searchPageIndex = 0;
 let searchMatchesAll = [];
 let searchDropdownPinned = true;
-let searchDebounceTimer = null;
+let activeSearchTask = null;
+let pendingAutoPan = false;
 const OUTLINE_VISIBILITY_KEY = 'atlas_outline_collapsed';
 let outlineCollapsed = false;
 const TAG_RULES = [
@@ -480,6 +483,18 @@ function annotateTags(node){
 }
 
 annotateTags(root);
+
+try {
+  const storedTagFilters = JSON.parse(localStorage.getItem(TAG_FILTER_STORAGE_KEY));
+  if (Array.isArray(storedTagFilters)){
+    storedTagFilters.slice(0, 120).forEach(tag => {
+      if (typeof tag === 'string' && tag.trim() && allTags.has(tag)){
+        activeTags.add(tag);
+      }
+    });
+  }
+} catch(e) {}
+
 applyTagFilters();
 
 // Set a custom root title for the map.  This updates both the data model
@@ -500,6 +515,20 @@ walk(root, n=>{ setNodeOpenState(n, n.depth < 2); });
 // Each top-level macro bucket visibility can be toggled on/off via the Filters UI.
 const macroVisibility = {};
 root.children.forEach(n => { macroVisibility[n.id] = true; });
+
+try {
+  const storedMacros = localStorage.getItem(MACRO_VISIBILITY_STORAGE_KEY);
+  if (storedMacros){
+    const parsed = JSON.parse(storedMacros);
+    if (parsed && typeof parsed === 'object'){
+      root.children.forEach(n => {
+        if (Object.prototype.hasOwnProperty.call(parsed, n.id)){
+          macroVisibility[n.id] = !!parsed[n.id];
+        }
+      });
+    }
+  }
+} catch(e) {}
 
 try { recentSearches = JSON.parse(localStorage.getItem('atlas_recent_searches')) || []; } catch(e) { recentSearches = []; }
 try { searchInSubtree = localStorage.getItem('atlas_search_subtree') === '1'; } catch(e) { searchInSubtree = false; }
@@ -538,6 +567,7 @@ const focusAnnounceElem = document.getElementById('focusAnnounce');
 const fisheyeToggleBtn = document.getElementById('fisheyeToggleBtn');
 const searchSubtreeElem = document.getElementById('searchSubtree');
 const searchTagsElem = document.getElementById('searchTags');
+const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 const recentSearchesElem = document.getElementById('recentSearches');
 const overviewToggleRowElem = document.getElementById('overviewToggleRow');
 const appRootElem = document.querySelector('.app');
@@ -1930,38 +1960,189 @@ let viewStack=[];
 let searchMatches = [];
 let highlightedResultIndex = -1;
 
-function scheduleSearch(term){
-  if (searchDebounceTimer){
-    clearTimeout(searchDebounceTimer);
+if (qElem){
+  requestAnimationFrame(() => {
+    const active = document.activeElement;
+    if (!active || active === document.body || active === document.documentElement){
+      try {
+        qElem.focus({ preventScroll: true });
+      } catch(e) {
+        qElem.focus();
+      }
+      qElem.select();
+    }
+  });
+}
+
+function cancelActiveSearch(){
+  if (activeSearchTask && typeof activeSearchTask.cancel === 'function'){
+    activeSearchTask.cancel();
   }
-  searchDebounceTimer = setTimeout(() => {
-    searchDebounceTimer = null;
-    renderSearchResults(term);
-  }, SEARCH_DEBOUNCE_MS);
+  activeSearchTask = null;
+}
+
+function scheduleIdleWork(callback){
+  if (typeof window.requestIdleCallback === 'function'){
+    const id = window.requestIdleCallback(callback, { timeout: 160 });
+    return { type: 'idle', id };
+  }
+  const wrapped = () => callback({ timeRemaining: () => 0, didTimeout: false });
+  const id = window.requestAnimationFrame(wrapped);
+  return { type: 'raf', id };
+}
+
+function cancelIdleWork(handle){
+  if (!handle) return;
+  if (handle.type === 'idle' && typeof window.cancelIdleCallback === 'function'){
+    window.cancelIdleCallback(handle.id);
+  } else {
+    window.cancelAnimationFrame(handle.id);
+  }
+}
+
+function computeSearchScore(node, tokens){
+  if (!tokens.length) return null;
+  const lowerName = (node.name || '').toLowerCase();
+  let score = 0;
+  for (const token of tokens){
+    let tokenScore = 0;
+    if (lowerName.includes(token)){
+      const index = lowerName.indexOf(token);
+      tokenScore += 6;
+      if (index === 0) tokenScore += 4;
+      tokenScore += Math.max(0, 3 - index / 12);
+    }
+    let matched = tokenScore > 0;
+    if (!matched && searchIncludeTags && node.tags){
+      for (const tag of node.tags){
+        const lowerTag = String(tag).toLowerCase();
+        if (lowerTag.includes(token)){
+          tokenScore += 3;
+          matched = true;
+          break;
+        }
+      }
+    }
+    if (!matched){
+      const pathText = pathTo(node).map(p => (p.name || '').toLowerCase()).join(' ');
+      if (pathText.includes(token)){
+        tokenScore += 1.5;
+        matched = true;
+      }
+    }
+    if (!matched){
+      return null;
+    }
+    score += tokenScore;
+  }
+  score += (node.children ? node.children.length : 0) * 0.1;
+  return score;
 }
 
 function renderSearchResults(rawTerm){
   if (!resultsElem) return;
+  cancelActiveSearch();
   const term = (rawTerm || '').trim();
   searchMatches = [];
+  searchMatchesAll = [];
   highlightedResultIndex = -1;
+  pendingAutoPan = false;
   if (!term){
-    searchMatchesAll = [];
+    lastSearchTokens = [];
     searchPageIndex = 0;
     resultsElem.innerHTML = '';
     resultsElem.classList.remove('visible');
+    resultsElem.classList.remove('persist');
     resultsElem.setAttribute('aria-expanded', 'false');
     walk(root, n => { n.match = false; });
     updateRecentSearchesUI();
     draw();
     return;
   }
-  searchMatchesAll = buildSearchMatches(term);
+  const tokens = term.toLowerCase().split(/\s+/).filter(Boolean);
+  lastSearchTokens = tokens;
+  walk(root, n => { n.match = false; });
+  pendingAutoPan = true;
   searchPageIndex = 0;
-  renderSearchResultsPage();
+  resultsElem.innerHTML = '';
+  const searching = document.createElement('div');
+  searching.className = 'hit searching';
+  searching.textContent = 'Searching…';
+  searching.setAttribute('role', 'status');
+  resultsElem.appendChild(searching);
+  resultsElem.classList.add('visible');
+  resultsElem.setAttribute('aria-expanded', 'true');
+  resultsElem.classList.toggle('persist', searchDropdownPinned);
+
+  const scopeRoot = (searchInSubtree && currentFocusNode) ? currentFocusNode : root;
+  const queue = [scopeRoot];
+  const matches = [];
+  const seen = new Set();
+  let lastRenderedCount = 0;
+
+  const state = {
+    cancelled: false,
+    handle: null,
+    cancel(){
+      this.cancelled = true;
+      if (this.handle){
+        cancelIdleWork(this.handle);
+        this.handle = null;
+      }
+    }
+  };
+
+  function processBatch(deadline){
+    if (state.cancelled) return;
+    let processed = 0;
+    while(queue.length && (!deadline || deadline.timeRemaining() > 1) && processed < SEARCH_BATCH_SIZE){
+      const node = queue.shift();
+      processed += 1;
+      if (!node) continue;
+      const children = node.children || [];
+      children.forEach(child => {
+        if (!seen.has(child.id)){
+          queue.push(child);
+        }
+      });
+      if (seen.has(node.id)) continue;
+      seen.add(node.id);
+      if (node.syntheticOverview && !showSyntheticNodes) continue;
+      const score = computeSearchScore(node, tokens);
+      if (score !== null){
+        matches.push({ node, score });
+        node.match = true;
+      }
+    }
+
+    const shouldRender = matches.length !== lastRenderedCount || queue.length === 0;
+    if (shouldRender){
+      matches.sort((a,b) => b.score - a.score || fallbackText(a.node, 'name').localeCompare(fallbackText(b.node, 'name')));
+      searchMatchesAll = matches.slice();
+      lastRenderedCount = matches.length;
+      const shouldAutoPan = pendingAutoPan && matches.length > 0;
+      renderSearchResultsPage({ autopan: shouldAutoPan });
+      if (shouldAutoPan){
+        pendingAutoPan = false;
+      }
+    }
+
+    if (queue.length && !state.cancelled){
+      state.handle = scheduleIdleWork(processBatch);
+    } else {
+      activeSearchTask = null;
+      if (!matches.length){
+        searchMatchesAll = [];
+        renderSearchResultsPage();
+      }
+    }
+  }
+
+  state.handle = scheduleIdleWork(processBatch);
+  activeSearchTask = state;
 }
 
-function renderSearchResultsPage(){
+function renderSearchResultsPage({ autopan = false } = {}){
   if (!resultsElem) return;
   resultsElem.innerHTML = '';
   const total = searchMatchesAll.length;
@@ -2046,7 +2227,7 @@ function renderSearchResultsPage(){
   closeBtn.onclick = () => hideSearchResults();
   nav.appendChild(closeBtn);
   resultsElem.appendChild(nav);
-  setActiveSearchResult(0);
+  setActiveSearchResult(0, { autopan });
   resultsElem.classList.add('visible');
   resultsElem.setAttribute('aria-expanded', 'true');
   resultsElem.classList.toggle('persist', searchDropdownPinned);
@@ -2083,68 +2264,6 @@ function restoreView(v){
   }
 }
 let lastSearchTokens = [];
-function buildSearchMatches(rawTerm){
-  const term = (rawTerm || '').trim().toLowerCase();
-  lastSearchTokens = term ? term.split(/\s+/).filter(Boolean) : [];
-  walk(root, n => { n.match = false; });
-  if (!lastSearchTokens.length){
-    return [];
-  }
-  const scopeRoot = (searchInSubtree && currentFocusNode) ? currentFocusNode : root;
-  const matches = [];
-  const seen = new Set();
-  function scoreNode(node){
-    if (node.syntheticOverview && !showSyntheticNodes) return null;
-    const lowerName = (node.name || '').toLowerCase();
-    let score = 0;
-    for (const token of lastSearchTokens){
-      let tokenScore = 0;
-      if (lowerName.includes(token)){
-        const index = lowerName.indexOf(token);
-        tokenScore += 6;
-        if (index === 0) tokenScore += 4;
-        tokenScore += Math.max(0, 3 - index / 12);
-      }
-      let matched = tokenScore > 0;
-      if (!matched && searchIncludeTags && node.tags){
-        for (const tag of node.tags){
-          const lowerTag = tag.toLowerCase();
-          if (lowerTag.includes(token)){
-            tokenScore += 3;
-            matched = true;
-            break;
-          }
-        }
-      }
-      if (!matched){
-        const pathText = pathTo(node).map(p => (p.name || '').toLowerCase()).join(' ');
-        if (pathText.includes(token)){
-          tokenScore += 1.5;
-          matched = true;
-        }
-      }
-      if (!matched){
-        return null;
-      }
-      score += tokenScore;
-    }
-    score += (node.children ? node.children.length : 0) * 0.1;
-    return score;
-  }
-  walkFrom(scopeRoot, n => {
-    if (n.syntheticOverview && !showSyntheticNodes) return;
-    if (seen.has(n.id)) return;
-    const nodeScore = scoreNode(n);
-    if (nodeScore !== null){
-      matches.push({ node: n, score: nodeScore });
-      n.match = true;
-      seen.add(n.id);
-    }
-  });
-  matches.sort((a,b) => b.score - a.score || fallbackText(a.node, 'name').localeCompare(fallbackText(b.node, 'name')));
-  return matches;
-}
-
 function escapeRegExp(str){
   return str.replace(/[\\^$.*+?()[\]{}|]/g, '\$&');
 }
@@ -2359,7 +2478,7 @@ function buildShareableLink(node){
   return window.location.origin + window.location.pathname + hash;
 }
 
-function setActiveSearchResult(index){
+function setActiveSearchResult(index, { autopan = false } = {}){
   const items = Array.from(resultsElem.querySelectorAll('.hit'));
   if (!items.length){
     highlightedResultIndex = -1;
@@ -2378,11 +2497,15 @@ function setActiveSearchResult(index){
   currentFocusNode = entry ? entry.node : null;
   if (currentFocusNode){
     triggerNodeFlash(currentFocusNode, 1500);
+    if (autopan){
+      focusNode(currentFocusNode, { animate: true, ensureVisible: true, keepZoom: true });
+    }
     draw();
   }
 }
 
 function hideSearchResults(){
+  cancelActiveSearch();
   resultsElem.classList.remove('visible');
   resultsElem.innerHTML = '';
   highlightedResultIndex = -1;
@@ -2398,7 +2521,7 @@ function hideSearchResults(){
 }
 
 qElem.addEventListener('input', () => {
-  scheduleSearch(qElem.value);
+  renderSearchResults(qElem.value);
 });
 
 qElem.addEventListener('focus', () => {
@@ -2577,7 +2700,7 @@ if (searchSubtreeElem){
     searchInSubtree = searchSubtreeElem.checked;
     try { localStorage.setItem('atlas_search_subtree', searchInSubtree ? '1' : '0'); } catch(e) {}
     if (qElem.value.trim()){
-      scheduleSearch(qElem.value);
+      renderSearchResults(qElem.value);
     }
     scheduleUrlUpdate();
   });
@@ -2588,7 +2711,7 @@ if (searchTagsElem){
     searchIncludeTags = searchTagsElem.checked;
     try { localStorage.setItem('atlas_search_tags', searchIncludeTags ? '1' : '0'); } catch(e) {}
     if (qElem.value.trim()){
-      scheduleSearch(qElem.value);
+      renderSearchResults(qElem.value);
     }
     scheduleUrlUpdate();
   });
@@ -2924,6 +3047,7 @@ function restoreStateFromUrl(){
       state.tags.forEach(t => activeTags.add(t));
       updateTagFiltersUI();
       applyTagFilters();
+      persistTagFilters();
     }
     applyOpenChains(state.openChains);
     walk(root, node => {
@@ -3413,21 +3537,29 @@ if (outlineTreeElem){
 }
 
 // Render Filters UI for macro buckets
+function persistMacroVisibility(){
+  try { localStorage.setItem(MACRO_VISIBILITY_STORAGE_KEY, JSON.stringify(macroVisibility)); } catch(e) {}
+}
+
+function persistTagFilters(){
+  try { localStorage.setItem(TAG_FILTER_STORAGE_KEY, JSON.stringify(Array.from(activeTags).sort())); } catch(e) {}
+}
+
 function updateFiltersUI(){
   const filtersElem = document.getElementById('filters');
   if (!filtersElem) return;
   filtersElem.innerHTML = '';
   root.children.forEach(n => {
     const label = document.createElement('label');
-    label.style.display = 'block';
-    label.style.fontSize = '12px';
-    label.style.cursor = 'pointer';
+    label.className = 'filter-option';
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.checked = macroVisibility[n.id];
-    cb.style.marginRight = '6px';
+    label.classList.toggle('is-active', cb.checked);
     cb.onchange = () => {
       macroVisibility[n.id] = cb.checked;
+      label.classList.toggle('is-active', cb.checked);
+      persistMacroVisibility();
       refreshVisibilityCaches();
       updateOutlineTree(lastFocusedNode ? lastFocusedNode.id : root.id);
       draw();
@@ -3547,13 +3679,18 @@ function updateTagFiltersUI(){
   }
   sorted.forEach(tag => {
     const label = document.createElement('label');
+    label.className = 'filter-option';
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.value = tag;
     input.checked = activeTags.has(tag);
+    label.classList.toggle('is-active', input.checked);
     input.onchange = () => {
       if (input.checked){ activeTags.add(tag); } else { activeTags.delete(tag); }
       applyTagFilters();
+      label.classList.toggle('is-active', input.checked);
+      persistTagFilters();
+      draw();
       if (!applyingUrlState){ scheduleUrlUpdate(); }
     };
     const span = document.createElement('span');
@@ -3561,6 +3698,34 @@ function updateTagFiltersUI(){
     label.appendChild(input);
     label.appendChild(span);
     tagElem.appendChild(label);
+  });
+}
+
+if (clearFiltersBtn){
+  clearFiltersBtn.addEventListener('click', () => {
+    let visibilityChanged = false;
+    root.children.forEach(n => {
+      if (!macroVisibility[n.id]){
+        macroVisibility[n.id] = true;
+        visibilityChanged = true;
+      }
+    });
+    const hadActiveTags = activeTags.size > 0;
+    if (hadActiveTags){
+      activeTags.clear();
+    }
+    persistMacroVisibility();
+    persistTagFilters();
+    applyTagFilters();
+    refreshVisibilityCaches();
+    updateFiltersUI();
+    updateTagFiltersUI();
+    updateOutlineTree(lastFocusedNode ? lastFocusedNode.id : root.id);
+    draw();
+    if (!applyingUrlState){ scheduleUrlUpdate(); }
+    if (visibilityChanged || hadActiveTags){
+      showToast('All filters restored to their defaults.', { title: 'Filters reset', duration: 2600 });
+    }
   });
 }
 
