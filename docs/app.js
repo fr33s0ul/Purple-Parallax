@@ -1176,14 +1176,6 @@ const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 const recentSearchesElem = document.getElementById('recentSearches');
 const popularSearchesElem = document.getElementById('popularSearches');
 const favoriteShortcutsElem = document.getElementById('favoriteShortcuts');
-// Some legacy handlers referenced the older pluralised variable name.  Provide a
-// backwards-compatible alias so those listeners do not throw before the new UI
-// boots.  Keeping the alias on window also mirrors the previous global access
-// pattern used by the onboarding scripts.
-const favoritesShortcutElem = favoriteShortcutsElem;
-if (typeof window !== 'undefined'){
-  window.favoritesShortcutElem = favoriteShortcutsElem;
-}
 const overviewToggleRowElem = document.getElementById('overviewToggleRow');
 const appRootElem = document.querySelector('.app');
 const primarySidebarElem = document.querySelector('aside.primary');
