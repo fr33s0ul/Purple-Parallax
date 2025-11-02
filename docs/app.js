@@ -74,6 +74,7 @@ const profileConfig = {
 let totalNodeCount = 0;
 let currentFocusNode = null;
 const loadingOverlayElem = document.getElementById('loadingOverlay');
+let loadingStatusElem = document.getElementById('loadingStatus');
 const dataFreshnessElem = document.getElementById('dataFreshness');
 const toastRegion = document.getElementById('toastRegion');
 const FAVORITES_STORAGE_KEY = 'atlas_favorites_v2';
@@ -96,6 +97,14 @@ let downloadMenuElem = null;
 let lazyBranchLoadingEnabled = false;
 const branchFetchCache = new Map();
 const pendingBranchLoads = new Map();
+let loadingStatusClearTimer;
+
+function getLoadingStatusElem(){
+  if (!loadingStatusElem){
+    loadingStatusElem = document.getElementById('loadingStatus');
+  }
+  return loadingStatusElem;
+}
 
 function showFatalError(error){
   console.error(error);
@@ -117,8 +126,9 @@ function showFatalError(error){
 }
 
 function updateLoadingStatus(message, { busy = true, final = false } = {}){
-  if (loadingStatusElem){
-    loadingStatusElem.textContent = message || '';
+  const statusElem = getLoadingStatusElem();
+  if (statusElem){
+    statusElem.textContent = message || '';
   }
   const canvasTarget = mainCanvasRef || document.getElementById('c');
   if (canvasTarget){
@@ -132,10 +142,11 @@ function updateLoadingStatus(message, { busy = true, final = false } = {}){
     clearTimeout(loadingStatusClearTimer);
     loadingStatusClearTimer = null;
   }
-  if (final && loadingStatusElem){
+  if (final && statusElem){
     loadingStatusClearTimer = setTimeout(() => {
-      if (loadingStatusElem){
-        loadingStatusElem.textContent = '';
+      const lateStatusElem = getLoadingStatusElem();
+      if (lateStatusElem){
+        lateStatusElem.textContent = '';
       }
     }, 2200);
   }
