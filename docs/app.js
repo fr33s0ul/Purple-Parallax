@@ -119,8 +119,9 @@ function showFatalError(error){
 }
 
 function updateLoadingStatus(message, { busy = true, final = false } = {}){
-  if (loadingStatusElem){
-    loadingStatusElem.textContent = message || '';
+  const statusElem = getLoadingStatusElem();
+  if (statusElem){
+    statusElem.textContent = message || '';
   }
   const canvasTarget = mainCanvasRef || document.getElementById('c');
   if (canvasTarget){
@@ -134,10 +135,11 @@ function updateLoadingStatus(message, { busy = true, final = false } = {}){
     clearTimeout(loadingStatusClearTimer);
     loadingStatusClearTimer = null;
   }
-  if (final && loadingStatusElem){
+  if (final && statusElem){
     loadingStatusClearTimer = setTimeout(() => {
-      if (loadingStatusElem){
-        loadingStatusElem.textContent = '';
+      const lateStatusElem = getLoadingStatusElem();
+      if (lateStatusElem){
+        lateStatusElem.textContent = '';
       }
     }, 2200);
   }
