@@ -74,7 +74,7 @@ const profileConfig = {
 let totalNodeCount = 0;
 let currentFocusNode = null;
 const loadingOverlayElem = document.getElementById('loadingOverlay');
-const loadingStatusElem = document.getElementById('loadingStatus');
+const getLoadingStatusElem = () => document.getElementById('loadingStatus');
 const dataFreshnessElem = document.getElementById('dataFreshness');
 const toastRegion = document.getElementById('toastRegion');
 const FAVORITES_STORAGE_KEY = 'atlas_favorites_v2';
@@ -118,7 +118,7 @@ function showFatalError(error){
   }
 }
 
-function updateLoadingStatus(message, { busy = true, final = false } = {}){
+function updateLoadingStatus(message, { autoClearMs = 1200, busy = true, final = false } = {}){
   const statusElem = getLoadingStatusElem();
   if (statusElem){
     statusElem.textContent = message || '';
@@ -135,13 +135,14 @@ function updateLoadingStatus(message, { busy = true, final = false } = {}){
     clearTimeout(loadingStatusClearTimer);
     loadingStatusClearTimer = null;
   }
-  if (final && statusElem){
+  const clearDelay = typeof autoClearMs === 'number' ? autoClearMs : (final ? 1200 : null);
+  if (clearDelay){
     loadingStatusClearTimer = setTimeout(() => {
       const lateStatusElem = getLoadingStatusElem();
       if (lateStatusElem){
         lateStatusElem.textContent = '';
       }
-    }, 2200);
+    }, clearDelay);
   }
 }
 
@@ -155,7 +156,9 @@ function setLoadingState(active, message = 'Loading…', options = {}){
   }
   loadingOverlayElem.hidden = !active;
   const busy = Object.prototype.hasOwnProperty.call(options, 'busy') ? options.busy : active;
-  updateLoadingStatus(message, { busy, final: !busy && !active });
+  const final = !busy && !active;
+  const autoClearMs = busy ? null : (final ? 1800 : 1200);
+  updateLoadingStatus(message, { busy, final, autoClearMs });
 }
 
 function markMapToolsCoachSeen(){
@@ -1068,13 +1071,13 @@ try {
   console.warn('Failed to read cached dataset', error);
 }
 try {
-  const dataUrl = new URL(`./data/${datasetFile}`, document.baseURI);
+  const datasetUrl = new URL(`data/${datasetFile}`, document.baseURI);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
-  const response = await fetch(dataUrl, { cache: 'no-store', signal: controller.signal });
+  const response = await fetch(datasetUrl, { cache: 'no-store', signal: controller.signal });
   clearTimeout(timeout);
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${dataUrl.pathname}: ${response.status}`);
+    throw new Error(`Failed to fetch ${datasetUrl.pathname}: ${response.status}`);
   }
   const master = await response.json();
   data = JSON.parse(JSON.stringify(master));
@@ -6973,6 +6976,9 @@ if (supportsHover){
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (typeof window !== 'undefined'){
+    window.loadingStatusElem = getLoadingStatusElem();
+  }
   boot().catch(showFatalError);
 });
 

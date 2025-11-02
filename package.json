@@ -1,0 +1,8 @@
+{
+  "name": "purple-parallax",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "validate-dataset": "npm exec --yes ajv-cli@5 validate -s schema/atlas.schema.json -d docs/data/atlas.json --errors=line"
+  }
+}
