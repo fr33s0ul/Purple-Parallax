@@ -4,6 +4,17 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Cybersecurity Atlas</title>
+<meta name="description" content="Explore the Cybersecurity Atlas—an interactive, searchable knowledge map of threats, defenses, and market segments."/>
+<meta property="og:title" content="Cybersecurity Atlas"/>
+<meta property="og:description" content="Interactive cybersecurity knowledge map with branching search, filters, favorites, and export tools."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://fr33s0ul.github.io"/>
+<meta property="og:image" content="https://dummyimage.com/1200x630/1a1431/ffffff.png&amp;text=Cybersecurity+Atlas"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Cybersecurity Atlas"/>
+<meta name="twitter:description" content="Navigate an interactive atlas of the cybersecurity landscape, complete with filters, favorites, and export options."/>
+<meta name="twitter:image" content="https://dummyimage.com/1200x630/1a1431/ffffff.png&amp;text=Cybersecurity+Atlas"/>
+<link rel="canonical" href="https://fr33s0ul.github.io"/>
 <link rel="stylesheet" href="./styles.css">
 <link rel="preload" href="./data/atlas.json" as="fetch" crossorigin="anonymous">
 <script src="./app.js" defer></script>
@@ -28,6 +39,16 @@
     </aside>
     <aside class="primary">
       <h1>Cybersecurity Atlas</h1>
+      <div class="primary-toolbar" role="group" aria-label="Atlas controls">
+        <button class="btn" id="toggleSidebarBtn" title="Collapse sidebar">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="sr-only">Toggle sidebar</span>
+        </button>
+        <button class="btn" id="helpBtn" title="Keyboard shortcuts" aria-haspopup="dialog" aria-controls="helpModal">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.09 9a3 3 0 1 1 5.91 1c0 2-3 2-3 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span class="sr-only">Open help</span>
+        </button>
+      </div>
       <div id="dataFreshness" class="muted" aria-live="polite"></div>
       <div class="muted" id="canvasKeyboardHint">Wheel = zoom • drag = pan • click to focus • use toggle ⊕/⊖ to expand • <span class="key">WASD</span> or <span class="key">←↑→↓</span> pan • <span class="key">+</span>/<span class="key">-</span> zoom • <span class="key">H/J/K/L</span> navigate • <span class="key">Ctrl</span> + <span class="key">←↑→↓</span> navigate • <span class="key">Enter</span> toggle • <span class="key">F</span> refocus</div>
       <div class="row search-wrapper">
@@ -113,7 +134,7 @@
       <hr class="divider"/>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7m0 0 4-4m-4 4-4-4m20 15v-7m0 0 4-4m-4 4-4-4M9 7l3-4 3 4m-3-4v18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Export</span></div>
-      <div class="row btn-row">
+      <div class="row btn-row export-row" role="group" aria-label="Export options">
         <button class="btn" id="png1" title="Download PNG at original size">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7 10 12 15 17 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span>PNG 1×</span>
@@ -125,6 +146,14 @@
         <button class="btn" id="png4" title="Download PNG at 4×">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7 10 12 15 17 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span>4×</span>
+        </button>
+        <button class="btn" id="pngSelection" title="Download PNG of the focused branch">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="9 12 11 14 15 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Selection</span>
+        </button>
+        <button class="btn" id="exportSvgBtn" title="Download scalable SVG snapshot">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 8h8v8H8z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span>SVG</span>
         </button>
       </div>
 
@@ -186,9 +215,9 @@
         <button class="control-help" type="button" data-help="Magnify the area around the cursor with a fisheye lens for dense clusters." aria-label="Explain lens control" aria-expanded="false"><span aria-hidden="true">?</span></button>
       </div>
     </div>
-    <canvas id="c" tabindex="0" role="application" aria-label="Interactive atlas canvas" aria-describedby="canvasKeyboardHint"></canvas>
+    <canvas id="c" tabindex="0" role="application" aria-label="Interactive atlas canvas" aria-describedby="canvasKeyboardHint" aria-busy="true"></canvas>
     <!-- Overview minimap in bottom‑right corner -->
-    <canvas id="minimap" width="200" height="200" role="img" aria-label="Atlas minimap"></canvas>
+    <canvas id="minimap" width="200" height="200" role="img" aria-label="Atlas minimap" tabindex="0"></canvas>
     <button class="btn minimap-touch-toggle" id="minimapTouchToggle" type="button" aria-expanded="false">Touch minimap</button>
     <div id="minimapTouchPanel" class="minimap-touch-panel" hidden aria-hidden="true">
       <div class="minimap-touch-panel__body" role="region" aria-label="Touch minimap navigator">
@@ -206,6 +235,7 @@
       <div class="spinner" aria-hidden="true"></div>
       <p>Loading atlas data…</p>
     </div>
+    <div id="loadingStatus" class="sr-only" aria-live="polite"></div>
   </div>
   <aside class="favorites-pane" id="favoritesPane" aria-label="Saved favorites">
     <header class="favorites-header">
