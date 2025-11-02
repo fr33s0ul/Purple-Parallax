@@ -811,6 +811,17 @@ function removeFavoriteById(id){
   return true;
 }
 
+function removeFavoriteById(id){
+  if (!favoritesFeatureEnabled || !favoriteIdSet.has(id)) return false;
+  favoriteIdSet.delete(id);
+  favoriteEntryMap.delete(id);
+  const idx = favoriteEntries.findIndex(entry => entry.id === id);
+  if (idx !== -1){ favoriteEntries.splice(idx, 1); }
+  persistFavorites();
+  updateFavoritesUI();
+  return true;
+}
+
 function addFavorite(node){
   if (!favoritesFeatureEnabled || !node) return false;
   if (favoriteIdSet.has(node.id)) return false;
