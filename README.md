@@ -7,6 +7,31 @@ A self-contained, canvas-accelerated knowledge map for the fr33s0ul Cybersecurit
 - Local open: just double-click `docs/index.html` and explore the atlas offline.
 - Favorites and theme choices persist automatically in `localStorage`.
 
+## Local preview
+
+The published build is the static `docs` directory. To preview it exactly as GitHub Pages serves it:
+
+1. (Optional) Install the tooling used for dataset validation to warm the local cache:
+   ```bash
+   npm install
+   ```
+   The `npm run validate-dataset` script downloads the CLI from npm on demand, so an internet connection is required the first time it runs.
+2. Start a local web server from the repository root:
+   ```bash
+   python -m http.server 8000 -d docs
+   ```
+3. Visit [http://127.0.0.1:8000/](http://127.0.0.1:8000/) and confirm the spinner clears without console errors.
+
+## Troubleshooting GitHub Pages paths
+
+- Asset URLs are expressed relative to the repository (`./app.js`, `./styles.css`), so GitHub Pages will resolve them correctly at `https://<user>.github.io/<repo>/`.
+- Dataset requests derive from `document.baseURI`, which prevents `404` responses when the site is hosted under a project subdirectory.
+- If a cached script or stylesheet refuses to update after deployment, bump the `?v=` query strings in `docs/index.html` and redeploy.
+
+## Contributing data updates
+
+The atlas accepts pull requests that edit `docs/data/atlas.json`. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the JSON schema, validation workflow, and collaboration tips.
+
 ## Publishing with GitHub Pages
 
 1. Commit your changes to the `main` branch and push to GitHub.

@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fr33s0ul.github.io/Purple-Parallax/schema/atlas.schema.json",
+  "title": "Cybersecurity Atlas dataset",
+  "description": "Recursive taxonomy describing the Cybersecurity Atlas content tree.",
+  "type": "object",
+  "allOf": [
+    { "$ref": "#/definitions/node" },
+    {
+      "required": ["children"],
+      "properties": {
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/node" },
+          "default": []
+        },
+        "meta": { "$ref": "#/definitions/datasetMeta" }
+      }
+    }
+  ],
+  "definitions": {
+    "datasetMeta": {
+      "type": "object",
+      "description": "Optional metadata about the dataset snapshot.",
+      "properties": {
+        "version": { "type": ["string", "number"] },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "source": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "link": {
+      "type": "object",
+      "required": ["title", "url"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri-reference" },
+        "description": { "type": "string" },
+        "kind": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "relationship": {
+      "type": "object",
+      "required": ["targetId", "kind"],
+      "properties": {
+        "targetId": { "type": ["string", "number"] },
+        "kind": { "type": "string", "minLength": 1 },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "id": { "type": ["string", "number"] },
+        "name": { "type": "string", "minLength": 1 },
+        "shortName": { "type": "string" },
+        "summary": { "type": "string" },
+        "description": { "type": "string" },
+        "aka": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "links": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/link" },
+          "uniqueItems": true
+        },
+        "resources": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/link" },
+          "uniqueItems": true
+        },
+        "relationships": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/relationship" }
+        },
+        "notes": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          ]
+        },
+        "syntheticOverview": { "type": "boolean" },
+        "lazyChildUrl": { "type": "string", "format": "uri-reference" },
+        "meta": { "$ref": "#/definitions/datasetMeta" },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/node" },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
