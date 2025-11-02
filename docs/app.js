@@ -82,45 +82,20 @@ const favoritesFeatureEnabled = document.body?.dataset?.featureFavorites === 'on
 const favoritesListElem = document.getElementById('favoritesList');
 const favoritesEmptyElem = document.getElementById('favoritesEmpty');
 const favoritesCountElem = document.getElementById('favoritesCount');
-// Older builds referenced a global `favoritesShortcutSel` selector for the
-// saved shortcuts list.  Keep exposing that selector so existing cached HTML
-// or scripts do not crash while the new favorites pane boots.
-const favoritesShortcutSelector = '#favoritesList .favorite-entry';
-if (typeof window !== 'undefined' && !window.favoritesShortcutSel){
-  window.favoritesShortcutSel = favoritesShortcutSelector;
-}
-const loadingStatusElem = document.getElementById('loadingStatus');
-if (typeof window !== 'undefined'){
-  // Older cached bundles referenced various global spellings for the loading
-  // status live region.  Expose the current element under the legacy names so
-  // they continue to work even if the new script loads before the cache clears.
-  if (!('loadingStatusElem' in window)){
-    window.loadingStatusElem = loadingStatusElem;
-  }
-  if (!('loadingStatusEl' in window)){
-    window.loadingStatusEl = loadingStatusElem;
-  }
-  if (!('loadingstatusEl' in window)){
-    window.loadingstatusEl = loadingStatusElem;
-  }
-}
-let mainCanvasRef = null;
-let loadingStatusClearTimer = null;
-let mapToolsCoachTimer = null;
-const mapToolsPanelElem = document.getElementById('mapToolsPanel');
-const mapToolsCoachElem = document.getElementById('mapToolsCoach');
-const dismissMapToolsCoachBtn = document.getElementById('dismissMapToolsCoach');
-const mapToolsCoachMessageElem = document.getElementById('mapToolsCoachMessage');
-if (mapToolsCoachElem){
-  mapToolsCoachElem.setAttribute('aria-hidden', 'true');
-  if (!mapToolsCoachElem.hasAttribute('tabindex')){
-    mapToolsCoachElem.setAttribute('tabindex', '-1');
-  }
-}
+const POPULAR_SEARCH_LIMIT = 6;
 let datasetMeta = null;
 let favoriteEntries = [];
 const favoriteIdSet = new Set();
-const favoriteEntryMap = new Map();
+let popularSearches = [];
+let selectionLockActive = false;
+let controlHelpPopover = null;
+let controlHelpButtons = [];
+let activeHelpButton = null;
+let helpPopoverLocked = false;
+let downloadMenuElem = null;
+let lazyBranchLoadingEnabled = false;
+const branchFetchCache = new Map();
+const pendingBranchLoads = new Map();
 
 function showFatalError(error){
   console.error(error);
@@ -247,35 +222,292 @@ function showToast(message, options = {}){
   setTimeout(() => { toast.remove(); }, lifetime);
 }
 
-function sanitizeFavoriteView(view){
-  if (!view || typeof view !== 'object') return null;
-  const { offsetX, offsetY, scale: viewScale, openIds, openMap, focusId } = view;
-  if (!Number.isFinite(offsetX) || !Number.isFinite(offsetY) || !Number.isFinite(viewScale)){
-    return null;
-  }
-  const snapshot = {
-    offsetX: Number(offsetX),
-    offsetY: Number(offsetY),
-    scale: Number(viewScale),
-    focusId: Number.isFinite(focusId) ? focusId : null
-  };
-  if (Array.isArray(openIds)){
-    snapshot.openIds = openIds.slice(0, 800);
-  } else if (openMap && typeof openMap === 'object'){
-    snapshot.openMap = { ...openMap };
-  }
-  return snapshot;
+function ensureControlHelpPopover(){
+  if (controlHelpPopover) return controlHelpPopover;
+  const popover = document.createElement('div');
+  popover.id = 'controlHelpPopover';
+  popover.setAttribute('role', 'tooltip');
+  popover.hidden = true;
+  document.body.appendChild(popover);
+  controlHelpPopover = popover;
+  return popover;
 }
 
-function ensureFavoriteMaps(){
-  favoriteEntryMap.clear();
-  favoriteIdSet.clear();
-  favoriteEntries.forEach(entry => {
-    if (!favoriteEntryMap.has(entry.id)){
-      favoriteEntryMap.set(entry.id, entry);
-      favoriteIdSet.add(entry.id);
-    }
+function hideControlHelp(){
+  if (!controlHelpPopover) return;
+  controlHelpPopover.classList.remove('visible');
+  controlHelpPopover.hidden = true;
+  if (activeHelpButton){
+    activeHelpButton.setAttribute('aria-expanded', 'false');
+    activeHelpButton.removeAttribute('aria-describedby');
+  }
+  activeHelpButton = null;
+}
+
+function positionControlHelp(button){
+  if (!controlHelpPopover || !button) return;
+  const rect = button.getBoundingClientRect();
+  const popRect = controlHelpPopover.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  let left = rect.right + window.scrollX - popRect.width;
+  if (left < 12){ left = rect.left + window.scrollX; }
+  if (left + popRect.width > viewportWidth - 12){
+    left = viewportWidth - popRect.width - 12;
+  }
+  const top = rect.bottom + window.scrollY + 8;
+  controlHelpPopover.style.left = `${Math.max(12, left)}px`;
+  controlHelpPopover.style.top = `${top}px`;
+}
+
+function showControlHelp(button, { lock = false } = {}){
+  if (!button || (helpPopoverLocked && activeHelpButton && activeHelpButton !== button)){
+    return;
+  }
+  const popover = ensureControlHelpPopover();
+  const message = button.dataset.help || button.getAttribute('title') || button.getAttribute('aria-label') || '';
+  if (!message){
+    hideControlHelp();
+    return;
+  }
+  activeHelpButton = button;
+  if (lock){
+    helpPopoverLocked = true;
+  }
+  popover.textContent = message;
+  popover.hidden = false;
+  popover.classList.add('visible');
+  button.setAttribute('aria-expanded', 'true');
+  button.setAttribute('aria-describedby', popover.id);
+  requestAnimationFrame(() => {
+    positionControlHelp(button);
   });
+}
+
+function releaseControlHelpLock(){
+  helpPopoverLocked = false;
+  hideControlHelp();
+}
+
+function setupControlHelp(){
+  controlHelpButtons = Array.from(document.querySelectorAll('.control-help'));
+  if (!controlHelpButtons.length) return;
+  ensureControlHelpPopover();
+  controlHelpButtons.forEach((button) => {
+    button.addEventListener('mouseenter', () => {
+      if (helpPopoverLocked) return;
+      showControlHelp(button);
+    });
+    button.addEventListener('focus', () => {
+      if (helpPopoverLocked && activeHelpButton && activeHelpButton !== button) return;
+      showControlHelp(button);
+    });
+    button.addEventListener('mouseleave', () => {
+      if (helpPopoverLocked && activeHelpButton === button) return;
+      hideControlHelp();
+    });
+    button.addEventListener('blur', () => {
+      if (helpPopoverLocked && activeHelpButton === button) return;
+      hideControlHelp();
+    });
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (helpPopoverLocked && activeHelpButton === button){
+        releaseControlHelpLock();
+      } else {
+        helpPopoverLocked = true;
+        showControlHelp(button, { lock: true });
+      }
+    });
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (!helpPopoverLocked || !controlHelpPopover) return;
+    if (controlHelpPopover.contains(event.target)) return;
+    if (controlHelpButtons.some(btn => btn.contains(event.target))){
+      return;
+    }
+    releaseControlHelpLock();
+  });
+}
+
+function ensureDownloadMenu(){
+  if (downloadMenuElem || !canvasActionsElem) {
+    return downloadMenuElem;
+  }
+  const menu = document.createElement('div');
+  menu.className = 'download-menu';
+  menu.id = 'downloadMenu';
+  menu.hidden = true;
+  const options = [
+    { label: 'PNG 1×', multiplier: 1, hint: 'Original resolution' },
+    { label: 'PNG 2×', multiplier: 2, hint: 'High-res' },
+    { label: 'PNG 4×', multiplier: 4, hint: 'Poster' }
+  ];
+  options.forEach(opt => {
+    const optionBtn = document.createElement('button');
+    optionBtn.type = 'button';
+    const label = document.createElement('span');
+    label.textContent = opt.label;
+    const hint = document.createElement('small');
+    hint.className = 'muted';
+    hint.textContent = opt.hint;
+    optionBtn.appendChild(label);
+    optionBtn.appendChild(hint);
+    optionBtn.addEventListener('click', () => {
+      exportPNG(opt.multiplier);
+      hideDownloadMenu();
+    });
+    menu.appendChild(optionBtn);
+  });
+  canvasActionsElem.appendChild(menu);
+  downloadMenuElem = menu;
+  if (downloadViewBtn){
+    downloadViewBtn.setAttribute('aria-controls', menu.id);
+  }
+  return menu;
+}
+
+function normaliseLazyDataset(payload){
+  if (!payload || !payload.root || !Array.isArray(payload.children)){
+    lazyBranchLoadingEnabled = false;
+    return payload;
+  }
+  lazyBranchLoadingEnabled = true;
+  const normalized = {
+    name: payload.root.name || 'Cybersecurity Atlas',
+    children: payload.children.map(child => ({
+      name: child.name,
+      lazyChildUrl: child.childUrl || null,
+      hasChildren: child.hasChildren,
+      children: []
+    }))
+  };
+  return normalized;
+}
+
+function buildHierarchyFromBranch(branchPayload){
+  if (!branchPayload || !Array.isArray(branchPayload.nodes)) return [];
+  const stack = [];
+  let branchRoot = null;
+  branchPayload.nodes.forEach(entry => {
+    const depth = Number(entry.depth) || 0;
+    const descriptor = {
+      name: entry.name,
+      children: [],
+      syntheticOverview: entry.syntheticOverview || false
+    };
+    if (entry.hasChildren && entry.childUrl){
+      descriptor.lazyChildUrl = entry.childUrl;
+    }
+    while (stack.length && stack[stack.length - 1].depth >= depth){
+      stack.pop();
+    }
+    if (stack.length){
+      stack[stack.length - 1].node.children.push(descriptor);
+    } else {
+      branchRoot = descriptor;
+    }
+    stack.push({ node: descriptor, depth });
+  });
+  return branchRoot && branchRoot.children ? branchRoot.children : [];
+}
+
+function openDownloadMenu(){
+  const menu = ensureDownloadMenu();
+  if (!menu || !downloadViewBtn) return;
+  menu.hidden = false;
+  downloadViewBtn.setAttribute('aria-expanded', 'true');
+  const first = menu.querySelector('button');
+  if (first){
+    requestAnimationFrame(() => first.focus());
+  }
+}
+
+function hideDownloadMenu(){
+  if (!downloadMenuElem || downloadMenuElem.hidden) return;
+  downloadMenuElem.hidden = true;
+  if (downloadViewBtn){
+    downloadViewBtn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function ensureNodeChildrenLoaded(node){
+  if (!lazyBranchLoadingEnabled || !node || !node.lazyChildUrl || node.__lazyLoaded){
+    return null;
+  }
+  if (pendingBranchLoads.has(node)){
+    return pendingBranchLoads.get(node);
+  }
+  const url = new URL(node.lazyChildUrl, document.baseURI);
+  const fetchPromise = branchFetchCache.has(url.href)
+    ? Promise.resolve(branchFetchCache.get(url.href))
+    : fetch(url.href, { cache: 'no-store' }).then(response => {
+        if (!response.ok){
+          throw new Error(`Failed to load ${url.pathname}: ${response.status}`);
+        }
+        return response.json();
+      }).then(data => {
+        branchFetchCache.set(url.href, data);
+        return data;
+      });
+  setLoadingState(true, 'Loading branch…');
+  const loadPromise = fetchPromise.then(branchData => {
+    if (!branchData){
+      node.__lazyLoaded = true;
+      node.lazyChildUrl = null;
+      return;
+    }
+    const descriptors = buildHierarchyFromBranch(branchData);
+    if (!Array.isArray(descriptors) || descriptors.length === 0){
+      node.__lazyLoaded = true;
+      node.lazyChildUrl = null;
+      return;
+    }
+    const createdChildren = descriptors.map(desc => mkNode(desc, node.depth + 1));
+    let addedCount = 0;
+    createdChildren.forEach(child => {
+      child.parent = node;
+      walkFrom(child, descendant => {
+        addedCount += 1;
+        descendant.tags = deriveTags(descendant.name || '');
+        descendant.tags.forEach(tag => allTags.add(tag));
+        nodeById.set(descendant.id, descendant);
+      });
+      node.children.push(child);
+    });
+    node.__lazyLoaded = true;
+    node.lazyChildUrl = null;
+    if (addedCount > 0){
+      totalNodeCount += addedCount;
+      if (typeof window !== 'undefined'){
+        window.__atlasTotalNodes = totalNodeCount;
+      }
+    }
+    addDetailNodesForDataset(node, node.depth);
+    updateTagFiltersUI();
+    applyTagFilters();
+    updateFavoritesUI();
+    updateOutlineTree(lastFocusedNode ? lastFocusedNode.id : root.id);
+  }).catch(error => {
+    console.error('Unable to hydrate branch', error);
+    showToast('Unable to load that branch right now.', { title: 'Branch load' });
+  }).finally(() => {
+    pendingBranchLoads.delete(node);
+    setLoadingState(false);
+  });
+  pendingBranchLoads.set(node, loadPromise);
+  return loadPromise;
+}
+
+function nodeHasLoadedChildren(node){
+  return !!(node && Array.isArray(node.children) && node.children.length > 0);
+}
+
+function nodeHasPendingChildren(node){
+  return !!(lazyBranchLoadingEnabled && node && node.lazyChildUrl && !node.__lazyLoaded);
+}
+
+function nodeHasAnyChildren(node){
+  return nodeHasLoadedChildren(node) || nodeHasPendingChildren(node);
 }
 
 function loadFavoritesFromStorage(){
@@ -339,13 +571,48 @@ function persistFavorites(){
 }
 
 function updateFavoriteSelectionHighlight(){
-  if (!favoritesFeatureEnabled || !favoritesListElem) return;
+  if (!favoritesFeatureEnabled) return;
   const activeId = currentFocusNode ? currentFocusNode.id : null;
-  const entries = favoritesListElem.querySelectorAll('.favorite-entry');
-  entries.forEach(entry => {
-    const entryId = Number(entry.dataset.nodeId);
-    entry.classList.toggle('active', activeId !== null && entryId === activeId);
-  });
+  if (favoritesListElem){
+    const entries = favoritesListElem.querySelectorAll('.favorite-entry');
+    entries.forEach(entry => {
+      const entryId = Number(entry.dataset.nodeId);
+      entry.classList.toggle('active', activeId !== null && entryId === activeId);
+    });
+  }
+  if (favoriteShortcutsElem){
+    const shortcuts = favoriteShortcutsElem.querySelectorAll('button[data-node-id]');
+    shortcuts.forEach(btn => {
+      const entryId = Number(btn.dataset.nodeId);
+      btn.classList.toggle('active', activeId !== null && entryId === activeId);
+    });
+  }
+}
+
+function updateFavoriteShortcuts(nodes = []){
+  if (!favoriteShortcutsElem) return;
+  favoriteShortcutsElem.innerHTML = '';
+  if (!favoritesFeatureEnabled || !nodes.length){
+    const empty = document.createElement('span');
+    empty.className = 'muted';
+    empty.textContent = 'Mark favorites to pin quick links.';
+    favoriteShortcutsElem.appendChild(empty);
+    return;
+  }
+  const maxShortcuts = Math.min(8, nodes.length);
+  for (let i = 0; i < maxShortcuts; i += 1){
+    const node = nodes[i];
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'favorite-shortcut';
+    btn.dataset.nodeId = String(node.id);
+    btn.innerHTML = `<span class="favorite-shortcut__icon" aria-hidden="true">★</span><span>${fallbackText(node, 'name')}</span>`;
+    btn.addEventListener('click', () => {
+      focusNode(node, { animate: true, ensureVisible: true });
+    });
+    favoriteShortcutsElem.appendChild(btn);
+  }
+  updateFavoriteSelectionHighlight();
 }
 
 let favoriteDragIndex = null;
@@ -354,26 +621,41 @@ function updateFavoritesUI(){
   if (!favoritesFeatureEnabled || !favoritesListElem) return;
   favoritesListElem.innerHTML = '';
   let mutated = false;
-  const validEntries = [];
-  favoriteEntries.forEach(entry => {
-    const node = findNodeById(entry.id);
+  const validNodes = [];
+  const nextIds = [];
+  let missingCount = 0;
+  favoriteIds.forEach(id => {
+    const node = findNodeById(id);
     if (!node){
-      favoriteEntryMap.delete(entry.id);
-      favoriteIdSet.delete(entry.id);
-      mutated = true;
+      if (lazyBranchLoadingEnabled){
+        missingCount += 1;
+        nextIds.push(id);
+      } else {
+        favoriteIdSet.delete(id);
+        mutated = true;
+      }
       return;
     }
-    validEntries.push(entry);
+    validNodes.push(node);
+    nextIds.push(id);
   });
-  if (mutated){
-    favoriteEntries = validEntries;
-    ensureFavoriteMaps();
+  if (lazyBranchLoadingEnabled){
+    favoriteIds = nextIds;
+    persistFavorites();
+  } else if (mutated){
+    favoriteIds = nextIds;
     persistFavorites();
   }
   if (!favoriteEntries.length){
     if (favoritesEmptyElem){ favoritesEmptyElem.hidden = false; }
     if (favoritesCountElem){ favoritesCountElem.textContent = '0'; }
-    updateFavoriteSelectionHighlight();
+    if (lazyBranchLoadingEnabled && missingCount > 0){
+      const notice = document.createElement('span');
+      notice.className = 'muted';
+      notice.textContent = missingCount === 1 ? 'Load the related branch to restore 1 saved favorite.' : `Load the related branches to restore ${missingCount} saved favorites.`;
+      favoritesListElem.appendChild(notice);
+    }
+    updateFavoriteShortcuts([]);
     return;
   }
   if (favoritesEmptyElem){ favoritesEmptyElem.hidden = true; }
@@ -498,7 +780,35 @@ function updateFavoritesUI(){
 
     favoritesListElem.appendChild(entryElem);
   });
-  updateFavoriteSelectionHighlight();
+  if (lazyBranchLoadingEnabled && missingCount > 0){
+    const notice = document.createElement('div');
+    notice.className = 'muted';
+    notice.textContent = missingCount === 1 ? '1 saved favorite will reappear after its branch loads.' : `${missingCount} saved favorites will reappear after their branches load.`;
+    favoritesListElem.appendChild(notice);
+  }
+  updateFavoriteShortcuts(validNodes);
+}
+
+function removeFavoriteById(id){
+  if (!favoritesFeatureEnabled || !favoriteIdSet.has(id)) return false;
+  favoriteIdSet.delete(id);
+  favoriteEntryMap.delete(id);
+  const idx = favoriteEntries.findIndex(entry => entry.id === id);
+  if (idx !== -1){ favoriteEntries.splice(idx, 1); }
+  persistFavorites();
+  updateFavoritesUI();
+  return true;
+}
+
+function removeFavoriteById(id){
+  if (!favoritesFeatureEnabled || !favoriteIdSet.has(id)) return false;
+  favoriteIdSet.delete(id);
+  favoriteEntryMap.delete(id);
+  const idx = favoriteEntries.findIndex(entry => entry.id === id);
+  if (idx !== -1){ favoriteEntries.splice(idx, 1); }
+  persistFavorites();
+  updateFavoritesUI();
+  return true;
 }
 
 function removeFavoriteById(id){
@@ -889,6 +1199,7 @@ function addDetailNodesForDataset(node, depth=0) {
     }
   }
 }
+data = normaliseLazyDataset(data);
 addDetailNodesForDataset(data);
 
 // ----------------------------------------------------------------------------
@@ -940,7 +1251,9 @@ function mkNode(d, depth=0){
     match:false,
     dimmed:false,
     tags:new Set(),
-    appear:1 // 0..1 for fade/scale on spawn
+    appear:1, // 0..1 for fade/scale on spawn
+    lazyChildUrl: d.lazyChildUrl || null,
+    __lazyLoaded: !d.lazyChildUrl
   };
   if (d.children) n.children = d.children.map(ch => (mkNode(ch, depth+1)));
   n.children.forEach(c=>c.parent=n);
@@ -1242,10 +1555,11 @@ const focusAnnounceElem = document.getElementById('focusAnnounce');
 const fisheyeToggleBtn = document.getElementById('fisheyeToggleBtn');
 const searchSubtreeElem = document.getElementById('searchSubtree');
 const searchTagsElem = document.getElementById('searchTags');
+const clearSearchBtn = document.getElementById('clearSearchBtn');
 const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 const recentSearchesElem = document.getElementById('recentSearches');
-const searchScopeBtn = document.getElementById('searchScopeBtn');
-const searchResultCountElem = document.getElementById('searchResultCount');
+const popularSearchesElem = document.getElementById('popularSearches');
+const favoriteShortcutsElem = document.getElementById('favoriteShortcuts');
 const overviewToggleRowElem = document.getElementById('overviewToggleRow');
 const appRootElem = document.querySelector('.app');
 const primarySidebarElem = document.querySelector('aside.primary');
@@ -1255,6 +1569,11 @@ const minimapTouchClose = document.getElementById('minimapTouchClose');
 const minimapTouchCanvas = document.getElementById('minimapTouchCanvas');
 const touchPreviewElem = document.getElementById('touchPreview');
 const sectorLegendElem = document.getElementById('sectorLegend');
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const selectionLockBtn = document.getElementById('selectionLockBtn');
+const downloadViewBtn = document.getElementById('downloadViewBtn');
+const canvasActionsElem = document.querySelector('.canvas-actions');
 function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
 window.addEventListener('resize', resize); resize();
 
@@ -1305,6 +1624,7 @@ walk(root, node => {
     nodeById.set(node.id, node);
   }
 });
+derivePopularSearches();
 function visible(n){
   if (n.syntheticOverview && !showSyntheticNodes) return false;
   // A node is visible if all its ancestors are expanded, and its top-level macro bucket is not filtered out.
@@ -1490,7 +1810,7 @@ function computeFocusScale(node){
 
 function computeFrameZoom(node){
   const items = [node];
-  if (node.children && node.children.length){
+  if (nodeHasLoadedChildren(node)){
     node.children.forEach(child => items.push(child));
   }
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -1516,6 +1836,13 @@ function computeFrameZoom(node){
 function focusNode(node, options = {}){
   if (!node) return;
   const { animate = true, ensureVisible = true, exclusive = false, targetScale, keepZoom = false, frameChildren = false } = options;
+  if (frameChildren && nodeHasPendingChildren(node)){
+    const load = ensureNodeChildrenLoaded(node);
+    if (load && typeof load.then === 'function'){
+      load.then(() => focusNode(node, options));
+      return;
+    }
+  }
   if (ensureVisible){
     if (exclusive){
       openPathOnly(node);
@@ -1525,7 +1852,7 @@ function focusNode(node, options = {}){
       kickPhysics();
     }
   }
-  if (frameChildren && node.children && node.children.length){
+  if (frameChildren && nodeHasLoadedChildren(node)){
     let openedForFrameChildren = false;
     if (!node.open){
       markNodeOpen(node);
@@ -1563,7 +1890,15 @@ function focusSiblingNode(direction){
 }
 
 function focusFirstChild(){
-  if (!currentFocusNode || !currentFocusNode.children || currentFocusNode.children.length === 0) return;
+  if (!currentFocusNode) return;
+  if (!nodeHasLoadedChildren(currentFocusNode) && nodeHasPendingChildren(currentFocusNode)){
+    const load = ensureNodeChildrenLoaded(currentFocusNode);
+    if (load && typeof load.then === 'function'){
+      load.then(() => focusFirstChild());
+    }
+    return;
+  }
+  if (!nodeHasLoadedChildren(currentFocusNode)) return;
   if (!currentFocusNode.open){
     toggleNode(currentFocusNode, true);
   }
@@ -1656,7 +1991,7 @@ function measureNode(n, measureCtx = ctx){
   const maxW = isChip? Infinity : 280;
   const padX = isChip? 14 : 12;
   const padY = isChip? 8 : 10;
-  const togglePadding = (!isChip && n.children && n.children.length) ? 28 : 0;
+  const togglePadding = (!isChip && nodeHasAnyChildren(n)) ? 28 : 0;
   const lines = textLinesFor(n, isChip ? maxW : Math.max(120, maxW - togglePadding), isChip, measureCtx);
   const w = (function(){
     measureCtx.save();
@@ -2192,7 +2527,7 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
       targetCtx.fillText(badgeText, badgeX + badgeWidth / 2, badgeY + badgeHeight / 2 + 0.5);
       targetCtx.restore();
     }
-    if (n.children && n.children.length > 0 && renderScale > 0.75){
+    if (nodeHasLoadedChildren(n) && renderScale > 0.75){
       targetCtx.save();
       const badgeRadius = Math.max(10, 8 * renderScale * pulseScale);
       const badgeX = x + ww - badgeRadius - 6 * renderScale;
@@ -2213,7 +2548,7 @@ function renderScene(targetCtx, width, height, cameraState, options = {}){
     if (shouldUpdateHitboxes){
       n._hit = {x,y,w:ww,h:hh, sx,sy};
     }
-    if (n.children && n.children.length>0){
+    if (nodeHasLoadedChildren(n)){
       const toggleRadius = Math.max(9, 7 * renderScale * pulseScale);
       const toggleCx = isChip ? sx + (ww/2) - toggleRadius - 6*renderScale : x + ww - toggleRadius - 8*renderScale;
       const toggleCy = isChip ? sy : y + toggleRadius + 8*renderScale;
@@ -2494,7 +2829,7 @@ function layoutChildren(n){
   // repositioning open subtrees here, each level fans out within its
   // allocated sector, yielding a symmetrical, mycelium-like pattern.
   n.children.forEach(ch => {
-    if (ch.open && ch.children && ch.children.length > 0) {
+    if (ch.open && nodeHasLoadedChildren(ch)) {
       layoutChildren(ch);
     }
   });
@@ -2807,7 +3142,7 @@ canvas.addEventListener('mousedown',e=>{
   // Reset movement detection at the start of each mouse press
   movedDuringDrag = false;
   mouseDownScreen=[x,y];
-  let target = hitTestNodeAt(x, y);
+  let target = selectionLockActive ? null : hitTestNodeAt(x, y);
   if (target){
     dragNode=target; target.isDragging=true;
     const [wx,wy] = screenToWorld(x,y);
@@ -2877,9 +3212,13 @@ canvas.addEventListener('touchstart', (e) => {
   const y = point.clientY - rect.top;
   lastMouse = [x, y];
   touchStartPoint = { x, y };
-  touchCandidateNode = hitTestNodeAt(x, y);
+  touchCandidateNode = selectionLockActive ? null : hitTestNodeAt(x, y);
   if (touchPressTimer){
     clearTimeout(touchPressTimer);
+  }
+  if (selectionLockActive){
+    beginTouchPan(x, y);
+    return;
   }
   if (touchCandidateNode){
     touchPressTimer = setTimeout(() => {
@@ -2949,7 +3288,7 @@ canvas.addEventListener('touchend', (e) => {
     }
     suppressNextClick = true;
   }
-  if (!touchPanActive && !pinching && touchStartPoint && touchCandidateNode){
+  if (!selectionLockActive && !touchPanActive && !pinching && touchStartPoint && touchCandidateNode){
     const point = pointerPositionFromEvent(e);
     if (point){
       const rect = canvas.getBoundingClientRect();
@@ -2971,8 +3310,12 @@ canvas.addEventListener('touchend', (e) => {
     const x = remaining.clientX - rect.left;
     const y = remaining.clientY - rect.top;
     touchStartPoint = { x, y };
-    touchCandidateNode = hitTestNodeAt(x, y);
-    beginTouchPan(x, y);
+    touchCandidateNode = selectionLockActive ? null : hitTestNodeAt(x, y);
+    if (selectionLockActive){
+      beginTouchPan(x, y);
+    } else {
+      beginTouchPan(x, y);
+    }
   }
 });
 canvas.addEventListener('touchcancel', () => {
@@ -2996,7 +3339,7 @@ canvas.addEventListener('click',e=>{
   }
   // Determine which node (if any) the mouse is over on click
   const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
-  let target = hitTestNodeAt(x, y);
+  let target = selectionLockActive ? null : hitTestNodeAt(x, y);
   // Determine if the pointer moved significantly since the press. Use the stored mouseDownScreen to avoid relying on mousemove events (which may not fire in all drag simulations).
   const dxMove = x - mouseDownScreen[0];
   const dyMove = y - mouseDownScreen[1];
@@ -3010,6 +3353,11 @@ canvas.addEventListener('click',e=>{
   // pointer drift.
   const moved = Math.abs(dxMove) > 12 || Math.abs(dyMove) > 12;
   // If a node drag just occurred, skip toggling entirely to prevent accidental expansion
+  if (selectionLockActive){
+    downNode = null;
+    movedDuringDrag = false;
+    return;
+  }
   if (justDraggedNode){
     justDraggedNode = false;
   } else if (!moved && downNode && target && target === downNode){
@@ -3083,39 +3431,53 @@ function animateZoom(targetScale, anchorWx, anchorWy, ms){
   }
   requestAnimationFrame(step);
 }
+
+function zoomByFactor(factor){
+  if (!Number.isFinite(factor) || factor <= 0) return;
+  const targetScale = clamp(scale * factor, MIN_ZOOM, MAX_ZOOM);
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const [anchorWx, anchorWy] = screenToWorld(centerX, centerY);
+  animateZoom(targetScale, anchorWx, anchorWy, WHEEL_EASE_MS);
+}
 function toggleNode(n, animated){
-  if (!n.children || n.children.length === 0) return;
-  const opening = !n.open;
-  setNodeOpenState(n, opening);
-  if (opening){
-    // Automatically open immediate children when expanding so the first
-    // interaction reveals the full branch.  Deeper descendants remain
-    // collapsed so the user can drill down gradually.
-    n.children.forEach(ch => {
-      markNodeOpen(ch);
-      ch.appear = 0;
-    });
-    // Schedule a progressive layout pass for the node and its ancestors.
-    // This defers expensive angle assignment and radial layout work across
-    // animation frames, preventing large branches from freezing the UI.
-    queueLayout(n, { includeAncestors: true });
-    // Animate the appearance quickly for a snappy feel (180 ms)
-    const t0 = performance.now();
-    (function anim(time){
-      const t = Math.min(1, (time - t0) / 180);
-      n.children.forEach(ch => ch.appear = t);
-      if (t < 1 && n.open) requestAnimationFrame(anim);
-    })(t0);
-  } else {
-    queueLayout(n, { includeAncestors: true });
+  if (!n) return;
+  const finalizeToggle = () => {
+    if (!n.children || n.children.length === 0) return;
+    const opening = !n.open;
+    setNodeOpenState(n, opening);
+    if (opening){
+      n.children.forEach(ch => {
+        markNodeOpen(ch);
+        ch.appear = 0;
+      });
+      queueLayout(n, { includeAncestors: true });
+      const t0 = performance.now();
+      (function anim(time){
+        const t = Math.min(1, (time - t0) / 180);
+        n.children.forEach(ch => ch.appear = t);
+        if (t < 1 && n.open) requestAnimationFrame(anim);
+      })(t0);
+    } else {
+      queueLayout(n, { includeAncestors: true });
+    }
+    requestVisibilityRefresh();
+    requestPhysicsKick();
+    updateOutlineTree(n.id);
+    if (!applyingUrlState){
+      scheduleUrlUpdate();
+    }
+  };
+  if (!nodeHasLoadedChildren(n) && nodeHasPendingChildren(n)){
+    const load = ensureNodeChildrenLoaded(n);
+    if (load && typeof load.then === 'function'){
+      load.then(() => {
+        finalizeToggle();
+      });
+      return;
+    }
   }
-  requestVisibilityRefresh();
-  // Let physics run briefly to settle the new layout, then freeze
-  requestPhysicsKick();
-  updateOutlineTree(n.id);
-  if (!applyingUrlState){
-    scheduleUrlUpdate();
-  }
+  finalizeToggle();
 }
 const qElem = document.getElementById('q');
 const resultsElem = document.getElementById('results');
@@ -3135,6 +3497,27 @@ if (qElem){
       qElem.select();
     }
   });
+}
+updateSearchClearButton();
+
+function updateSearchClearButton(){
+  if (!clearSearchBtn || !qElem) return;
+  const hasValue = qElem.value && qElem.value.trim().length > 0;
+  clearSearchBtn.hidden = !hasValue;
+}
+
+function updateSelectionLockButton(){
+  if (!selectionLockBtn) return;
+  selectionLockBtn.setAttribute('aria-pressed', selectionLockActive ? 'true' : 'false');
+  const label = selectionLockBtn.querySelector('span');
+  if (label){
+    label.textContent = selectionLockActive ? 'Unlock' : 'Lock';
+  }
+  selectionLockBtn.title = selectionLockActive ? 'Unlock node dragging' : 'Lock node dragging';
+  selectionLockBtn.setAttribute('aria-label', selectionLockActive ? 'Unlock node dragging' : 'Lock node dragging');
+  if (canvas){
+    canvas.classList.toggle('selection-lock', selectionLockActive);
+  }
 }
 
 function cancelActiveSearch(){
@@ -3627,14 +4010,66 @@ function updateRecentSearchesUI(){
   history.forEach(query => {
     const pill = document.createElement('button');
     pill.type = 'button';
-    pill.className = 'recent-pill';
     pill.textContent = query;
+    pill.dataset.query = query;
+    pill.setAttribute('role', 'listitem');
     pill.onclick = () => {
       qElem.value = query;
+      updateSearchClearButton();
       renderSearchResults(query);
       qElem.focus();
     };
     recentSearchesElem.appendChild(pill);
+  });
+}
+
+function derivePopularSearches(){
+  if (!root) return;
+  const candidates = [];
+  walk(root, node => {
+    if (!node || node.syntheticOverview) return;
+    const label = fallbackText(node, 'name');
+    if (!label || label === 'No data available') return;
+    const childCount = node.children ? node.children.length : 0;
+    const weight = childCount + Math.max(0, 4 - node.depth) * 2;
+    candidates.push({ label, weight });
+  });
+  candidates.sort((a, b) => b.weight - a.weight || a.label.localeCompare(b.label));
+  const seen = new Set();
+  const picked = [];
+  for (const entry of candidates){
+    const key = entry.label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    picked.push(entry.label);
+    if (picked.length >= POPULAR_SEARCH_LIMIT) break;
+  }
+  popularSearches = picked;
+  updatePopularSearchesUI();
+}
+
+function updatePopularSearchesUI(){
+  if (!popularSearchesElem) return;
+  popularSearchesElem.innerHTML = '';
+  if (!popularSearches.length){
+    const empty = document.createElement('span');
+    empty.className = 'muted';
+    empty.textContent = 'Popular topics appear after the map loads.';
+    popularSearchesElem.appendChild(empty);
+    return;
+  }
+  popularSearches.forEach(label => {
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.textContent = label;
+    pill.setAttribute('role', 'listitem');
+    pill.onclick = () => {
+      qElem.value = label;
+      updateSearchClearButton();
+      renderSearchResults(label);
+      qElem.focus();
+    };
+    popularSearchesElem.appendChild(pill);
   });
 }
 
@@ -3871,6 +4306,7 @@ function hideSearchResults(){
 }
 
 qElem.addEventListener('input', () => {
+  updateSearchClearButton();
   renderSearchResults(qElem.value);
 });
 
@@ -3878,6 +4314,15 @@ qElem.addEventListener('focus', () => {
   const term = qElem.value.trim();
   if (term){ renderSearchResults(term); }
 });
+
+if (clearSearchBtn){
+  clearSearchBtn.addEventListener('click', () => {
+    qElem.value = '';
+    updateSearchClearButton();
+    hideSearchResults();
+    qElem.focus();
+  });
+}
 
 resultsElem.addEventListener('mousedown', (e) => {
   e.preventDefault();
@@ -3935,7 +4380,7 @@ function openPathOnly(n){
   // Radially lay out children of each node along the opened path.  This
   // minimises overlap when jumping directly to a deep node via search.
   pathNodes.forEach(x => {
-    if (x.children && x.children.length>0) {
+    if (nodeHasLoadedChildren(x)) {
       // Force an immediate layout so the subsequent focus animation uses the
       // latest geometry.  We bypass the progressive queue here because this
       // path is taken when jumping directly to a node via search, where the
@@ -4693,7 +5138,7 @@ function restoreStateFromUrl(){
     }
     applyOpenChains(state.openChains);
     walk(root, node => {
-      if (node.open && node.children && node.children.length > 0){
+    if (node.open && nodeHasLoadedChildren(node)){
         queueLayout(node, { immediate: true });
       }
     });
@@ -4886,9 +5331,27 @@ function renderDetailsPanel(node, options = {}){
     empty.textContent = 'Select a node to inspect its context.';
     detailsContentElem.appendChild(empty);
   } else {
+    const titleRow = document.createElement('div');
+    titleRow.className = 'details-title-row';
     const title = document.createElement('h2');
     title.textContent = fallbackText(node, 'name');
-    detailsContentElem.appendChild(title);
+    titleRow.appendChild(title);
+    if (favoritesFeatureEnabled){
+      const favBtn = document.createElement('button');
+      favBtn.type = 'button';
+      favBtn.className = 'details-favorite';
+      const isFav = favoriteIdSet.has(node.id);
+      favBtn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
+      favBtn.setAttribute('aria-label', `${isFav ? 'Remove' : 'Add'} ${fallbackText(node, 'name')} ${isFav ? 'from' : 'to'} favorites`);
+      favBtn.textContent = isFav ? '★' : '☆';
+      favBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleFavorite(node);
+        renderDetailsPanel(node, { open: true });
+      });
+      titleRow.appendChild(favBtn);
+    }
+    detailsContentElem.appendChild(titleRow);
 
     const pathNodes = currentPath.map(p => fallbackText(p, 'name')).slice(1, -1).join(' › ');
     if (pathNodes){
@@ -4910,14 +5373,14 @@ function renderDetailsPanel(node, options = {}){
     neighbors.setAttribute('role', 'navigation');
     neighbors.setAttribute('aria-label', 'Neighbor nodes');
 
-    function appendGroup(label, nodes){
+    function appendGroup(label, nodes, { pending = false } = {}){
       const heading = document.createElement('h3');
       heading.textContent = label;
       neighbors.appendChild(heading);
       if (!nodes.length){
         const emptyGroup = document.createElement('div');
         emptyGroup.className = 'neighbor-empty';
-        emptyGroup.textContent = 'None';
+        emptyGroup.textContent = pending ? 'Expand to load this branch.' : 'None';
         neighbors.appendChild(emptyGroup);
         return;
       }
@@ -4940,12 +5403,20 @@ function renderDetailsPanel(node, options = {}){
     appendGroup('Parent', parentNode);
     const siblings = node.parent ? node.parent.children.filter(ch => ch !== node) : [];
     appendGroup('Siblings', siblings);
-    appendGroup('Children', node.children || []);
+    const childNodes = nodeHasLoadedChildren(node) ? node.children : [];
+    appendGroup('Children', childNodes, { pending: nodeHasPendingChildren(node) });
     detailsContentElem.appendChild(neighbors);
 
     const stats = document.createElement('div');
     stats.className = 'muted';
-    stats.textContent = `${(node.children || []).length} child${(node.children || []).length === 1 ? '' : 'ren'} • depth ${node.depth}`;
+    if (nodeHasLoadedChildren(node)){
+      const count = node.children.length;
+      stats.textContent = `${count} child${count === 1 ? '' : 'ren'} • depth ${node.depth}`;
+    } else if (nodeHasPendingChildren(node)){
+      stats.textContent = `Branch loads on expand • depth ${node.depth}`;
+    } else {
+      stats.textContent = `0 children • depth ${node.depth}`;
+    }
     detailsContentElem.appendChild(stats);
   }
 
@@ -4995,13 +5466,16 @@ function renderOutlineTree(){
     row.className = 'tree-item';
     row.dataset.nodeId = node.id;
     row.tabIndex = -1;
-    const hasChildren = node.children && node.children.length > 0;
+    const hasChildren = nodeHasAnyChildren(node);
     if (hasChildren){
       const toggle = document.createElement('button');
       toggle.type = 'button';
       toggle.className = 'tree-toggle';
       toggle.textContent = node.open ? '−' : '+';
-      toggle.setAttribute('aria-label', node.open ? 'Collapse branch' : 'Expand branch');
+      const toggleLabel = node.open
+        ? 'Collapse branch'
+        : (nodeHasPendingChildren(node) ? 'Expand branch (loads more topics)' : 'Expand branch');
+      toggle.setAttribute('aria-label', toggleLabel);
       toggle.onclick = (ev) => {
         ev.stopPropagation();
         toggleNode(node, true);
@@ -5031,7 +5505,13 @@ function renderOutlineTree(){
     if (hasChildren){
       const count = document.createElement('span');
       count.className = 'count';
-      count.textContent = String(node.children.length);
+      if (nodeHasLoadedChildren(node)){
+        count.textContent = String(node.children.length);
+        count.title = node.children.length === 1 ? '1 child topic' : `${node.children.length} child topics`;
+      } else {
+        count.textContent = '…';
+        count.title = 'Branch loads on expand';
+      }
       label.appendChild(count);
     }
     row.appendChild(label);
@@ -5052,10 +5532,18 @@ function renderOutlineTree(){
         const group = document.createElement('ul');
         group.className = 'tree-children';
         group.setAttribute('role', 'group');
-        node.children.forEach(child => {
-          const childLi = build(child, depth + 1);
-          if (childLi){ group.appendChild(childLi); }
-        });
+        if (nodeHasLoadedChildren(node)){
+          node.children.forEach(child => {
+            const childLi = build(child, depth + 1);
+            if (childLi){ group.appendChild(childLi); }
+          });
+        } else if (nodeHasPendingChildren(node)){
+          const pendingItem = document.createElement('li');
+          pendingItem.className = 'tree-item tree-item--pending';
+          pendingItem.textContent = 'Loading…';
+          pendingItem.setAttribute('aria-hidden', 'true');
+          group.appendChild(pendingItem);
+        }
         li.appendChild(group);
       }
     } else {
@@ -5108,7 +5596,7 @@ function renderScreenReaderOutline(){
     li.setAttribute('aria-level', String(depth + 1));
     const row = document.createElement('div');
     row.className = 'sr-outline-row';
-    const hasChildren = node.children && node.children.length > 0;
+    const hasChildren = nodeHasAnyChildren(node);
     if (hasChildren){
       const groupId = `sr-outline-children-${node.id}`;
       const collapsed = srOutlineCollapsed.has(node.id);
@@ -5118,6 +5606,11 @@ function renderScreenReaderOutline(){
       toggle.setAttribute('aria-controls', groupId);
       toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
       toggle.textContent = collapsed ? 'Expand' : 'Collapse';
+      if (nodeHasPendingChildren(node) && collapsed){
+        toggle.setAttribute('aria-description', 'Loads more topics when expanded');
+      } else {
+        toggle.removeAttribute('aria-description');
+      }
       toggle.addEventListener('click', () => {
         if (srOutlineCollapsed.has(node.id)){
           srOutlineCollapsed.delete(node.id);
@@ -5133,10 +5626,17 @@ function renderScreenReaderOutline(){
       group.setAttribute('role', 'group');
       group.id = groupId;
       group.hidden = collapsed;
-      node.children.forEach(child => {
+      (node.children || []).forEach(child => {
         const childItem = build(child, depth + 1);
         if (childItem){ group.appendChild(childItem); }
       });
+      if (!nodeHasLoadedChildren(node) && nodeHasPendingChildren(node)){
+        const pendingItem = document.createElement('li');
+        pendingItem.className = 'sr-outline-pending';
+        pendingItem.textContent = 'Loading…';
+        pendingItem.setAttribute('aria-hidden', 'true');
+        group.appendChild(pendingItem);
+      }
       li.appendChild(row);
       li.appendChild(group);
     } else {
@@ -5235,12 +5735,12 @@ function handleOutlineKeyDown(event){
       moveOutlineFocus(-1);
       break;
     case 'ArrowRight':
-      if (node.children && node.children.length){
+      if (nodeHasAnyChildren(node)){
         event.preventDefault();
-        if (!node.open){
+        if (!node.open || nodeHasPendingChildren(node)){
           outlineLastFocusedId = node.id;
           toggleNode(node, true);
-        } else {
+        } else if (nodeHasLoadedChildren(node)){
           const childId = node.children[0].id;
           outlineLastFocusedId = childId;
           const childRow = outlineItems.get(childId);
@@ -5251,7 +5751,7 @@ function handleOutlineKeyDown(event){
       }
       break;
     case 'ArrowLeft':
-      if (node.children && node.children.length && node.open){
+      if (nodeHasAnyChildren(node) && node.open){
         event.preventDefault();
         outlineLastFocusedId = node.id;
         toggleNode(node, true);
@@ -5533,12 +6033,35 @@ function showTooltip(n, pageX, pageY){
   provenance.textContent = n.syntheticOverview ? 'Synthetic overview summary' : 'Curated dataset node';
   tooltipElem.appendChild(provenance);
   // Children count
-  if (n.children && n.children.length > 0){
+  if (nodeHasLoadedChildren(n)){
     const countDiv = document.createElement('div');
     countDiv.style.fontSize = '11px';
     countDiv.style.color = getComputedStyle(document.documentElement).getPropertyValue('--muted');
     countDiv.textContent = `${n.children.length} child${n.children.length===1?'':'ren'}`;
     tooltipElem.appendChild(countDiv);
+  }
+  if (nodeHasPendingChildren(n)){
+    const lazyDiv = document.createElement('div');
+    lazyDiv.className = 'tooltip-lazy muted';
+    lazyDiv.textContent = 'Branch loads on expand.';
+    tooltipElem.appendChild(lazyDiv);
+  }
+  if (favoritesFeatureEnabled){
+    const actions = document.createElement('div');
+    actions.className = 'tooltip-actions';
+    const favBtn = document.createElement('button');
+    favBtn.type = 'button';
+    const isFav = favoriteIdSet.has(n.id);
+    favBtn.className = 'tooltip-favorite';
+    favBtn.innerHTML = `${isFav ? '★' : '☆'} <span>${isFav ? 'Remove favorite' : 'Add to favorites'}</span>`;
+    favBtn.setAttribute('aria-label', `${isFav ? 'Remove' : 'Add'} ${fallbackText(n, 'name')} ${isFav ? 'from' : 'to'} favorites`);
+    favBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleFavorite(n);
+      showTooltip(n, pageX, pageY);
+    });
+    actions.appendChild(favBtn);
+    tooltipElem.appendChild(actions);
   }
   // Position tooltip near the cursor, offset to avoid covering the pointer
   tooltipElem.style.left = (pageX + 12) + 'px';
@@ -5582,8 +6105,10 @@ function showTouchPreview(node){
   meta.className = 'meta';
   const details = [];
   details.push(node.syntheticOverview ? 'Synthetic overview summary' : 'Curated dataset node');
-  if (node.children && node.children.length){
+  if (nodeHasLoadedChildren(node)){
     details.push(`${node.children.length} child${node.children.length === 1 ? '' : 'ren'}`);
+  } else if (nodeHasPendingChildren(node)){
+    details.push('Branch loads on expand');
   }
   meta.textContent = details.join(' • ');
   touchPreviewElem.appendChild(meta);
@@ -6272,6 +6797,53 @@ if (favoritesFeatureEnabled){
   updateFavoritesUI();
 }
 updateRecentSearchesUI();
+updatePopularSearchesUI();
+setupControlHelp();
+if (zoomInBtn){
+  zoomInBtn.addEventListener('click', () => {
+    zoomByFactor(1.18);
+  });
+}
+if (zoomOutBtn){
+  zoomOutBtn.addEventListener('click', () => {
+    zoomByFactor(0.85);
+  });
+}
+if (selectionLockBtn){
+  selectionLockBtn.addEventListener('click', () => {
+    selectionLockActive = !selectionLockActive;
+    updateSelectionLockButton();
+    hideTooltip();
+  });
+  updateSelectionLockButton();
+}
+if (downloadViewBtn){
+  downloadViewBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    const menu = ensureDownloadMenu();
+    if (!menu) return;
+    if (menu.hidden){
+      openDownloadMenu();
+    } else {
+      hideDownloadMenu();
+    }
+  });
+}
+document.addEventListener('pointerdown', (event) => {
+  if (!downloadMenuElem || downloadMenuElem.hidden) return;
+  if (downloadMenuElem.contains(event.target) || (downloadViewBtn && downloadViewBtn.contains(event.target))){
+    return;
+  }
+  hideDownloadMenu();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape'){
+    hideDownloadMenu();
+    if (helpPopoverLocked){
+      releaseControlHelpLock();
+    }
+  }
+});
 maybeShowOnboardingCoachmark();
 
 // Sidebar reopen button: when clicked, restore the sidebar and hide the
