@@ -51,6 +51,10 @@ VISUAL
 const DATA_CACHE_KEY = 'atlas_dataset_cache_v2';
 const DATA_META_KEY = 'atlas_dataset_meta_v2';
 const DATA_STALE_MS = 1000 * 60 * 60 * 24; // 24 hours
+const MAP_TOOLS_COACH_KEY = 'atlas_map_tools_seen_v1';
+const SEARCH_HISTORY_STORAGE_KEY = 'atlas_recent_searches_v2';
+const ROOT_SEARCH_SCOPE = 'scope:root';
+const MAX_SEARCH_HISTORY_PER_SCOPE = 5;
 const urlParams = new URLSearchParams(window.location.search);
 const requestedDataset = urlParams.get('dataset');
 const sanitizedDataset = requestedDataset ? requestedDataset.replace(/[^a-z0-9_\-]/gi, '') : 'atlas';
@@ -72,14 +76,51 @@ let currentFocusNode = null;
 const loadingOverlayElem = document.getElementById('loadingOverlay');
 const dataFreshnessElem = document.getElementById('dataFreshness');
 const toastRegion = document.getElementById('toastRegion');
-const FAVORITES_STORAGE_KEY = 'atlas_favorites_v1';
+const FAVORITES_STORAGE_KEY = 'atlas_favorites_v2';
+const LEGACY_FAVORITES_KEY = 'atlas_favorites_v1';
 const favoritesFeatureEnabled = document.body?.dataset?.featureFavorites === 'on';
 const favoritesListElem = document.getElementById('favoritesList');
 const favoritesEmptyElem = document.getElementById('favoritesEmpty');
 const favoritesCountElem = document.getElementById('favoritesCount');
+// Older builds referenced a global `favoritesShortcutSel` selector for the
+// saved shortcuts list.  Keep exposing that selector so existing cached HTML
+// or scripts do not crash while the new favorites pane boots.
+const favoritesShortcutSelector = '#favoritesList .favorite-entry';
+if (typeof window !== 'undefined' && !window.favoritesShortcutSel){
+  window.favoritesShortcutSel = favoritesShortcutSelector;
+}
+const loadingStatusElem = document.getElementById('loadingStatus');
+if (typeof window !== 'undefined'){
+  // Older cached bundles referenced various global spellings for the loading
+  // status live region.  Expose the current element under the legacy names so
+  // they continue to work even if the new script loads before the cache clears.
+  if (!('loadingStatusElem' in window)){
+    window.loadingStatusElem = loadingStatusElem;
+  }
+  if (!('loadingStatusEl' in window)){
+    window.loadingStatusEl = loadingStatusElem;
+  }
+  if (!('loadingstatusEl' in window)){
+    window.loadingstatusEl = loadingStatusElem;
+  }
+}
+let mainCanvasRef = null;
+let loadingStatusClearTimer = null;
+let mapToolsCoachTimer = null;
+const mapToolsPanelElem = document.getElementById('mapToolsPanel');
+const mapToolsCoachElem = document.getElementById('mapToolsCoach');
+const dismissMapToolsCoachBtn = document.getElementById('dismissMapToolsCoach');
+const mapToolsCoachMessageElem = document.getElementById('mapToolsCoachMessage');
+if (mapToolsCoachElem){
+  mapToolsCoachElem.setAttribute('aria-hidden', 'true');
+  if (!mapToolsCoachElem.hasAttribute('tabindex')){
+    mapToolsCoachElem.setAttribute('tabindex', '-1');
+  }
+}
 let datasetMeta = null;
-let favoriteIds = [];
+let favoriteEntries = [];
 const favoriteIdSet = new Set();
+const favoriteEntryMap = new Map();
 
 function showFatalError(error){
   console.error(error);
@@ -100,10 +141,95 @@ function showFatalError(error){
   }
 }
 
-function setLoadingState(active, message = 'Loading…'){
+function updateLoadingStatus(message, { busy = true, final = false } = {}){
+  if (loadingStatusElem){
+    loadingStatusElem.textContent = message || '';
+  }
+  const canvasTarget = mainCanvasRef || document.getElementById('c');
+  if (canvasTarget){
+    if (busy){
+      canvasTarget.setAttribute('aria-busy', 'true');
+    } else {
+      canvasTarget.removeAttribute('aria-busy');
+    }
+  }
+  if (loadingStatusClearTimer){
+    clearTimeout(loadingStatusClearTimer);
+    loadingStatusClearTimer = null;
+  }
+  if (final && loadingStatusElem){
+    loadingStatusClearTimer = setTimeout(() => {
+      if (loadingStatusElem){
+        loadingStatusElem.textContent = '';
+      }
+    }, 2200);
+  }
+}
+
+function setLoadingState(active, message = 'Loading…', options = {}){
   if (!loadingOverlayElem) return;
-  if (typeof message === 'string'){ const label = loadingOverlayElem.querySelector('p'); if (label){ label.textContent = message; } }
+  if (typeof message === 'string'){
+    const label = loadingOverlayElem.querySelector('p');
+    if (label){
+      label.textContent = message;
+    }
+  }
   loadingOverlayElem.hidden = !active;
+  const busy = Object.prototype.hasOwnProperty.call(options, 'busy') ? options.busy : active;
+  updateLoadingStatus(message, { busy, final: !busy && !active });
+}
+
+function markMapToolsCoachSeen(){
+  try { localStorage.setItem(MAP_TOOLS_COACH_KEY, '1'); } catch(e) {}
+}
+
+function dismissMapToolsCoach({ persist = false } = {}){
+  if (mapToolsCoachTimer){
+    clearTimeout(mapToolsCoachTimer);
+    mapToolsCoachTimer = null;
+  }
+  if (persist){
+    markMapToolsCoachSeen();
+  }
+  if (mapToolsCoachElem){
+    mapToolsCoachElem.hidden = true;
+    mapToolsCoachElem.setAttribute('aria-hidden', 'true');
+  }
+  if (mapToolsPanelElem){
+    mapToolsPanelElem.classList.remove('map-tools-panel--highlight');
+    mapToolsPanelElem.removeAttribute('aria-describedby');
+  }
+}
+
+function showMapToolsCoach(){
+  if (!mapToolsCoachElem || !mapToolsPanelElem) return;
+  mapToolsPanelElem.classList.add('map-tools-panel--highlight');
+  if (mapToolsCoachMessageElem){
+    mapToolsPanelElem.setAttribute('aria-describedby', 'mapToolsCoachMessage');
+  }
+  mapToolsCoachElem.hidden = false;
+  mapToolsCoachElem.removeAttribute('hidden');
+  mapToolsCoachElem.setAttribute('aria-hidden', 'false');
+  if (!mapToolsCoachElem.hasAttribute('tabindex')){
+    mapToolsCoachElem.setAttribute('tabindex', '-1');
+  }
+  if (focusAnnounceElem){
+    focusAnnounceElem.textContent = 'Map tools grouped together. Use reset, back, expand, and lens controls here.';
+  }
+}
+
+function scheduleMapToolsCoach(){
+  if (!mapToolsCoachElem || !mapToolsPanelElem) return;
+  let alreadySeen = false;
+  try { alreadySeen = localStorage.getItem(MAP_TOOLS_COACH_KEY) === '1'; } catch(e) {}
+  if (alreadySeen) return;
+  if (mapToolsCoachTimer){
+    clearTimeout(mapToolsCoachTimer);
+  }
+  mapToolsCoachTimer = setTimeout(() => {
+    mapToolsCoachTimer = null;
+    showMapToolsCoach();
+  }, 1800);
 }
 
 function showToast(message, options = {}){
@@ -121,31 +247,94 @@ function showToast(message, options = {}){
   setTimeout(() => { toast.remove(); }, lifetime);
 }
 
+function sanitizeFavoriteView(view){
+  if (!view || typeof view !== 'object') return null;
+  const { offsetX, offsetY, scale: viewScale, openIds, openMap, focusId } = view;
+  if (!Number.isFinite(offsetX) || !Number.isFinite(offsetY) || !Number.isFinite(viewScale)){
+    return null;
+  }
+  const snapshot = {
+    offsetX: Number(offsetX),
+    offsetY: Number(offsetY),
+    scale: Number(viewScale),
+    focusId: Number.isFinite(focusId) ? focusId : null
+  };
+  if (Array.isArray(openIds)){
+    snapshot.openIds = openIds.slice(0, 800);
+  } else if (openMap && typeof openMap === 'object'){
+    snapshot.openMap = { ...openMap };
+  }
+  return snapshot;
+}
+
+function ensureFavoriteMaps(){
+  favoriteEntryMap.clear();
+  favoriteIdSet.clear();
+  favoriteEntries.forEach(entry => {
+    if (!favoriteEntryMap.has(entry.id)){
+      favoriteEntryMap.set(entry.id, entry);
+      favoriteIdSet.add(entry.id);
+    }
+  });
+}
+
 function loadFavoritesFromStorage(){
   if (!favoritesFeatureEnabled) return;
-  favoriteIds = [];
+  favoriteEntries = [];
+  favoriteEntryMap.clear();
   favoriteIdSet.clear();
   try {
     const raw = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY));
     if (Array.isArray(raw)){
       raw.forEach((value) => {
-        const id = Number(value);
-        if (Number.isFinite(id) && !favoriteIdSet.has(id)){
-          favoriteIdSet.add(id);
-          favoriteIds.push(id);
-        }
+        const id = Number(value?.id ?? value);
+        if (!Number.isFinite(id) || favoriteIdSet.has(id)) return;
+        const alias = typeof value?.alias === 'string' ? value.alias.trim() : '';
+        const entry = {
+          id,
+          alias: alias ? alias : null,
+          view: sanitizeFavoriteView(value?.view)
+        };
+        favoriteEntries.push(entry);
+        favoriteEntryMap.set(id, entry);
+        favoriteIdSet.add(id);
       });
     }
   } catch (error) {
-    favoriteIds = [];
+    favoriteEntries = [];
+    favoriteEntryMap.clear();
     favoriteIdSet.clear();
+  }
+  if (!favoriteEntries.length){
+    try {
+      const legacy = JSON.parse(localStorage.getItem(LEGACY_FAVORITES_KEY));
+      if (Array.isArray(legacy)){
+        legacy.forEach((value) => {
+          const id = Number(value);
+          if (!Number.isFinite(id) || favoriteIdSet.has(id)) return;
+          const entry = { id, alias: null, view: null };
+          favoriteEntries.push(entry);
+          favoriteEntryMap.set(id, entry);
+          favoriteIdSet.add(id);
+        });
+        if (favoriteEntries.length){
+          persistFavorites();
+        }
+      }
+    } catch (error) {}
   }
 }
 
 function persistFavorites(){
   if (!favoritesFeatureEnabled) return;
   try {
-    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favoriteIds));
+    const payload = favoriteEntries.map(entry => ({
+      id: entry.id,
+      alias: entry.alias || null,
+      view: entry.view || null
+    }));
+    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(payload));
+    try { localStorage.removeItem(LEGACY_FAVORITES_KEY); } catch (error) {}
   } catch (error) {}
 }
 
@@ -159,84 +348,177 @@ function updateFavoriteSelectionHighlight(){
   });
 }
 
+let favoriteDragIndex = null;
+
 function updateFavoritesUI(){
   if (!favoritesFeatureEnabled || !favoritesListElem) return;
   favoritesListElem.innerHTML = '';
   let mutated = false;
-  const validNodes = [];
-  const validIds = [];
-  favoriteIds.forEach(id => {
-    const node = findNodeById(id);
+  const validEntries = [];
+  favoriteEntries.forEach(entry => {
+    const node = findNodeById(entry.id);
     if (!node){
-      favoriteIdSet.delete(id);
+      favoriteEntryMap.delete(entry.id);
+      favoriteIdSet.delete(entry.id);
       mutated = true;
       return;
     }
-    validNodes.push(node);
-    validIds.push(id);
+    validEntries.push(entry);
   });
   if (mutated){
-    favoriteIds = validIds;
+    favoriteEntries = validEntries;
+    ensureFavoriteMaps();
     persistFavorites();
   }
-  if (!validNodes.length){
+  if (!favoriteEntries.length){
     if (favoritesEmptyElem){ favoritesEmptyElem.hidden = false; }
     if (favoritesCountElem){ favoritesCountElem.textContent = '0'; }
     updateFavoriteSelectionHighlight();
     return;
   }
   if (favoritesEmptyElem){ favoritesEmptyElem.hidden = true; }
-  if (favoritesCountElem){ favoritesCountElem.textContent = String(validNodes.length); }
-  validNodes.forEach(node => {
-    const entry = document.createElement('div');
-    entry.className = 'favorite-entry';
-    entry.dataset.nodeId = String(node.id);
-    entry.setAttribute('role', 'listitem');
+  if (favoritesCountElem){ favoritesCountElem.textContent = String(favoriteEntries.length); }
+  favoriteEntries.forEach((entry, idx) => {
+    const node = findNodeById(entry.id);
+    if (!node) return;
+    const labelText = entry.alias || fallbackText(node, 'name');
+    const entryElem = document.createElement('div');
+    entryElem.className = 'favorite-entry';
+    entryElem.dataset.nodeId = String(entry.id);
+    entryElem.setAttribute('role', 'listitem');
+    entryElem.draggable = true;
 
     const main = document.createElement('div');
     main.className = 'favorite-main';
 
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'favorite-link';
-    const label = document.createElement('span');
-    label.textContent = fallbackText(node, 'name');
-    button.appendChild(label);
-    button.addEventListener('click', () => {
-      focusNode(node, { animate: true, ensureVisible: true, exclusive: true, frameChildren: true });
-      triggerNodeFlash(node, 900);
+    const handle = document.createElement('button');
+    handle.type = 'button';
+    handle.className = 'favorite-drag-handle';
+    handle.setAttribute('aria-label', `Reorder ${labelText}`);
+    handle.innerHTML = '⋮⋮';
+    main.appendChild(handle);
+
+    const openContextBtn = document.createElement('button');
+    openContextBtn.type = 'button';
+    openContextBtn.className = 'favorite-link';
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = labelText;
+    openContextBtn.appendChild(labelSpan);
+    const hint = document.createElement('span');
+    hint.className = 'favorite-link__hint';
+    hint.textContent = 'In context';
+    openContextBtn.appendChild(hint);
+    openContextBtn.title = entry.alias ? `${fallbackText(node, 'name')} (saved context)` : `Open ${labelText} with saved view`;
+    openContextBtn.addEventListener('click', () => openFavorite(entry, { mode: 'context', node }));
+    openContextBtn.addEventListener('keydown', (event) => {
+      if ((event.key === 'ContextMenu') || (event.shiftKey && event.key === 'F10')){
+        event.preventDefault();
+        const rect = openContextBtn.getBoundingClientRect();
+        openFavoritesContextMenu(entry, rect.left + rect.width / 2, rect.top + rect.height / 2);
+      }
     });
+    main.appendChild(openContextBtn);
+
+    const actions = document.createElement('div');
+    actions.className = 'favorite-actions';
+
+    const rootBtn = document.createElement('button');
+    rootBtn.type = 'button';
+    rootBtn.className = 'favorite-action';
+    rootBtn.textContent = 'As root';
+    rootBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openFavorite(entry, { mode: 'root', node });
+    });
+    actions.appendChild(rootBtn);
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'favorite-remove';
-    removeBtn.setAttribute('aria-label', `Remove ${fallbackText(node, 'name')} from favorites`);
+    removeBtn.setAttribute('aria-label', `Remove ${labelText} from favorites`);
     removeBtn.innerHTML = '&times;';
     removeBtn.addEventListener('click', (event) => {
       event.stopPropagation();
-      toggleFavorite(node);
+      if (removeFavoriteById(entry.id)){
+        showToast(`Removed “${labelText}” from favorites.`, { title: 'Favorites' });
+      }
     });
+    actions.appendChild(removeBtn);
 
-    main.appendChild(button);
-    main.appendChild(removeBtn);
-    entry.appendChild(main);
+    main.appendChild(actions);
+    entryElem.appendChild(main);
 
     const meta = document.createElement('div');
     meta.className = 'favorite-meta';
-    meta.textContent = node.parent ? fallbackText(node.parent, 'name') : 'Root';
+    const parentLabel = node.parent ? fallbackText(node.parent, 'name') : 'Root';
+    meta.textContent = entry.alias ? `${parentLabel} • ${fallbackText(node, 'name')}` : parentLabel;
     meta.title = meta.textContent;
-    entry.appendChild(meta);
+    entryElem.appendChild(meta);
 
-    favoritesListElem.appendChild(entry);
+    entryElem.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+      openFavoritesContextMenu(entry, event.pageX, event.pageY);
+    });
+
+    entryElem.addEventListener('dragstart', (event) => {
+      if (!event.target.classList.contains('favorite-drag-handle') && !event.target.closest('.favorite-drag-handle')){
+        event.preventDefault();
+        return;
+      }
+      favoriteDragIndex = idx;
+      event.dataTransfer.effectAllowed = 'move';
+      entryElem.classList.add('dragging');
+    });
+    entryElem.addEventListener('dragover', (event) => {
+      if (favoriteDragIndex === null || favoriteDragIndex === idx) return;
+      event.preventDefault();
+      entryElem.classList.add('drag-target');
+    });
+    entryElem.addEventListener('dragleave', () => {
+      entryElem.classList.remove('drag-target');
+    });
+    entryElem.addEventListener('drop', (event) => {
+      if (favoriteDragIndex === null) return;
+      event.preventDefault();
+      entryElem.classList.remove('drag-target');
+      if (favoriteDragIndex === idx) return;
+      const moved = favoriteEntries.splice(favoriteDragIndex, 1)[0];
+      favoriteEntries.splice(idx, 0, moved);
+      favoriteDragIndex = null;
+      ensureFavoriteMaps();
+      persistFavorites();
+      updateFavoritesUI();
+    });
+    entryElem.addEventListener('dragend', () => {
+      favoriteDragIndex = null;
+      entryElem.classList.remove('dragging');
+      const activeTargets = favoritesListElem.querySelectorAll('.drag-target');
+      activeTargets.forEach(el => el.classList.remove('drag-target'));
+    });
+
+    favoritesListElem.appendChild(entryElem);
   });
   updateFavoriteSelectionHighlight();
+}
+
+function removeFavoriteById(id){
+  if (!favoritesFeatureEnabled || !favoriteIdSet.has(id)) return false;
+  favoriteIdSet.delete(id);
+  favoriteEntryMap.delete(id);
+  const idx = favoriteEntries.findIndex(entry => entry.id === id);
+  if (idx !== -1){ favoriteEntries.splice(idx, 1); }
+  persistFavorites();
+  updateFavoritesUI();
+  return true;
 }
 
 function addFavorite(node){
   if (!favoritesFeatureEnabled || !node) return false;
   if (favoriteIdSet.has(node.id)) return false;
+  const entry = { id: node.id, alias: null, view: sanitizeFavoriteView(snapshotView()) };
+  favoriteEntries.unshift(entry);
+  favoriteEntryMap.set(node.id, entry);
   favoriteIdSet.add(node.id);
-  favoriteIds.unshift(node.id);
   persistFavorites();
   updateFavoritesUI();
   if (favoritesListElem){ favoritesListElem.scrollTop = 0; }
@@ -245,22 +527,119 @@ function addFavorite(node){
 
 function removeFavorite(node){
   if (!favoritesFeatureEnabled || !node) return false;
-  if (!favoriteIdSet.has(node.id)) return false;
-  favoriteIdSet.delete(node.id);
-  const idx = favoriteIds.indexOf(node.id);
-  if (idx !== -1){ favoriteIds.splice(idx, 1); }
+  return removeFavoriteById(node.id);
+}
+
+function renameFavorite(entry){
+  if (!entry) return;
+  const node = findNodeById(entry.id);
+  const currentLabel = entry.alias || (node ? fallbackText(node, 'name') : 'Favorite');
+  const next = window.prompt('Rename shortcut', entry.alias || currentLabel);
+  if (next === null) return;
+  const trimmed = next.trim();
+  entry.alias = trimmed || null;
   persistFavorites();
   updateFavoritesUI();
-  return true;
+  showToast('Shortcut renamed.', { title: 'Favorites' });
+}
+
+function openFavorite(entry, { mode = 'context', node = null } = {}){
+  if (!favoritesFeatureEnabled || !entry) return;
+  const targetNode = node || findNodeById(entry.id);
+  if (!targetNode){
+    if (removeFavoriteById(entry.id)){
+      showToast('Favorite no longer available.', { title: 'Favorites' });
+    }
+    return;
+  }
+  if (mode === 'context'){
+    if (entry.view){
+      restoreView(entry.view);
+      updateBreadcrumb(targetNode);
+      requestRender();
+    } else {
+      focusNode(targetNode, { animate: true, ensureVisible: true, frameChildren: true });
+    }
+  } else {
+    focusNode(targetNode, { animate: true, ensureVisible: true, exclusive: true, frameChildren: true });
+  }
+  triggerNodeFlash(targetNode, 900);
+  scheduleUrlUpdate();
+  updateFavoriteSelectionHighlight();
+}
+
+function openFavoritesContextMenu(entry, pageX, pageY){
+  if (!contextMenuElem || !entry) return;
+  const node = findNodeById(entry.id);
+  contextMenuElem.innerHTML = '';
+  contextMenuNode = { type: 'favorite', entry };
+  contextMenuReturnFocus = document.activeElement;
+  const label = entry.alias || (node ? fallbackText(node, 'name') : 'Favorite');
+  const actions = [
+    { label: 'Open in context', handler: () => openFavorite(entry, { mode: 'context', node }) },
+    { label: 'Open as root', handler: () => openFavorite(entry, { mode: 'root', node }) },
+    { label: 'Rename shortcut', handler: () => renameFavorite(entry) },
+    { label: 'Remove', handler: () => {
+        if (removeFavoriteById(entry.id)){
+          showToast(`Removed “${label}” from favorites.`, { title: 'Favorites' });
+        }
+      } }
+  ];
+  actions.forEach(action => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = action.label;
+    btn.onclick = () => {
+      action.handler();
+      closeContextMenu();
+    };
+    if (action.label === 'Remove' && !favoriteIdSet.has(entry.id)){
+      btn.disabled = true;
+    }
+    contextMenuElem.appendChild(btn);
+  });
+  contextMenuElem.style.left = `${pageX}px`;
+  contextMenuElem.style.top = `${pageY}px`;
+  contextMenuElem.setAttribute('aria-hidden', 'false');
+  contextMenuElem.style.pointerEvents = 'auto';
+  const bounds = contextMenuElem.getBoundingClientRect();
+  const adjustedX = Math.min(pageX, window.innerWidth - bounds.width - 16);
+  const adjustedY = Math.min(pageY, window.innerHeight - bounds.height - 16);
+  contextMenuElem.style.left = `${Math.max(0, adjustedX)}px`;
+  contextMenuElem.style.top = `${Math.max(0, adjustedY)}px`;
+  const buttons = contextMenuElem.querySelectorAll('button');
+  if (buttons.length){
+    buttons[0].focus();
+  }
+  contextMenuElem.onkeydown = (event) => {
+    const items = Array.from(contextMenuElem.querySelectorAll('button'));
+    if (!items.length) return;
+    const index = items.indexOf(document.activeElement);
+    if (event.key === 'ArrowDown'){
+      event.preventDefault();
+      const next = index === -1 ? 0 : (index + 1) % items.length;
+      items[next].focus();
+    } else if (event.key === 'ArrowUp'){
+      event.preventDefault();
+      const prev = index <= 0 ? items.length - 1 : index - 1;
+      items[prev].focus();
+    } else if (event.key === 'Escape'){
+      event.preventDefault();
+      closeContextMenu();
+    }
+  };
 }
 
 function toggleFavorite(node){
   if (!favoritesFeatureEnabled || !node) return;
+  const existingEntry = favoriteEntryMap.get(node.id);
+  const label = existingEntry?.alias || fallbackText(node, 'name');
   const already = favoriteIdSet.has(node.id);
   const changed = already ? removeFavorite(node) : addFavorite(node);
   if (!changed) return;
-  const name = fallbackText(node, 'name');
-  showToast(`${already ? 'Removed' : 'Added'} “${name}” ${already ? 'from' : 'to'} favorites.`, { title: 'Favorites' });
+  const entry = favoriteEntryMap.get(node.id) || existingEntry;
+  const toastLabel = entry?.alias || fallbackText(node, 'name');
+  showToast(`${already ? 'Removed' : 'Added'} “${toastLabel}” ${already ? 'from' : 'to'} favorites.`, { title: 'Favorites' });
   if (currentFocusNode && currentFocusNode.id === node.id){
     updateBreadcrumb(node);
   } else {
@@ -353,7 +732,7 @@ async function boot(){
 // ----------------------------------------------------------------------------
 // DATA LOADING
 // ----------------------------------------------------------------------------
-setLoadingState(true, `Loading ${datasetLabel} dataset…`);
+setLoadingState(true, `Loading ${datasetLabel} dataset…`, { busy: true });
 let data;
 let usedCache = false;
 let loadError = null;
@@ -402,7 +781,7 @@ try {
   loadError = error;
   if (!data){
     showFatalError(error);
-    setLoadingState(false);
+    setLoadingState(false, 'Load failed', { busy: false });
     return;
   }
   usedCache = true;
@@ -420,7 +799,7 @@ updateDataFreshnessDisplay(datasetMeta, { usedCache, error: loadError });
 if (datasetMeta && Number.isFinite(datasetMeta.fetchedAt) && Date.now() - datasetMeta.fetchedAt > DATA_STALE_MS){
   showToast('Atlas data may be older than a day. Refresh when online for the latest view.', { title: 'Stale cache', duration: 4200 });
 }
-setLoadingState(false);
+setLoadingState(true, 'Laying out atlas…', { busy: true });
 
 function fallbackText(data, field, fallback = 'No data available') {
   if (!data || typeof data !== 'object') return fallback;
@@ -443,8 +822,7 @@ const srOutlineItems = new Map();
 let outlineOrder = [];
 let outlineLastFocusedId = null;
 const srOutlineCollapsed = new Set();
-const RECENT_SEARCH_LIMIT = 8;
-let recentSearches = [];
+let recentSearchesByScope = {};
 let searchInSubtree = false;
 let searchIncludeTags = false;
 const MACRO_VISIBILITY_STORAGE_KEY = 'atlas_macro_filters_v1';
@@ -770,7 +1148,55 @@ try {
   }
 } catch(e) {}
 
-try { recentSearches = JSON.parse(localStorage.getItem('atlas_recent_searches')) || []; } catch(e) { recentSearches = []; }
+function normaliseStoredSearchHistory(value){
+  const result = {};
+  if (!value || typeof value !== 'object') return result;
+  Object.entries(value).forEach(([key, list]) => {
+    if (!Array.isArray(list)) return;
+    const bucket = [];
+    list.forEach(entry => {
+      if (entry === null || entry === undefined) return;
+      const text = String(entry).trim();
+      if (!text) return;
+      if (!bucket.some(existing => existing.toLowerCase() === text.toLowerCase())){
+        bucket.push(text);
+      }
+    });
+    if (bucket.length){
+      result[key] = bucket.slice(0, MAX_SEARCH_HISTORY_PER_SCOPE);
+    }
+  });
+  return result;
+}
+
+try {
+  const storedHistory = JSON.parse(localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY));
+  recentSearchesByScope = normaliseStoredSearchHistory(storedHistory);
+} catch(e) {
+  recentSearchesByScope = {};
+}
+if (!recentSearchesByScope || typeof recentSearchesByScope !== 'object'){
+  recentSearchesByScope = {};
+}
+if (Object.keys(recentSearchesByScope).length === 0){
+  try {
+    const legacy = JSON.parse(localStorage.getItem('atlas_recent_searches'));
+    if (Array.isArray(legacy) && legacy.length){
+      const cleaned = [];
+      legacy.forEach(item => {
+        if (item === null || item === undefined) return;
+        const text = String(item).trim();
+        if (!text) return;
+        if (!cleaned.some(existing => existing.toLowerCase() === text.toLowerCase())){
+          cleaned.push(text);
+        }
+      });
+      if (cleaned.length){
+        recentSearchesByScope[ROOT_SEARCH_SCOPE] = cleaned.slice(0, MAX_SEARCH_HISTORY_PER_SCOPE);
+      }
+    }
+  } catch(e) {}
+}
 try { searchInSubtree = localStorage.getItem('atlas_search_subtree') === '1'; } catch(e) { searchInSubtree = false; }
 try { searchIncludeTags = localStorage.getItem('atlas_search_tags') === '1'; } catch(e) { searchIncludeTags = false; }
 try { showSyntheticNodes = localStorage.getItem(OVERVIEW_VISIBILITY_KEY) !== 'hidden'; } catch(e) { showSyntheticNodes = true; }
@@ -787,11 +1213,14 @@ let hoveredSectorId = null;
 // Store mini‑map scaling information for hit detection
 let miniMapBounds = null;
 let miniMapTouchBounds = null;
+let minimapKeyboardMode = false;
+let minimapKeyboardRect = null;
 
 // ----------------------------------------------------------------------------
 // Canvas & UI
 // ----------------------------------------------------------------------------
 const canvas = document.getElementById('c');
+mainCanvasRef = canvas;
 if (!canvas){
   showFatalError(new Error('Canvas element not found'));
   return;
@@ -815,6 +1244,8 @@ const searchSubtreeElem = document.getElementById('searchSubtree');
 const searchTagsElem = document.getElementById('searchTags');
 const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 const recentSearchesElem = document.getElementById('recentSearches');
+const searchScopeBtn = document.getElementById('searchScopeBtn');
+const searchResultCountElem = document.getElementById('searchResultCount');
 const overviewToggleRowElem = document.getElementById('overviewToggleRow');
 const appRootElem = document.querySelector('.app');
 const primarySidebarElem = document.querySelector('aside.primary');
@@ -2686,7 +3117,8 @@ function toggleNode(n, animated){
     scheduleUrlUpdate();
   }
 }
-const qElem = document.getElementById('q'), resultsElem = document.getElementById('results');
+const qElem = document.getElementById('q');
+const resultsElem = document.getElementById('results');
 let viewStack=[];
 let searchMatches = [];
 let highlightedResultIndex = -1;
@@ -2728,6 +3160,66 @@ function cancelIdleWork(handle){
     window.cancelIdleCallback(handle.id);
   } else {
     window.cancelAnimationFrame(handle.id);
+  }
+}
+
+function getScopeNode(){
+  if (searchInSubtree && currentFocusNode){
+    return currentFocusNode;
+  }
+  return root;
+}
+
+function getScopeKeyFromNode(node){
+  if (!node || node === root){
+    return ROOT_SEARCH_SCOPE;
+  }
+  return `scope:${node.id}`;
+}
+
+function getActiveScopeKey(){
+  return getScopeKeyFromNode(getScopeNode());
+}
+
+function getHistoryForScope(key){
+  const history = recentSearchesByScope[key];
+  return Array.isArray(history) ? history : [];
+}
+
+function updateSearchScopeUI(){
+  if (!searchScopeBtn) return;
+  const scopeNode = getScopeNode();
+  const isBranch = scopeNode && scopeNode !== root;
+  const baseLabel = isBranch ? `Branch: ${fallbackText(scopeNode, 'name')}` : 'Atlas-wide search';
+  searchScopeBtn.textContent = isBranch ? `${baseLabel} • Expand to whole atlas` : baseLabel;
+  searchScopeBtn.classList.toggle('is-branch', isBranch);
+  searchScopeBtn.setAttribute('aria-pressed', isBranch ? 'true' : 'false');
+  if (isBranch){
+    searchScopeBtn.setAttribute('aria-label', `${baseLabel}. Activate to search the whole atlas.`);
+    searchScopeBtn.title = 'Searching within current branch. Activate to search the whole atlas.';
+  } else if (currentFocusNode && currentFocusNode !== root){
+    searchScopeBtn.setAttribute('aria-label', `${baseLabel}. Activate to limit to the current branch.`);
+    searchScopeBtn.title = 'Searching the whole atlas. Activate to limit to the current branch.';
+  } else {
+    searchScopeBtn.setAttribute('aria-label', `${baseLabel}.`);
+    searchScopeBtn.removeAttribute('title');
+  }
+}
+
+function updateSearchResultCount(total, { pending = false } = {}){
+  if (!searchResultCountElem) return;
+  if (pending){
+    searchResultCountElem.textContent = 'Searching…';
+    return;
+  }
+  if (typeof total === 'number'){
+    if (total === 0){
+      searchResultCountElem.textContent = 'No matches';
+    } else {
+      searchResultCountElem.textContent = `${total} result${total === 1 ? '' : 's'}`;
+    }
+  } else {
+    searchResultCountElem.textContent = '';
   }
 }
 
@@ -2787,6 +3279,7 @@ function renderSearchResults(rawTerm){
     resultsElem.setAttribute('aria-expanded', 'false');
     walk(root, n => { n.match = false; });
     updateRecentSearchesUI();
+    updateSearchResultCount(null);
     requestRender();
     return;
   }
@@ -2804,6 +3297,7 @@ function renderSearchResults(rawTerm){
   resultsElem.classList.add('visible');
   resultsElem.setAttribute('aria-expanded', 'true');
   resultsElem.classList.toggle('persist', searchDropdownPinned);
+  updateSearchResultCount(null, { pending: true });
 
   const scopeRoot = (searchInSubtree && currentFocusNode) ? currentFocusNode : root;
   const queue = [scopeRoot];
@@ -2886,9 +3380,11 @@ function renderSearchResultsPage({ autopan = false } = {}){
     resultsElem.classList.add('visible');
     resultsElem.setAttribute('aria-expanded', 'true');
     currentFocusNode = null;
+    updateSearchResultCount(0);
     requestRender();
     return;
   }
+  updateSearchResultCount(total);
   const start = Math.max(0, Math.min(searchPageIndex * SEARCH_PAGE_SIZE, Math.max(0, total - 1)));
   const pageMatches = searchMatchesAll.slice(start, start + SEARCH_PAGE_SIZE);
   searchMatches = pageMatches;
@@ -2898,6 +3394,7 @@ function renderSearchResultsPage({ autopan = false } = {}){
     item.className = 'hit';
     item.setAttribute('role', 'option');
     item.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
+    item.tabIndex = idx === 0 ? 0 : -1;
     const title = document.createElement('span');
     title.innerHTML = highlightText(fallbackText(node, 'name'), lastSearchTokens);
     const pathSpan = document.createElement('small');
@@ -2913,6 +3410,31 @@ function renderSearchResultsPage({ autopan = false } = {}){
         hideSearchResults();
       }
     };
+    item.addEventListener('focus', () => setActiveSearchResult(idx));
+    item.addEventListener('keydown', (event) => {
+      if (event.key === 'Tab'){
+        event.preventDefault();
+        const items = Array.from(resultsElem.querySelectorAll('.hit'));
+        if (!items.length) return;
+        if (event.shiftKey && idx === 0){
+          qElem.focus();
+          return;
+        }
+        const nextIndex = event.shiftKey ? (idx - 1 + items.length) % items.length : (idx + 1) % items.length;
+        const target = items[nextIndex];
+        if (target){ target.focus(); }
+      } else if (event.key === 'Enter'){
+        event.preventDefault();
+        setActiveSearchResult(idx);
+        const targetEntry = searchMatches[idx];
+        if (targetEntry){ jumpToMatch(targetEntry.node); }
+        if (!searchDropdownPinned){ hideSearchResults(); }
+      } else if (event.key === 'Escape'){
+        event.preventDefault();
+        hideSearchResults();
+        qElem.focus();
+      }
+    });
     resultsElem.appendChild(item);
   });
   const nav = document.createElement('div');
@@ -3009,29 +3531,100 @@ function highlightText(text, tokens){
   return result;
 }
 
+function escapeXml(text){
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function collectVisibleNodesInSubtree(node){
+  const collected = [];
+  if (!node) return collected;
+  walkFrom(node, candidate => {
+    if (visible(candidate)){
+      collected.push(candidate);
+    }
+  });
+  return collected;
+}
+
+function computeScreenBoundsForNodes(nodes){
+  if (!Array.isArray(nodes) || !nodes.length) return null;
+  const baseWidth = canvas.clientWidth || canvas.width;
+  const baseHeight = canvas.clientHeight || canvas.height;
+  let minX = baseWidth;
+  let minY = baseHeight;
+  let maxX = 0;
+  let maxY = 0;
+  nodes.forEach(node => {
+    if (!node) return;
+    const metrics = measureNode(node);
+    const centerX = (node.x + offsetX) * scale;
+    const centerY = (node.y + offsetY) * scale;
+    const halfW = (metrics.w * scale) / 2 + 24;
+    const halfH = (metrics.h * scale) / 2 + 24;
+    minX = Math.min(minX, centerX - halfW);
+    minY = Math.min(minY, centerY - halfH);
+    maxX = Math.max(maxX, centerX + halfW);
+    maxY = Math.max(maxY, centerY + halfH);
+  });
+  minX = Math.max(0, minX);
+  minY = Math.max(0, minY);
+  maxX = Math.min(baseWidth, maxX);
+  maxY = Math.min(baseHeight, maxY);
+  if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY) || maxX <= minX || maxY <= minY){
+    return null;
+  }
+  return { minX, minY, maxX, maxY };
+}
+
+function syncMinimapKeyboardRect(bounds){
+  if (!bounds || !bounds.viewport){
+    if (!minimapKeyboardMode){
+      minimapKeyboardRect = null;
+    }
+    return;
+  }
+  const { viewport, canvasWidth, canvasHeight } = bounds;
+  const maxWidth = canvasWidth || (minimapKeyboardRect ? minimapKeyboardRect.width : 0);
+  const maxHeight = canvasHeight || (minimapKeyboardRect ? minimapKeyboardRect.height : 0);
+  if (!minimapKeyboardMode || !minimapKeyboardRect){
+    minimapKeyboardRect = { ...viewport };
+  } else {
+    minimapKeyboardRect.width = viewport.width;
+    minimapKeyboardRect.height = viewport.height;
+    const limitX = Math.max(0, maxWidth - minimapKeyboardRect.width);
+    const limitY = Math.max(0, maxHeight - minimapKeyboardRect.height);
+    minimapKeyboardRect.x = Math.max(0, Math.min(limitX, minimapKeyboardRect.x));
+    minimapKeyboardRect.y = Math.max(0, Math.min(limitY, minimapKeyboardRect.y));
+  }
+}
+
 function rememberSearch(term){
   const clean = (term || '').trim();
   if (!clean) return;
-  recentSearches = recentSearches.filter(item => item.toLowerCase() !== clean.toLowerCase());
-  recentSearches.unshift(clean);
-  if (recentSearches.length > RECENT_SEARCH_LIMIT){
-    recentSearches = recentSearches.slice(0, RECENT_SEARCH_LIMIT);
+  const scopeKey = getActiveScopeKey();
+  const history = getHistoryForScope(scopeKey).filter(item => item.toLowerCase() !== clean.toLowerCase());
+  history.unshift(clean);
+  if (history.length > MAX_SEARCH_HISTORY_PER_SCOPE){
+    history.length = MAX_SEARCH_HISTORY_PER_SCOPE;
   }
-  try { localStorage.setItem('atlas_recent_searches', JSON.stringify(recentSearches)); } catch(e) {}
+  recentSearchesByScope[scopeKey] = history;
+  try { localStorage.setItem(SEARCH_HISTORY_STORAGE_KEY, JSON.stringify(recentSearchesByScope)); } catch(e) {}
   updateRecentSearchesUI();
 }
 
 function updateRecentSearchesUI(){
   if (!recentSearchesElem) return;
   recentSearchesElem.innerHTML = '';
-  if (!recentSearches.length){
+  const scopeKey = getActiveScopeKey();
+  const history = getHistoryForScope(scopeKey);
+  if (!history.length){
     const empty = document.createElement('span');
     empty.className = 'muted';
     empty.textContent = 'Recent searches appear here.';
     recentSearchesElem.appendChild(empty);
     return;
   }
-  recentSearches.forEach(query => {
+  history.forEach(query => {
     const pill = document.createElement('button');
     pill.type = 'button';
     pill.className = 'recent-pill';
@@ -3232,6 +3825,7 @@ function setActiveSearchResult(index, { autopan = false } = {}){
     if (el.getAttribute('role') === 'option'){
       el.setAttribute('aria-selected', active ? 'true' : 'false');
     }
+    el.tabIndex = active ? 0 : -1;
   });
   const entry = searchMatches[highlightedResultIndex];
   currentFocusNode = entry ? entry.node : null;
@@ -3242,6 +3836,21 @@ function setActiveSearchResult(index, { autopan = false } = {}){
     }
     draw();
   }
+}
+
+function focusSearchResultByIndex(index = 0){
+  if (!resultsElem) return false;
+  const options = Array.from(resultsElem.querySelectorAll('.hit[role="option"]'));
+  if (!options.length) return false;
+  const targetIndex = Math.max(0, Math.min(index, options.length - 1));
+  setActiveSearchResult(targetIndex);
+  const target = options[targetIndex];
+  requestAnimationFrame(() => {
+    if (target && typeof target.focus === 'function'){
+      target.focus();
+    }
+  });
+  return true;
 }
 
 function hideSearchResults(){
@@ -3258,6 +3867,7 @@ function hideSearchResults(){
   }
   resultsElem.setAttribute('aria-expanded', 'false');
   updateRecentSearchesUI();
+  updateSearchResultCount(null);
 }
 
 qElem.addEventListener('input', () => {
@@ -3275,6 +3885,12 @@ resultsElem.addEventListener('mousedown', (e) => {
 
 qElem.addEventListener('keydown', (e) => {
   if (!resultsElem.classList.contains('visible')) return;
+  if (e.key === 'Tab' && !e.shiftKey){
+    if (focusSearchResultByIndex(0)){
+      e.preventDefault();
+    }
+    return;
+  }
   if (e.key === 'ArrowDown'){
     e.preventDefault();
     if (searchMatches.length){
@@ -3288,13 +3904,8 @@ qElem.addEventListener('keydown', (e) => {
       setActiveSearchResult(prev);
     }
   } else if (e.key === 'Enter'){
-    const entry = searchMatches[highlightedResultIndex] || searchMatches[0];
-    if (entry){
-      e.preventDefault();
-      jumpToMatch(entry.node);
-      hideSearchResults();
-      qElem.blur();
-    }
+    e.preventDefault();
+    focusSearchResultByIndex(highlightedResultIndex >= 0 ? highlightedResultIndex : 0);
   } else if (e.key === 'Escape'){
     hideSearchResults();
     highlightedResultIndex = -1;
@@ -3437,6 +4048,49 @@ if (prefersDark){
     if (!applyingUrlState){ scheduleUrlUpdate(); }
   });
 }
+const handleMapToolsKeyDismiss = (event) => {
+  if (!mapToolsPanelElem) return;
+  if (event.key === 'Enter' || event.key === ' '){
+    dismissMapToolsCoach({ persist: true });
+    mapToolsPanelElem.removeEventListener('keydown', handleMapToolsKeyDismiss);
+  }
+};
+if (mapToolsPanelElem){
+  const cancelCoachPointer = () => {
+    dismissMapToolsCoach({ persist: true });
+    mapToolsPanelElem.removeEventListener('keydown', handleMapToolsKeyDismiss);
+  };
+  mapToolsPanelElem.addEventListener('pointerdown', cancelCoachPointer, { once: true });
+  mapToolsPanelElem.addEventListener('keydown', handleMapToolsKeyDismiss);
+}
+if (dismissMapToolsCoachBtn){
+  dismissMapToolsCoachBtn.addEventListener('click', () => {
+    dismissMapToolsCoach({ persist: true });
+    if (mapToolsPanelElem){
+      mapToolsPanelElem.removeEventListener('keydown', handleMapToolsKeyDismiss);
+    }
+    const firstToolBtn = mapToolsPanelElem ? mapToolsPanelElem.querySelector('.btn') : null;
+    if (firstToolBtn && typeof firstToolBtn.focus === 'function'){
+      firstToolBtn.focus();
+    }
+  });
+}
+if (mapToolsCoachElem){
+  mapToolsCoachElem.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape'){
+      event.preventDefault();
+      dismissMapToolsCoach({ persist: true });
+      if (mapToolsPanelElem){
+        mapToolsPanelElem.removeEventListener('keydown', handleMapToolsKeyDismiss);
+      }
+      const firstToolBtn = mapToolsPanelElem ? mapToolsPanelElem.querySelector('.btn') : null;
+      if (firstToolBtn && typeof firstToolBtn.focus === 'function'){
+        firstToolBtn.focus();
+      }
+    }
+  });
+}
+scheduleMapToolsCoach();
 if (searchSubtreeElem){
   searchSubtreeElem.checked = searchInSubtree;
   searchSubtreeElem.addEventListener('change', () => {
@@ -3445,6 +4099,8 @@ if (searchSubtreeElem){
     if (qElem.value.trim()){
       renderSearchResults(qElem.value);
     }
+    updateSearchScopeUI();
+    updateRecentSearchesUI();
     scheduleUrlUpdate();
   });
 }
@@ -3459,6 +4115,32 @@ if (searchTagsElem){
     scheduleUrlUpdate();
   });
 }
+if (searchScopeBtn){
+  searchScopeBtn.addEventListener('click', () => {
+    if (searchInSubtree){
+      searchInSubtree = false;
+    } else {
+      if (!currentFocusNode || currentFocusNode === root){
+        showToast('Focus on a branch first to limit search scope.', { title: 'Search scope', duration: 2200 });
+        updateSearchScopeUI();
+        return;
+      }
+      searchInSubtree = true;
+    }
+    if (searchSubtreeElem){
+      searchSubtreeElem.checked = searchInSubtree;
+    }
+    try { localStorage.setItem('atlas_search_subtree', searchInSubtree ? '1' : '0'); } catch(e) {}
+    updateSearchScopeUI();
+    updateRecentSearchesUI();
+    if (qElem.value.trim()){
+      renderSearchResults(qElem.value);
+    }
+    scheduleUrlUpdate();
+  });
+}
+updateSearchScopeUI();
+updateRecentSearchesUI();
 
 const collapseOutlineBtn = document.getElementById('collapseOutlineBtn');
 if (outlinePaneElem && collapseOutlineBtn){
@@ -3498,7 +4180,10 @@ function exportPNG(mult){
   exportCanvas.width = Math.round(outputWidth * pixelRatio);
   exportCanvas.height = Math.round(outputHeight * pixelRatio);
   const cameraState = { scale: scale * mult, offsetX, offsetY };
-  showToast(`Rendering ${Math.round(mult * pixelRatio * 100)}% scale snapshot…`, { title: 'Export', duration: 1800 });
+  const pixelCount = outputWidth * outputHeight;
+  const progressMessage = pixelCount > 1600000 ? 'Rendering high-resolution export…' : `Rendering ${Math.round(mult * pixelRatio * 100)}% scale snapshot…`;
+  const progressDuration = pixelCount > 1600000 ? 3600 : 2000;
+  showToast(progressMessage, { title: 'Export in progress', duration: progressDuration });
   exportCtx.save();
   exportCtx.scale(pixelRatio, pixelRatio);
   renderScene(exportCtx, outputWidth, outputHeight, cameraState, { skipMinimap: true, updateHitboxes: false });
@@ -3506,12 +4191,140 @@ function exportPNG(mult){
   const a=document.createElement('a'); a.href=exportCanvas.toDataURL('image/png'); a.download='infosec_universe_'+mult+'x.png'; a.click();
   showToast('Export ready—check your downloads.', { title: 'Export complete', duration: 2400 });
 }
+
+function exportSelectionPNG(){
+  if (!canvas) return;
+  const focusNodeRef = lastFocusedNode || currentFocusNode || root;
+  const nodes = collectVisibleNodesInSubtree(focusNodeRef);
+  if (!nodes.length){
+    showToast('Selection is empty—expand the branch and try again.', { title: 'Export', duration: 2400 });
+    return;
+  }
+  const bounds = computeScreenBoundsForNodes(nodes);
+  if (!bounds){
+    showToast('Selection is outside the current view.', { title: 'Export', duration: 2400 });
+    return;
+  }
+  const baseWidth = canvas.clientWidth || canvas.width;
+  const baseHeight = canvas.clientHeight || canvas.height;
+  const ratio = window.devicePixelRatio || 1;
+  const selectionArea = (bounds.maxX - bounds.minX) * (bounds.maxY - bounds.minY) * ratio * ratio;
+  if (selectionArea > 1400000){
+    showToast('Rendering selection snapshot…', { title: 'Export in progress', duration: 2800 });
+  }
+  exportCanvas.width = Math.round(baseWidth * ratio);
+  exportCanvas.height = Math.round(baseHeight * ratio);
+  exportCtx.save();
+  exportCtx.scale(ratio, ratio);
+  renderScene(exportCtx, baseWidth, baseHeight, { scale, offsetX, offsetY }, { skipMinimap: true, updateHitboxes: false });
+  exportCtx.restore();
+  const cropWidth = Math.max(1, Math.round((bounds.maxX - bounds.minX) * ratio));
+  const cropHeight = Math.max(1, Math.round((bounds.maxY - bounds.minY) * ratio));
+  const cropCanvas = document.createElement('canvas');
+  cropCanvas.width = cropWidth;
+  cropCanvas.height = cropHeight;
+  const cropCtx = cropCanvas.getContext('2d');
+  cropCtx.drawImage(
+    exportCanvas,
+    Math.round(bounds.minX * ratio),
+    Math.round(bounds.minY * ratio),
+    cropWidth,
+    cropHeight,
+    0,
+    0,
+    cropWidth,
+    cropHeight
+  );
+  const safeName = (fallbackText(focusNodeRef, 'name') || 'selection').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'selection';
+  const link = document.createElement('a');
+  link.href = cropCanvas.toDataURL('image/png');
+  link.download = `${safeName}_selection.png`;
+  link.click();
+  showToast('Selection export ready—check your downloads.', { title: 'Export complete', duration: 2600 });
+}
+
+function exportAtlasAsSVG(){
+  const baseWidth = canvas.clientWidth || canvas.width;
+  const baseHeight = canvas.clientHeight || canvas.height;
+  const visibleNodes = collectVisible();
+  if (!visibleNodes.length){
+    showToast('Nothing visible to export right now.', { title: 'Export', duration: 2400 });
+    return;
+  }
+  const visibleLinks = collectLinks();
+  const themeStyles = getComputedStyle(document.documentElement);
+  const accentColour = (themeStyles.getPropertyValue('--accent') || '#ff9b6a').trim() || '#ff9b6a';
+  const bgColour = (themeStyles.getPropertyValue('--bg') || '#1b1b2f').trim() || '#1b1b2f';
+  const inkColour = (themeStyles.getPropertyValue('--ink') || '#e0e0ff').trim() || '#e0e0ff';
+  const panelColour = (themeStyles.getPropertyValue('--panel') || '#34345c').trim() || '#34345c';
+  const edgeColour = (themeStyles.getPropertyValue('--edge') || '#4c4c80').trim() || '#4c4c80';
+  const svg = [];
+  svg.push('<?xml version="1.0" encoding="UTF-8"?>');
+  svg.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${baseWidth}" height="${baseHeight}" viewBox="0 0 ${baseWidth} ${baseHeight}" role="img" aria-label="Cybersecurity Atlas snapshot">`);
+  svg.push(`<rect width="100%" height="100%" fill="${bgColour}"/>`);
+  visibleLinks.forEach(([a, b]) => {
+    if (!a || !b) return;
+    const x1 = (a.x + offsetX) * scale;
+    const y1 = (a.y + offsetY) * scale;
+    const x2 = (b.x + offsetX) * scale;
+    const y2 = (b.y + offsetY) * scale;
+    const mx = (x1 + x2) / 2;
+    svg.push(`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} C ${mx.toFixed(1)} ${y1.toFixed(1)}, ${mx.toFixed(1)} ${y2.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${edgeColour}" stroke-opacity="0.65" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>`);
+  });
+  visibleNodes.forEach(node => {
+    if (node.syntheticOverview && !showSyntheticNodes) return;
+    const metrics = measureNode(node);
+    const sx = (node.x + offsetX) * scale;
+    const sy = (node.y + offsetY) * scale;
+    const width = metrics.w * scale;
+    const height = metrics.h * scale;
+    const rx = (metrics.isChip ? 18 : 12) * scale;
+    const x = sx - width / 2;
+    const y = sy - height / 2;
+    const catColour = ringColour(nodeCategoryIndex(node));
+    let fill = node === root ? panelColour : lightenColor(catColour, node.depth === 1 ? 0.26 : 0.12);
+    let stroke = node === root ? edgeColour : lightenColor(catColour, 0.35);
+    if (node === lastFocusedNode){
+      stroke = accentColour;
+    }
+    svg.push('<g>');
+    svg.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${rx.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${(1.4 * scale).toFixed(2)}"/>`);
+    const textLines = Array.isArray(metrics.lines) && metrics.lines.length ? metrics.lines : [fallbackText(node, 'name')];
+    const fontSize = Math.max(10, 14 * scale);
+    if (metrics.isChip){
+      svg.push(`<text x="${sx.toFixed(1)}" y="${sy.toFixed(1)}" fill="${inkColour}" font-family="Segoe UI, Arial, sans-serif" font-size="${fontSize.toFixed(1)}" font-weight="${node === lastFocusedNode ? '600' : '500'}" text-anchor="middle" dominant-baseline="middle">${escapeXml(fallbackText(node, 'name'))}</text>`);
+    } else {
+      const textX = (x + 12 * scale).toFixed(1);
+      svg.push(`<text x="${textX}" y="${(y + 10 * scale + fontSize).toFixed(1)}" fill="${inkColour}" font-family="Segoe UI, Arial, sans-serif" font-size="${fontSize.toFixed(1)}" font-weight="${node === lastFocusedNode ? '600' : '500'}">`);
+      textLines.forEach((line, idx) => {
+        const dy = idx === 0 ? 0 : fontSize * 1.3;
+        svg.push(`<tspan x="${textX}" dy="${dy.toFixed(1)}">${escapeXml(line)}</tspan>`);
+      });
+      svg.push('</text>');
+    }
+    svg.push('</g>');
+  });
+  svg.push('<title>Cybersecurity Atlas snapshot</title>');
+  svg.push('</svg>');
+  const blob = new Blob([svg.join('\n')], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'cybersecurity_atlas.svg';
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('SVG export ready.', { title: 'Export complete', duration: 2600 });
+}
 const png1Btn = document.getElementById('png1');
 if (png1Btn){ png1Btn.onclick = () => exportPNG(1); }
 const png2Btn = document.getElementById('png2');
 if (png2Btn){ png2Btn.onclick = () => exportPNG(2); }
 const png4Btn = document.getElementById('png4');
 if (png4Btn){ png4Btn.onclick = () => exportPNG(4); }
+const pngSelectionBtn = document.getElementById('pngSelection');
+if (pngSelectionBtn){ pngSelectionBtn.onclick = () => exportSelectionPNG(); }
+const exportSvgBtn = document.getElementById('exportSvgBtn');
+if (exportSvgBtn){ exportSvgBtn.onclick = () => exportAtlasAsSVG(); }
   window.addEventListener('keydown', e=>{
     const active = document.activeElement;
     const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
@@ -3520,6 +4333,19 @@ if (png4Btn){ png4Btn.onclick = () => exportPNG(4); }
     if (e.defaultPrevented) return;
     const step = 60/scale;
     const lower = key.toLowerCase();
+    if (minimapKeyboardMode && minimapCanvas && document.activeElement === minimapCanvas){
+      if (key === 'ArrowUp'){ e.preventDefault(); nudgeMinimapKeyboardSelection(0, -1); return; }
+      if (key === 'ArrowDown'){ e.preventDefault(); nudgeMinimapKeyboardSelection(0, 1); return; }
+      if (key === 'ArrowLeft'){ e.preventDefault(); nudgeMinimapKeyboardSelection(-1, 0); return; }
+      if (key === 'ArrowRight'){ e.preventDefault(); nudgeMinimapKeyboardSelection(1, 0); return; }
+      if (key === 'Enter'){ e.preventDefault(); applyMinimapKeyboardSelection(); return; }
+      if (key === 'Escape'){ e.preventDefault(); toggleMinimapKeyboardMode(false); return; }
+    }
+    if (!isTyping && lower === 'm'){
+      e.preventDefault();
+      toggleMinimapKeyboardMode();
+      return;
+    }
     const hierarchicalModifier = e.ctrlKey || e.metaKey;
     const shouldPanWithArrows = !hierarchicalModifier && !e.altKey;
     let cameraChanged = false;
@@ -3892,6 +4718,8 @@ function updateBreadcrumb(n){
   if (!n) return;
   currentFocusNode = n;
   lastFocusedNode = n;
+  updateSearchScopeUI();
+  updateRecentSearchesUI();
   updateActivePath(n);
   currentPath.length = 0;
   pathTo(n).forEach(node => currentPath.push(node));
@@ -4842,7 +5670,15 @@ function drawMinimapTo(canvasEl, nodes, bounds){
   ctxMini.strokeStyle = 'rgba(234,179,8,0.8)';
   ctxMini.lineWidth = 2;
   ctxMini.strokeRect(vx, vy, vwMini, vhMini);
-  return { minX, minY, scale: scaleFactor, offsetX: offsetXMini, offsetY: offsetYMini };
+  if (minimapKeyboardMode && canvasEl === minimapCanvas && minimapKeyboardRect){
+    ctxMini.save();
+    ctxMini.setLineDash([4, 3]);
+    ctxMini.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctxMini.lineWidth = 2;
+    ctxMini.strokeRect(minimapKeyboardRect.x, minimapKeyboardRect.y, minimapKeyboardRect.width, minimapKeyboardRect.height);
+    ctxMini.restore();
+  }
+  return { minX, minY, scale: scaleFactor, offsetX: offsetXMini, offsetY: offsetYMini, viewport: { x: vx, y: vy, width: vwMini, height: vhMini }, canvasWidth: cw, canvasHeight: ch };
 }
 
 function updateMinimap(){
@@ -4859,10 +5695,20 @@ function updateMinimap(){
     }
     miniMapBounds = null;
     miniMapTouchBounds = null;
+    if (minimapKeyboardMode){
+      minimapKeyboardMode = false;
+      minimapKeyboardRect = null;
+      if (minimapCanvas){
+        minimapCanvas.classList.remove('keyboard-mode');
+      }
+    } else {
+      minimapKeyboardRect = null;
+    }
     return;
   }
   const bounds = computeVisibleBounds(nodes);
   miniMapBounds = drawMinimapTo(mini, nodes, bounds);
+  syncMinimapKeyboardRect(miniMapBounds);
   miniMapTouchBounds = drawMinimapTo(minimapTouchCanvas, nodes, bounds);
 }
 
@@ -4870,6 +5716,64 @@ function updateMinimap(){
 let draggingMini = false;
 let activeMiniCanvas = null;
 const minimapCanvas = document.getElementById('minimap');
+
+function toggleMinimapKeyboardMode(force){
+  const desiredState = typeof force === 'boolean' ? force : !minimapKeyboardMode;
+  if (desiredState === minimapKeyboardMode){
+    if (desiredState && minimapCanvas && document.activeElement !== minimapCanvas){
+      minimapCanvas.focus();
+    }
+    return;
+  }
+  minimapKeyboardMode = desiredState;
+  if (minimapCanvas){
+    minimapCanvas.classList.toggle('keyboard-mode', minimapKeyboardMode);
+  }
+  if (minimapKeyboardMode){
+    if (miniMapBounds){
+      syncMinimapKeyboardRect(miniMapBounds);
+    }
+    if (minimapCanvas && typeof minimapCanvas.focus === 'function'){
+      minimapCanvas.focus();
+    }
+    if (focusAnnounceElem){
+      focusAnnounceElem.textContent = 'Minimap keyboard mode on. Use arrow keys to move, Enter to confirm, Escape to cancel.';
+    }
+  } else {
+    if (focusAnnounceElem){
+      focusAnnounceElem.textContent = 'Minimap keyboard mode off.';
+    }
+    minimapKeyboardRect = miniMapBounds && miniMapBounds.viewport ? { ...miniMapBounds.viewport } : minimapKeyboardRect;
+    if (canvas && typeof canvas.focus === 'function'){
+      canvas.focus();
+    }
+  }
+  updateMinimap();
+}
+
+function nudgeMinimapKeyboardSelection(dx, dy){
+  if (!minimapKeyboardRect || !miniMapBounds || !minimapCanvas) return;
+  const stepX = dx * Math.max(4, minimapKeyboardRect.width * 0.15);
+  const stepY = dy * Math.max(4, minimapKeyboardRect.height * 0.15);
+  const maxX = Math.max(0, (miniMapBounds.canvasWidth || minimapCanvas.width) - minimapKeyboardRect.width);
+  const maxY = Math.max(0, (miniMapBounds.canvasHeight || minimapCanvas.height) - minimapKeyboardRect.height);
+  minimapKeyboardRect.x = Math.max(0, Math.min(maxX, minimapKeyboardRect.x + stepX));
+  minimapKeyboardRect.y = Math.max(0, Math.min(maxY, minimapKeyboardRect.y + stepY));
+  updateMinimap();
+}
+
+function applyMinimapKeyboardSelection(){
+  if (!minimapKeyboardRect || !miniMapBounds) return;
+  const centerX = minimapKeyboardRect.x + minimapKeyboardRect.width / 2;
+  const centerY = minimapKeyboardRect.y + minimapKeyboardRect.height / 2;
+  const worldX = (centerX - miniMapBounds.offsetX) / miniMapBounds.scale + miniMapBounds.minX;
+  const worldY = (centerY - miniMapBounds.offsetY) / miniMapBounds.scale + miniMapBounds.minY;
+  offsetX = (canvas.width / 2) / scale - worldX;
+  offsetY = (canvas.height / 2) / scale - worldY;
+  toggleMinimapKeyboardMode(false);
+  requestRender();
+  if (!applyingUrlState){ scheduleUrlUpdate(); }
+}
 
 function pointerPositionFromEvent(event){
   if (event.touches && event.touches.length){
@@ -4884,6 +5788,9 @@ function pointerPositionFromEvent(event){
 function beginMinimapDrag(event, canvasEl){
   const bounds = canvasEl === minimapTouchCanvas ? miniMapTouchBounds : miniMapBounds;
   if (!bounds) return;
+  if (minimapKeyboardMode){
+    toggleMinimapKeyboardMode(false);
+  }
   draggingMini = true;
   activeMiniCanvas = canvasEl;
   handleMiniDrag(event, bounds, canvasEl);
@@ -5484,6 +6391,9 @@ if (supportsHover){
   canvas.addEventListener('mouseleave', () => { hideTooltip(); hoveredSectorId = null; hoverNode = null; });
 }
 
+  requestAnimationFrame(() => {
+    setLoadingState(false, 'Ready', { busy: false });
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

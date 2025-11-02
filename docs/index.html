@@ -4,6 +4,17 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Cybersecurity Atlas</title>
+<meta name="description" content="Explore the Cybersecurity Atlas—an interactive, searchable knowledge map of threats, defenses, and market segments."/>
+<meta property="og:title" content="Cybersecurity Atlas"/>
+<meta property="og:description" content="Interactive cybersecurity knowledge map with branching search, filters, favorites, and export tools."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://fr33s0ul.github.io"/>
+<meta property="og:image" content="https://dummyimage.com/1200x630/1a1431/ffffff.png&amp;text=Cybersecurity+Atlas"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Cybersecurity Atlas"/>
+<meta name="twitter:description" content="Navigate an interactive atlas of the cybersecurity landscape, complete with filters, favorites, and export options."/>
+<meta name="twitter:image" content="https://dummyimage.com/1200x630/1a1431/ffffff.png&amp;text=Cybersecurity+Atlas"/>
+<link rel="canonical" href="https://fr33s0ul.github.io"/>
 <link rel="stylesheet" href="./styles.css">
 <link rel="preload" href="./data/atlas.json" as="fetch" crossorigin="anonymous">
 <script src="./app.js" defer></script>
@@ -28,46 +39,33 @@
     </aside>
     <aside class="primary">
       <h1>Cybersecurity Atlas</h1>
+      <div class="primary-toolbar" role="group" aria-label="Atlas controls">
+        <button class="btn" id="toggleSidebarBtn" title="Collapse sidebar">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="sr-only">Toggle sidebar</span>
+        </button>
+        <button class="btn" id="helpBtn" title="Keyboard shortcuts" aria-haspopup="dialog" aria-controls="helpModal">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.09 9a3 3 0 1 1 5.91 1c0 2-3 2-3 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span class="sr-only">Open help</span>
+        </button>
+      </div>
       <div id="dataFreshness" class="muted" aria-live="polite"></div>
       <div class="muted" id="canvasKeyboardHint">Wheel = zoom • drag = pan • click to focus • use toggle ⊕/⊖ to expand • <span class="key">WASD</span> or <span class="key">←↑→↓</span> pan • <span class="key">+</span>/<span class="key">-</span> zoom • <span class="key">H/J/K/L</span> navigate • <span class="key">Ctrl</span> + <span class="key">←↑→↓</span> navigate • <span class="key">Enter</span> toggle • <span class="key">F</span> refocus</div>
-      <div class="row search-wrapper">
-        <input id="q" type="search" placeholder="Search the atlas" autocomplete="off" aria-label="Search topics" />
-        <div id="results" role="listbox" aria-label="Search suggestions" aria-expanded="false"></div>
+      <div class="search-wrapper" role="search">
+        <div class="search-meta">
+          <button type="button" id="searchScopeBtn" class="search-scope" aria-live="polite"></button>
+          <span id="searchResultCount" class="search-count" aria-live="polite"></span>
+        </div>
+        <div class="search-input-row">
+          <input id="q" type="search" placeholder="Search the atlas" autocomplete="off" aria-label="Search topics" />
+          <div id="results" role="listbox" aria-label="Search suggestions" aria-expanded="false"></div>
+        </div>
       </div>
       <div class="row search-options">
         <label class="muted"><input type="checkbox" id="searchSubtree"/> Search within current branch</label>
         <label class="muted"><input type="checkbox" id="searchTags"/> Include tags</label>
       </div>
       <div class="row recent-searches" id="recentSearches" aria-label="Recent searches"></div>
-      <div class="row btn-row" role="group" aria-label="Primary actions">
-        <button class="btn" id="backBtn" title="Go to previous view">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="12 19 5 12 12 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Back</span>
-        </button>
-        <button class="btn" id="centerBtn" title="Center on the current node">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M19 12h2M3 12h2M12 5V3M12 21v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>Center</span>
-        </button>
-        <button class="btn" id="expandBtn" title="Expand all visible branches">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>Expand</span>
-        </button>
-        <button class="btn" id="collapseBtn" title="Collapse to macro buckets">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>Collapse</span>
-        </button>
-        <button class="btn" id="themeBtn" title="Toggle theme">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 5 5 0 0 1-9-9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Light</span>
-        </button>
-        <button class="btn" id="toggleSidebarBtn" title="Collapse sidebar" style="margin-left:auto;">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <button class="btn" id="helpBtn" title="Keyboard shortcuts" aria-haspopup="dialog" aria-controls="helpModal">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.09 9a3 3 0 1 1 5.91 1c0 2-3 2-3 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-
       <!-- Breadcrumb trail to show the current focused path -->
       <div id="breadcrumb" class="row"></div>
 
@@ -90,7 +88,7 @@
       <hr class="divider"/>
 
       <div class="section-label"><span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7m0 0 4-4m-4 4-4-4m20 15v-7m0 0 4-4m-4 4-4-4M9 7l3-4 3 4m-3-4v18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Export</span></div>
-      <div class="row btn-row">
+      <div class="row btn-row export-row" role="group" aria-label="Export options">
         <button class="btn" id="png1" title="Download PNG at original size">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7 10 12 15 17 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span>PNG 1×</span>
@@ -102,6 +100,14 @@
         <button class="btn" id="png4" title="Download PNG at 4×">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7 10 12 15 17 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span>4×</span>
+        </button>
+        <button class="btn" id="pngSelection" title="Download PNG of the focused branch">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="9 12 11 14 15 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Selection</span>
+        </button>
+        <button class="btn" id="exportSvgBtn" title="Download scalable SVG snapshot">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 8h8v8H8z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span>SVG</span>
         </button>
       </div>
 
@@ -119,19 +125,52 @@
        left edge of the viewport as a small arrow. -->
   <button id="sidebarReopenBtn" title="Show sidebar">⟩</button>
   <div class="canvas-wrap">
-    <div class="canvas-actions">
-      <button class="btn" id="resetViewBtn" title="Reset zoom and recenter view">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="21 3 21 12 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span>Reset</span>
-      </button>
-      <button class="btn fisheye-toggle" id="fisheyeToggleBtn" title="Toggle fisheye focus lens">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-        <span>Lens</span>
-      </button>
+    <div class="map-tools-panel" id="mapToolsPanel" role="region" aria-label="Map tools">
+      <span class="map-tools-panel__title">Map tools</span>
+      <div class="map-tools-panel__group" role="group" aria-label="Navigation">
+        <button class="btn" id="backBtn" title="Go to previous view">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="12 19 5 12 12 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Back</span>
+        </button>
+        <button class="btn" id="resetViewBtn" title="Reset zoom and recenter view">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="21 3 21 12 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Reset</span>
+        </button>
+        <button class="btn" id="centerBtn" title="Center on the current node">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M19 12h2M3 12h2M12 5V3M12 21v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Center</span>
+        </button>
+      </div>
+      <div class="map-tools-panel__group" role="group" aria-label="Expand or collapse">
+        <button class="btn" id="expandBtn" title="Expand all visible branches">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Expand</span>
+        </button>
+        <button class="btn" id="collapseBtn" title="Collapse to macro buckets">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Collapse</span>
+        </button>
+      </div>
+      <div class="map-tools-panel__group" role="group" aria-label="View preferences">
+        <button class="btn fisheye-toggle" id="fisheyeToggleBtn" title="Toggle fisheye focus lens" aria-pressed="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span>Lens</span>
+        </button>
+        <button class="btn" id="themeBtn" title="Toggle theme" aria-pressed="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 5 5 0 0 1-9-9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Light</span>
+        </button>
+      </div>
     </div>
-    <canvas id="c" tabindex="0" role="application" aria-label="Interactive atlas canvas" aria-describedby="canvasKeyboardHint"></canvas>
+    <div id="mapToolsCoach" class="map-tools-coach" role="dialog" aria-live="polite" aria-modal="false" hidden>
+      <div class="map-tools-coach__bubble">
+        <p id="mapToolsCoachMessage"><strong>Map tools</strong> regroup navigation, expansion, and lens controls. Use them anytime to reset your view.</p>
+        <button type="button" class="btn" id="dismissMapToolsCoach">Got it</button>
+      </div>
+    </div>
+    <canvas id="c" tabindex="0" role="application" aria-label="Interactive atlas canvas" aria-describedby="canvasKeyboardHint" aria-busy="true"></canvas>
     <!-- Overview minimap in bottom‑right corner -->
-    <canvas id="minimap" width="200" height="200" role="img" aria-label="Atlas minimap"></canvas>
+    <canvas id="minimap" width="200" height="200" role="img" aria-label="Atlas minimap" tabindex="0"></canvas>
     <button class="btn minimap-touch-toggle" id="minimapTouchToggle" type="button" aria-expanded="false">Touch minimap</button>
     <div id="minimapTouchPanel" class="minimap-touch-panel" hidden aria-hidden="true">
       <div class="minimap-touch-panel__body" role="region" aria-label="Touch minimap navigator">
@@ -149,6 +188,7 @@
       <div class="spinner" aria-hidden="true"></div>
       <p>Loading atlas data…</p>
     </div>
+    <div id="loadingStatus" class="sr-only" aria-live="polite"></div>
   </div>
   <aside class="favorites-pane" id="favoritesPane" aria-label="Saved favorites">
     <header class="favorites-header">
