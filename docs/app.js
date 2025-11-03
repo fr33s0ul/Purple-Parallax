@@ -73,6 +73,7 @@ const profileConfig = {
 };
 let totalNodeCount = 0;
 let currentFocusNode = null;
+let mainCanvasRef = null;
 const loadingOverlayElem = document.getElementById('loadingOverlay');
 const getLoadingStatusElem = () => document.getElementById('loadingStatus');
 const dataFreshnessElem = document.getElementById('dataFreshness');
@@ -87,6 +88,9 @@ const POPULAR_SEARCH_LIMIT = 6;
 let datasetMeta = null;
 let favoriteEntries = [];
 const favoriteIdSet = new Set();
+const favoriteEntryMap = new Map();
+let favoriteIds = [];
+let favoriteShortcutsElem = null;
 let popularSearches = [];
 let selectionLockActive = false;
 let controlHelpPopover = null;
@@ -98,6 +102,11 @@ let lazyBranchLoadingEnabled = false;
 const branchFetchCache = new Map();
 const pendingBranchLoads = new Map();
 let loadingStatusClearTimer;
+let mapToolsPanelElem = null;
+let mapToolsCoachElem = null;
+let mapToolsCoachMessageElem = null;
+let dismissMapToolsCoachBtn = null;
+let mapToolsCoachTimer = null;
 
 function showFatalError(error){
   console.error(error);
@@ -1562,11 +1571,12 @@ const focusAnnounceElem = document.getElementById('focusAnnounce');
 const fisheyeToggleBtn = document.getElementById('fisheyeToggleBtn');
 const searchSubtreeElem = document.getElementById('searchSubtree');
 const searchTagsElem = document.getElementById('searchTags');
+const searchScopeBtn = document.getElementById('searchScopeBtn');
 const clearSearchBtn = document.getElementById('clearSearchBtn');
 const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 const recentSearchesElem = document.getElementById('recentSearches');
 const popularSearchesElem = document.getElementById('popularSearches');
-const favoriteShortcutsElem = document.getElementById('favoriteShortcuts');
+favoriteShortcutsElem = document.getElementById('favoriteShortcuts');
 const overviewToggleRowElem = document.getElementById('overviewToggleRow');
 const appRootElem = document.querySelector('.app');
 const primarySidebarElem = document.querySelector('aside.primary');
@@ -1581,6 +1591,10 @@ const zoomOutBtn = document.getElementById('zoomOutBtn');
 const selectionLockBtn = document.getElementById('selectionLockBtn');
 const downloadViewBtn = document.getElementById('downloadViewBtn');
 const canvasActionsElem = document.querySelector('.canvas-actions');
+mapToolsPanelElem = canvasActionsElem || document.getElementById('mapToolsPanel');
+mapToolsCoachElem = document.getElementById('mapToolsCoach');
+mapToolsCoachMessageElem = document.getElementById('mapToolsCoachMessage');
+dismissMapToolsCoachBtn = document.getElementById('dismissMapToolsCoachBtn');
 function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
 window.addEventListener('resize', resize); resize();
 
