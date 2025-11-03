@@ -53,6 +53,7 @@ const DATA_META_KEY = 'atlas_dataset_meta_v2';
 const DATA_STALE_MS = 1000 * 60 * 60 * 24; // 24 hours
 const MAP_TOOLS_COACH_KEY = 'atlas_map_tools_seen_v1';
 const SEARCH_HISTORY_STORAGE_KEY = 'atlas_recent_searches_v2';
+const SEARCH_INDEX_VERSION = 'atlas-search-index-v1';
 const ROOT_SEARCH_SCOPE = 'scope:root';
 const MAX_SEARCH_HISTORY_PER_SCOPE = 5;
 const urlParams = new URLSearchParams(window.location.search);
@@ -74,6 +75,9 @@ const profileConfig = {
 let totalNodeCount = 0;
 let currentFocusNode = null;
 let mainCanvasRef = null;
+let atlasIndex = null;
+let searchableNodes = [];
+const atlasIndexIdSet = new Set();
 const loadingOverlayElem = document.getElementById('loadingOverlay');
 const getLoadingStatusElem = () => document.getElementById('loadingStatus');
 const dataFreshnessElem = document.getElementById('dataFreshness');
@@ -487,6 +491,10 @@ function ensureNodeChildrenLoaded(node){
         descendant.tags = deriveTags(descendant.name || '');
         descendant.tags.forEach(tag => allTags.add(tag));
         nodeById.set(descendant.id, descendant);
+        if (!atlasIndexIdSet.has(descendant.id)){
+          atlasIndexIdSet.add(descendant.id);
+          searchableNodes.push(descendant);
+        }
       });
       node.children.push(child);
     });
@@ -1167,13 +1175,11 @@ const OVERVIEW_VISIBILITY_KEY = 'atlas_overview_visibility';
 const OVERVIEW_DIM_KEY = 'atlas_overview_dim';
 let showSyntheticNodes = true;
 let dimSyntheticNodes = false;
-const SEARCH_BATCH_SIZE = 240;
 const SEARCH_PAGE_SIZE = 8;
 let searchPageIndex = 0;
 let searchMatchesAll = [];
 let searchDropdownPinned = true;
 let activeSearchTask = null;
-let pendingAutoPan = false;
 const OUTLINE_VISIBILITY_KEY = 'atlas_outline_collapsed';
 let outlineCollapsed = false;
 const ONBOARDING_SEEN_KEY = 'atlas_onboarding_seen_v1';
@@ -1416,6 +1422,32 @@ function annotateTags(node){
 
 annotateTags(root);
 
+if (typeof window !== 'undefined'){
+  window.atlas = window.atlas || {};
+  window.atlas.dataset = data;
+  window.atlas.meta = datasetMeta;
+  window.atlas.root = root;
+}
+
+try {
+  atlasIndex = initSearchIndex(root);
+  searchableNodes = atlasIndex.nodes;
+  if (typeof window !== 'undefined'){
+    window.atlas.index = atlasIndex;
+    window.atlas.searchableNodes = searchableNodes;
+    window.atlas.indexVersion = SEARCH_INDEX_VERSION;
+  }
+} catch (error) {
+  console.error('Failed to initialise atlas search index', error);
+  atlasIndex = null;
+  searchableNodes = [];
+  atlasIndexIdSet.clear();
+  if (typeof window !== 'undefined'){
+    window.atlas.index = null;
+    window.atlas.searchableNodes = [];
+  }
+}
+
 try {
   const storedTagFilters = JSON.parse(localStorage.getItem(TAG_FILTER_STORAGE_KEY));
   if (Array.isArray(storedTagFilters)){
@@ -1610,6 +1642,44 @@ function screenToWorld(sx,sy){ return [sx/scale - offsetX, sy/scale - offsetY]; 
 // ----------------------------------------------------------------------------
 function walk(n,fn){ fn(n); n.children.forEach(c=>walk(c,fn)); }
 function walkFrom(n, fn){ fn(n); (n.children || []).forEach(child => walkFrom(child, fn)); }
+
+function initSearchIndex(rootNode){
+  if (!rootNode){
+    throw new Error('Cannot build search index without a root node');
+  }
+  const nodes = [];
+  atlasIndexIdSet.clear();
+  walk(rootNode, node => {
+    nodes.push(node);
+    atlasIndexIdSet.add(node.id);
+  });
+  return {
+    version: SEARCH_INDEX_VERSION,
+    nodes
+  };
+}
+
+function collectNodesWithinScope(scopeRoot){
+  if (!scopeRoot){
+    return [];
+  }
+  const collected = [];
+  const queue = [scopeRoot];
+  const seen = new Set();
+  while (queue.length){
+    const node = queue.shift();
+    if (!node || seen.has(node.id)){
+      continue;
+    }
+    seen.add(node.id);
+    collected.push(node);
+    const children = node.children || [];
+    for (const child of children){
+      queue.push(child);
+    }
+  }
+  return collected;
+}
 
 function markNodeOpen(node){
   if (!node || typeof node.id === 'undefined') return;
@@ -3505,6 +3575,7 @@ const resultsElem = document.getElementById('results');
 let viewStack=[];
 let searchMatches = [];
 let highlightedResultIndex = -1;
+let searchTimeout = null;
 
 if (qElem){
   requestAnimationFrame(() => {
@@ -3546,25 +3617,6 @@ function cancelActiveSearch(){
     activeSearchTask.cancel();
   }
   activeSearchTask = null;
-}
-
-function scheduleIdleWork(callback){
-  if (typeof window.requestIdleCallback === 'function'){
-    const id = window.requestIdleCallback(callback, { timeout: 160 });
-    return { type: 'idle', id };
-  }
-  const wrapped = () => callback({ timeRemaining: () => 0, didTimeout: false });
-  const id = window.requestAnimationFrame(wrapped);
-  return { type: 'raf', id };
-}
-
-function cancelIdleWork(handle){
-  if (!handle) return;
-  if (handle.type === 'idle' && typeof window.cancelIdleCallback === 'function'){
-    window.cancelIdleCallback(handle.id);
-  } else {
-    window.cancelAnimationFrame(handle.id);
-  }
 }
 
 function getScopeNode(){
@@ -3666,21 +3718,20 @@ function computeSearchScore(node, tokens){
   return score;
 }
 
-function renderSearchResults(rawTerm){
+function renderSearchResults(rawTerm, { panToFirst = false } = {}){
   if (!resultsElem) return;
   cancelActiveSearch();
   const term = (rawTerm || '').trim();
   searchMatches = [];
   searchMatchesAll = [];
   highlightedResultIndex = -1;
-  pendingAutoPan = false;
+  resultsElem.innerHTML = '';
+  resultsElem.classList.remove('visible');
+  resultsElem.classList.remove('persist');
+  resultsElem.setAttribute('aria-expanded', 'false');
   if (!term){
     lastSearchTokens = [];
     searchPageIndex = 0;
-    resultsElem.innerHTML = '';
-    resultsElem.classList.remove('visible');
-    resultsElem.classList.remove('persist');
-    resultsElem.setAttribute('aria-expanded', 'false');
     walk(root, n => { n.match = false; });
     updateRecentSearchesUI();
     updateSearchResultCount(null);
@@ -3688,87 +3739,60 @@ function renderSearchResults(rawTerm){
     return;
   }
   const tokens = term.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!tokens.length){
+    lastSearchTokens = [];
+    updateSearchResultCount(null);
+    return;
+  }
   lastSearchTokens = tokens;
   walk(root, n => { n.match = false; });
-  pendingAutoPan = true;
   searchPageIndex = 0;
-  resultsElem.innerHTML = '';
-  const searching = document.createElement('div');
-  searching.className = 'hit searching';
-  searching.textContent = 'Searching…';
-  searching.setAttribute('role', 'status');
-  resultsElem.appendChild(searching);
-  resultsElem.classList.add('visible');
-  resultsElem.setAttribute('aria-expanded', 'true');
-  resultsElem.classList.toggle('persist', searchDropdownPinned);
-  updateSearchResultCount(null, { pending: true });
 
   const scopeRoot = (searchInSubtree && currentFocusNode) ? currentFocusNode : root;
-  const queue = [scopeRoot];
+  const pool = (scopeRoot === root && searchableNodes.length)
+    ? searchableNodes
+    : collectNodesWithinScope(scopeRoot);
   const matches = [];
   const seen = new Set();
-  let lastRenderedCount = 0;
 
-  const state = {
-    cancelled: false,
-    handle: null,
-    cancel(){
-      this.cancelled = true;
-      if (this.handle){
-        cancelIdleWork(this.handle);
-        this.handle = null;
-      }
+  for (const node of pool){
+    if (!node || seen.has(node.id)){
+      continue;
     }
-  };
-
-  function processBatch(deadline){
-    if (state.cancelled) return;
-    let processed = 0;
-    while(queue.length && (!deadline || deadline.timeRemaining() > 1) && processed < SEARCH_BATCH_SIZE){
-      const node = queue.shift();
-      processed += 1;
-      if (!node) continue;
-      const children = node.children || [];
-      children.forEach(child => {
-        if (!seen.has(child.id)){
-          queue.push(child);
-        }
-      });
-      if (seen.has(node.id)) continue;
-      seen.add(node.id);
-      if (node.syntheticOverview && !showSyntheticNodes) continue;
-      const score = computeSearchScore(node, tokens);
-      if (score !== null){
-        matches.push({ node, score });
-        node.match = true;
-      }
+    seen.add(node.id);
+    if (node.syntheticOverview && !showSyntheticNodes){
+      continue;
     }
-
-    const shouldRender = matches.length !== lastRenderedCount || queue.length === 0;
-    if (shouldRender){
-      matches.sort((a,b) => b.score - a.score || fallbackText(a.node, 'name').localeCompare(fallbackText(b.node, 'name')));
-      searchMatchesAll = matches.slice();
-      lastRenderedCount = matches.length;
-      const shouldAutoPan = pendingAutoPan && matches.length > 0;
-      renderSearchResultsPage({ autopan: shouldAutoPan });
-      if (shouldAutoPan){
-        pendingAutoPan = false;
-      }
-    }
-
-    if (queue.length && !state.cancelled){
-      state.handle = scheduleIdleWork(processBatch);
-    } else {
-      activeSearchTask = null;
-      if (!matches.length){
-        searchMatchesAll = [];
-        renderSearchResultsPage();
-      }
+    const score = computeSearchScore(node, tokens);
+    if (score !== null){
+      matches.push({ node, score });
+      node.match = true;
     }
   }
 
-  state.handle = scheduleIdleWork(processBatch);
-  activeSearchTask = state;
+  if (!matches.length){
+    searchMatchesAll = [];
+    searchMatches = [];
+    updateSearchResultCount(0);
+    const empty = document.createElement('li');
+    empty.className = 'hit empty';
+    empty.textContent = 'No results';
+    empty.setAttribute('role', 'status');
+    empty.tabIndex = -1;
+    resultsElem.appendChild(empty);
+    resultsElem.classList.add('visible');
+    resultsElem.setAttribute('aria-expanded', 'true');
+    resultsElem.classList.toggle('persist', searchDropdownPinned);
+    requestRender();
+    return;
+  }
+
+  matches.sort((a, b) => b.score - a.score || fallbackText(a.node, 'name').localeCompare(fallbackText(b.node, 'name')));
+  searchMatchesAll = matches.slice();
+  if (panToFirst){
+    rememberSearch(term);
+  }
+  renderSearchResultsPage({ autopan: panToFirst });
 }
 
 function renderSearchResultsPage({ autopan = false } = {}){
@@ -3776,13 +3800,15 @@ function renderSearchResultsPage({ autopan = false } = {}){
   resultsElem.innerHTML = '';
   const total = searchMatchesAll.length;
   if (!total){
-    const empty = document.createElement('div');
-    empty.className = 'hit';
-    empty.textContent = 'No matches available';
+    const empty = document.createElement('li');
+    empty.className = 'hit empty';
+    empty.textContent = 'No results';
     empty.setAttribute('role', 'status');
+    empty.tabIndex = -1;
     resultsElem.appendChild(empty);
     resultsElem.classList.add('visible');
     resultsElem.setAttribute('aria-expanded', 'true');
+    resultsElem.classList.toggle('persist', searchDropdownPinned);
     currentFocusNode = null;
     updateSearchResultCount(0);
     requestRender();
@@ -3794,7 +3820,7 @@ function renderSearchResultsPage({ autopan = false } = {}){
   searchMatches = pageMatches;
   pageMatches.forEach((entry, idx) => {
     const node = entry.node;
-    const item = document.createElement('div');
+    const item = document.createElement('li');
     item.className = 'hit';
     item.setAttribute('role', 'option');
     item.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
@@ -3841,7 +3867,7 @@ function renderSearchResultsPage({ autopan = false } = {}){
     });
     resultsElem.appendChild(item);
   });
-  const nav = document.createElement('div');
+  const nav = document.createElement('li');
   nav.className = 'search-nav';
   const info = document.createElement('span');
   const end = Math.min(total, start + pageMatches.length);
@@ -4328,7 +4354,34 @@ function hideSearchResults(){
 
 qElem.addEventListener('input', () => {
   updateSearchClearButton();
-  renderSearchResults(qElem.value);
+  if (searchTimeout){
+    clearTimeout(searchTimeout);
+  }
+  const term = qElem.value.trim();
+  searchTimeout = setTimeout(() => {
+    renderSearchResults(term);
+  }, 300);
+});
+
+qElem.addEventListener('keypress', (e) => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  if (searchTimeout){
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+  const term = qElem.value.trim();
+  if (resultsElem.classList.contains('visible') && highlightedResultIndex >= 0){
+    const match = searchMatches[highlightedResultIndex];
+    if (match && match.node){
+      jumpToMatch(match.node);
+      if (!searchDropdownPinned){
+        hideSearchResults();
+      }
+      return;
+    }
+  }
+  renderSearchResults(term, { panToFirst: true });
 });
 
 qElem.addEventListener('focus', () => {
@@ -4339,6 +4392,10 @@ qElem.addEventListener('focus', () => {
 if (clearSearchBtn){
   clearSearchBtn.addEventListener('click', () => {
     qElem.value = '';
+    if (searchTimeout){
+      clearTimeout(searchTimeout);
+      searchTimeout = null;
+    }
     updateSearchClearButton();
     hideSearchResults();
     qElem.focus();
@@ -4371,7 +4428,6 @@ qElem.addEventListener('keydown', (e) => {
     }
   } else if (e.key === 'Enter'){
     e.preventDefault();
-    focusSearchResultByIndex(highlightedResultIndex >= 0 ? highlightedResultIndex : 0);
   } else if (e.key === 'Escape'){
     hideSearchResults();
     highlightedResultIndex = -1;
