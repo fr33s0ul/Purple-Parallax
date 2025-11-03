@@ -9,6 +9,8 @@ on:
       - 'package-lock.json'
 
 jobs:
+
+
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -18,5 +20,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
       - name: Validate atlas dataset
         run: npm exec --yes ajv-cli@5 validate -s schema/atlas.schema.json -d docs/data/atlas.json --errors=line
